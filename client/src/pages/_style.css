@@ -1490,22 +1490,7 @@ a.fakebutton:active {
         padding: 10px 12px;
         gap: 10px;
         border-radius: var(--rounding-sm);
-    }
-
-    #toolbar > div {
-        justify-content: space-between;
-        width: 100%;
-    }
-
-    /* Segmented control full width on mobile */
-    #toolbar > div:last-child > div {
-        width: 100%;
-        justify-content: stretch;
-    }
-
-    #toolbar > div:last-child > div input[type="button"] {
-        flex: 1;
-        text-align: center;
+        flex-wrap: nowrap;
     }
 
     #toolbar select {
