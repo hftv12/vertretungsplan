@@ -679,7 +679,7 @@ function DSBTable(props: { // the main feature of this website
           {getFilteredSubstitutions().length > 0 && props.settings.newDesign === true && (
             <div>
               <Placeholder height="20px" />
-              <div id="new-slist">
+              <div id="new-slist" key={currentDay.date}>
                 {/* <h1>NEUES DESIGN</h1> */}
                 {getFilteredSubstitutions().map((s) => {
                     if (s.usual_subject.includes("AG")) {
