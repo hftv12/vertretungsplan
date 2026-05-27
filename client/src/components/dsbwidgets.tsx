@@ -602,13 +602,13 @@ function DSBTable(props: { // the main feature of this website
       {currentDay !== null && (
         <div>
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap' }}>
-            <div style={{ backgroundColor: 'var(--input-bg)', padding: '8px 16px', borderRadius: 'var(--rounding)', border: '1px solid var(--brighter-color)' }}>
+            <div style={{ backgroundColor: 'var(--input-bg)', padding: '8px 16px', borderRadius: 'var(--rounding-sm)', border: '1px solid var(--brighter-color)' }}>
               <h2 style={{ margin: 0, fontSize: '1.2rem' }}>
                 {currentDay.day.substring(0, 2)}, {currentDay.date}
               </h2>
             </div>
             {currentDay.day.includes("Woche") && (
-              <div style={{ backgroundColor: 'var(--accent-light)', padding: '8px 16px', borderRadius: 'var(--rounding)', border: '1px solid rgba(37, 99, 235, 0.15)' }}>
+              <div style={{ backgroundColor: 'var(--accent-light)', padding: '8px 16px', borderRadius: 'var(--rounding-sm)', border: '1px solid rgba(37, 99, 235, 0.15)' }}>
                 <h2 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--accent-color)' }}>
                   {currentDay.day.substring(currentDay.day.indexOf("Woche")).split(',')[0].trim()}
                 </h2>
