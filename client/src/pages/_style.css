@@ -1487,8 +1487,6 @@ a.fakebutton:active {
     }
 
     #toolbar {
-        flex-direction: column;
-        align-items: stretch;
         padding: 10px 12px;
         gap: 10px;
         border-radius: var(--rounding-sm);
