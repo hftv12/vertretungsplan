@@ -5,7 +5,7 @@ import { CheckButton, Select } from "./settingshelper";
 
 //import serializeEvent from "../util/event_helper";
 
-import { EyeIcon, EyeOffIcon, RefreshIcon, ImportantIcon } from "./icons";
+import { EyeIcon, EyeOffIcon, RefreshIcon, ImportantIcon, FilterIcon } from "./icons";
 import plink from "../assets/placeholder.gif";
 // import dsbIcon from "/favicons/dsb_simplistic192.png";
 
@@ -296,13 +296,18 @@ function DSBTableToolbar(props: { // toolbar for switching day & filtering optio
 
   return (
     <div id="toolbar">
-      <div>
+      <div style={{ display: 'flex', gap: '8px' }}>
         <DSBRefreshButton getData={props.getData} success={props.success} setSuccess={props.setSuccess} />
-        <select ref={filterStageRef} onChange={handleFilterChange}>
-          <option value={FilterStage.ALL}>Alle anzeigen</option>
-          <option value={FilterStage.GRADE}>Nur deine Stufe/Klasse</option>
-          <option value={FilterStage.COURSES}>Nur deine Kurse/Fächer</option>
-        </select>
+        <div style={{ position: 'relative' }}>
+          <button type="button" class="imgInput" aria-label="Filtern" style={{ zIndex: 1 }}>
+            <FilterIcon width="20" height="20" />
+          </button>
+          <select ref={filterStageRef} onChange={handleFilterChange} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', zIndex: 2 }}>
+            <option value={FilterStage.ALL}>Alle anzeigen</option>
+            <option value={FilterStage.GRADE}>Nur deine Stufe/Klasse</option>
+            <option value={FilterStage.COURSES}>Nur deine Kurse/Fächer</option>
+          </select>
+        </div>
       </div>
       <div>
         {props.timetable !== null && (
@@ -310,7 +315,7 @@ function DSBTableToolbar(props: { // toolbar for switching day & filtering optio
             <input
               type="button"
               onClick={setDayOne}
-              value={props.timetable.day_one.day}
+              value={props.timetable.day_one.day.substring(0, 2)}
               class={props.currentDay.day === props.timetable.day_one.day
                 ? "selected"
                 : ""}
@@ -318,7 +323,7 @@ function DSBTableToolbar(props: { // toolbar for switching day & filtering optio
             <input
               type="button"
               onClick={setDayTwo}
-              value={props.timetable.day_two.day}
+              value={props.timetable.day_two.day.substring(0, 2)}
               class={props.currentDay.day === props.timetable.day_two.day
                 ? "selected"
                 : ""}
@@ -599,9 +604,6 @@ function DSBTable(props: { // the main feature of this website
           <h2>
             Vertretungen für {currentDay.day}, den {currentDay.date}
           </h2>
-          <h3>
-            (Stand: {timetable.last_modified})
-          </h3>
 
           {getFilteredSubstitutions().length == 0 && (
             <div>
@@ -717,16 +719,14 @@ function DSBTable(props: { // the main feature of this website
             </div>
           )}
 
-
-          
+          <div style={{ textAlign: 'center', marginTop: '24px', marginBottom: '16px' }}>
+            <p style={{ margin: 0, color: 'var(--text-secondary)' }}><i>Stand: {timetable.last_modified}</i></p>
+          </div>
 
           {!(currentDay.messages[0] === "" || currentDay.messages.length < 1) && <div>
             <h2>
               Nachrichten für {currentDay.day}, den {currentDay.date}
             </h2>
-            <h3>
-              (Stand: {timetable.last_modified})
-            </h3>
             <ol>
               {currentDay.messages[0] === "" && <li>Nichts!</li>}
               {currentDay.messages.map((m) => {
