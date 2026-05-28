@@ -745,7 +745,27 @@ input[type='checkbox']:disabled {
     padding: 4px;
     border-radius: var(--rounding-sm);
     border: 1px solid var(--brighter-color);
-    gap: 4px;
+    position: relative;
+    z-index: 1;
+}
+
+#toolbar > div:last-child > div::before {
+    content: "";
+    position: absolute;
+    top: 4px;
+    bottom: 4px;
+    width: calc(50% - 4px);
+    background-color: var(--foreground-color);
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    z-index: -1;
+    left: 4px;
+    transform: translateX(0);
+}
+
+#toolbar > div:last-child > div.switched::before {
+    transform: translateX(100%);
 }
 
 #toolbar > div:last-child > div input[type="button"] {
@@ -759,15 +779,10 @@ input[type='checkbox']:disabled {
     font-weight: 600;
     cursor: pointer;
     transition: var(--transition-smooth);
-}
-
-#toolbar > div:last-child > div input[type="button"]:active {
-    transform: scale(0.92);
-}
-
-#toolbar > div:last-child > div input[type="button"]:hover {
-    color: var(--text-color);
-    background-color: rgba(255, 255, 255, 0.05);
+    position: relative;
+    z-index: 2;
+    flex: 1;
+    text-align: center;
 }
 
 @media (prefers-color-scheme: light) {
@@ -777,9 +792,9 @@ input[type='checkbox']:disabled {
 }
 
 #toolbar > div:last-child > div input[type="button"].selected {
-    background-color: var(--foreground-color);
+    background-color: transparent;
     color: var(--accent-color);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+    box-shadow: none;
 }
 
 /* SVG Custom Icon Button Style */
@@ -885,9 +900,7 @@ tbody tr:last-child td {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     gap: 20px;
-    animation: tileReveal 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
     width: 100%;
-    margin-top: 20px;
 }
 
 .new-s {
@@ -899,7 +912,7 @@ tbody tr:last-child td {
     flex-direction: column;
     box-shadow: var(--shadow-tile);
     transition: var(--transition-smooth);
-    min-height: 160px;
+    min-height: 120px;
     position: relative;
 }
 
@@ -1546,7 +1559,7 @@ a.fakebutton:active {
     }
 
     .header-version {
-        display: none;
+        /* display: none; */
     }
 
     #toolbar {
