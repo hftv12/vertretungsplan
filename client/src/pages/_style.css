@@ -81,8 +81,49 @@
     --shadow-tile: 0 0 12px 2px rgba(255, 255, 255, 0.7), var(--shadow-card);
 }
 
+:root[data-theme="dark"] {
+    /* DARK MODE TOKENS */
+    --header-bg: rgba(15, 15, 17, 0.82);
+    --background-color: #09090b;    /* Zinc 950 */
+    --foreground-color: #18181b;    /* Zinc 900 Card */
+    --darker-color: #0f0f11;        /* Zinc 950 Header/Footer */
+    --brighter-color: #27272a;      /* Zinc 800 Border */
+    --input-bg: #27272a;            /* Zinc 800 Input */
+    --text-color: #fafafa;          /* Zinc 50 */
+    --text-secondary: #a1a1aa;      /* Zinc 400 */
+    
+    /* Accents & Blue */
+    --accent-color: #3b82f6;        /* Medium Blue (Blue 500) */
+    --accent-hover: #60a5fa;        /* Blue 400 */
+    --accent-light: rgba(59, 130, 246, 0.1);
+    --accent-glow: rgba(59, 130, 246, 0.2);
+    
+    /* Substitutions - Dark Theme Semantic Colors */
+    --s-free-bg: rgba(239, 68, 68, 0.07);
+    --s-free-border: #ef4444;
+    --s-free-text: #fca5a5;
+    
+    --s-moved-bg: rgba(59, 130, 246, 0.07);
+    --s-moved-border: #3b82f6;
+    --s-moved-text: #93c5fd;
+    
+    --s-exam-bg: rgba(139, 92, 246, 0.07);
+    --s-exam-border: #a78bfa;
+    --s-exam-text: #c084fc;
+    
+    --s-subst-bg: rgba(249, 115, 22, 0.07);
+    --s-subst-border: #f97316;
+    --s-subst-text: #ffb74d;
+    
+    /* Shadows */
+    --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -2px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.02);
+    --shadow-hover: 0 12px 30px -5px rgba(0, 0, 0, 0.4), 0 8px 16px -8px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.03);
+    --shadow-header: 0 4px 20px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.02);
+    --shadow-tile: 0 0 12px 2px rgba(255, 255, 255, 0.05), var(--shadow-card);
+}
+
 @media (prefers-color-scheme: dark) {
-    :root {
+    :root:not([data-theme="light"]) {
         /* DARK MODE TOKENS */
         --header-bg: rgba(15, 15, 17, 0.82);
         --background-color: #09090b;    /* Zinc 950 */
@@ -720,6 +761,10 @@ input[type='checkbox']:disabled {
     transition: var(--transition-smooth);
 }
 
+#toolbar > div:last-child > div input[type="button"]:active {
+    transform: scale(0.92);
+}
+
 #toolbar > div:last-child > div input[type="button"]:hover {
     color: var(--text-color);
     background-color: rgba(255, 255, 255, 0.05);
@@ -942,15 +987,31 @@ tbody tr:last-child td {
     font-style: normal;
 }
 
-/* Card title */
+/* Card title row */
+.new-s .s-title-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    margin: 18px 20px 10px;
+    gap: 10px;
+}
+
 .new-s h2 {
     font-family: var(--font-heading);
     font-size: 1.2rem;
     font-weight: 700;
-    margin: 18px 20px 10px;
+    margin: 0;
     color: var(--text-color);
     letter-spacing: -0.015em;
     line-height: 1.3;
+}
+
+.new-s .s-hours-badge {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-color);
+    /* Align to the left to sit slightly offset to the right of the course title, starting from halfway */
+    text-align: left;
 }
 
 .new-s h2 del {
