@@ -317,7 +317,7 @@ function DSBTableToolbar(props: { // toolbar for switching day & filtering optio
       </div>
       <div>
         {props.timetable !== null && (
-          <div>
+          <div class={props.currentDay.day === props.timetable.day_two.day ? "switched" : ""}>
             <input
               type="button"
               onClick={setDayOne}
@@ -617,7 +617,7 @@ function DSBTable(props: { // the main feature of this website
           </div>
 
           {getFilteredSubstitutions().length == 0 && (
-            <div>
+            <div key={"nichts-" + currentDay.date} style={{ animation: 'tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards' }}>
               <p>
                 <i>nichts...</i>
               </p>
@@ -690,9 +690,9 @@ function DSBTable(props: { // the main feature of this website
           )}
 
           {getFilteredSubstitutions().length > 0 && props.settings.newDesign === true && (
-            <div>
-              <Placeholder height="20px" />
-              <div id="new-slist" key={currentDay.date}>
+            <div key={"subst-" + currentDay.date} style={{ animation: 'tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards', marginTop: '20px' }}>
+              <h2 style={{ marginBottom: '12px' }}>Vertretungen</h2>
+              <div id="new-slist">
                 {/* <h1>NEUES DESIGN</h1> */}
                 {getFilteredSubstitutions().map((s) => {
                     if (s.usual_subject.includes("AG")) {
