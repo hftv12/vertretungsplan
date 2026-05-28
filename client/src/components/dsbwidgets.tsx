@@ -90,6 +90,7 @@ interface DSBSettings {
   showCredits: boolean,
   yellowPaint: boolean,
   newDesign: boolean,
+  theme: string,
 }
 
 enum FilterStage {
@@ -291,6 +292,11 @@ function DSBTableToolbar(props: { // toolbar for switching day & filtering optio
     if (filterStage !== null && filterStage !== undefined) {
       (filterStageRef.current as HTMLSelectElement).value = filterStage;
       props.setFilterStage(filterStage);
+    } else {
+      if (filterStageRef.current) {
+        (filterStageRef.current as HTMLSelectElement).value = FilterStage.GRADE;
+      }
+      props.setFilterStage(FilterStage.GRADE);
     }
   }, []);
 
@@ -376,47 +382,41 @@ function DSBNewSubstitution(props: Substitution) { // new design substitution
           <div class="s-free">
             <p><b>Ausfall</b></p>
           </div>
-          <h2>{props.classes} - {props.usual_subject}</h2>
-          <div class="s-grid">
-            {/* <p><b>{props.hours}.</b> Stunde</p> */}
-            <label><i>Stunde(n):</i></label>
-            <label><b>{props.hours}</b></label>
-          </div> 
+          <div class="s-title-row">
+            <h2>{props.classes} - {props.usual_subject}</h2>
+            <div class="s-hours-badge">{props.hours} Std.</div>
+          </div>
         </div> : getType() === SubstitutionType.EXAM ? // Klausur
         <div>
           <div class="s-exam">
             <p><b>Klausur</b></p>
             <p><i><b>{props.room}</b></i></p>
           </div>
-          <h2>{props.classes} - {props.subject !== "&nbsp;" ? props.subject : "????"}</h2>
-          <div class="s-grid">
-            {/* <p><b>{props.hours}.</b> Stunde</p> */}
-            <label><i>Stunde(n):</i></label>
-            <label><b>{props.hours}</b></label>
-          </div> 
+          <div class="s-title-row">
+            <h2>{props.classes} - {props.subject !== "&nbsp;" ? props.subject : "????"}</h2>
+            <div class="s-hours-badge">{props.hours} Std.</div>
+          </div>
         </div> : getType() === SubstitutionType.MOVED ? // Raumverschiebung
         <div>
           <div class="s-moved">
             <p><b>Raumwechsel</b></p>
             <p><i><b>{props.room}</b></i></p>
           </div>
-          <h2>{props.classes} - {props.usual_subject}</h2>
-          <div class="s-grid">
-            {/* <p><b>{props.hours}.</b> Stunde</p> */}
-            <label><i>Stunde(n):</i></label>
-            <label><b>{props.hours}</b></label>
-          </div> 
+          <div class="s-title-row">
+            <h2>{props.classes} - {props.usual_subject}</h2>
+            <div class="s-hours-badge">{props.hours} Std.</div>
+          </div>
         </div> :  // Vertretung
         <div>
           <div class="s-subst">
             <p><b>Vertretung</b></p>
             <p><i><b>{props.room}</b></i></p>
           </div>
-          <h2>{props.classes} - <del>{props.usual_subject}</del></h2>
+          <div class="s-title-row">
+            <h2>{props.classes} - <del>{props.usual_subject}</del></h2>
+            <div class="s-hours-badge">{props.hours} Std.</div>
+          </div>
           <div class="s-grid">
-            {/* <p><b>{props.hours}.</b> Stunde</p> */}
-            <label><i>Stunde(n):</i></label>
-            <label><b>{props.hours}</b></label>
             <label><i>Fach:</i></label>
             <label><b>{props.subject}</b></label>
           </div> 
@@ -440,7 +440,7 @@ function DSBTable(props: { // the main feature of this website
 }) {
   const [timetable, setTimetable] = useState(null as Timetables);
   const [currentDay, setCurrentDay] = useState(null as DayTimetable);
-  const [filterStage, setFilterStage] = useState(FilterStage.ALL);
+  const [filterStage, setFilterStage] = useState(FilterStage.GRADE);
   const [success, setSuccess] = useState(null);
 
   const getData = useCallback(async (): Promise<boolean> => {
@@ -601,7 +601,7 @@ function DSBTable(props: { // the main feature of this website
       )}
       {currentDay !== null && (
         <div>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap' }}>
+          <div key={"header-" + currentDay.date} style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', animation: 'slideUpFade 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards' }}>
             <div style={{ backgroundColor: 'var(--input-bg)', padding: '8px 16px', borderRadius: 'var(--rounding-sm)', border: '1px solid var(--brighter-color)' }}>
               <h2 style={{ margin: 0, fontSize: '1.2rem' }}>
                 {currentDay.day.substring(0, 2)}, {currentDay.date}
@@ -730,24 +730,26 @@ function DSBTable(props: { // the main feature of this website
             </div>
           )}
 
-          <div style={{ textAlign: 'center', marginTop: '24px', marginBottom: '16px' }}>
+          {!(currentDay.messages[0] === "" || currentDay.messages.length < 1) && (
+            <div key={"messages-" + currentDay.date} style={{ animation: 'tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards', marginTop: '20px' }}>
+              <h2 style={{ marginBottom: '12px' }}>Nachrichten</h2>
+              <div class="new-s messages-tile" style={{ minHeight: 'auto', padding: '20px' }}>
+                {currentDay.messages.map((m, idx) => {
+                  if (m === "") return null;
+                  return (
+                    <div key={idx} class="message-item">
+                      <p style={{ color: 'var(--text-color)', margin: 0, fontSize: '0.95rem' }}>{m}</p>
+                      {idx < currentDay.messages.length - 1 && <div class="line" style={{ margin: '12px 0', opacity: 0.3 }}></div>}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <div key={"stand-" + currentDay.date} style={{ textAlign: 'center', marginTop: '24px', marginBottom: '16px', animation: 'tileReveal 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards' }}>
             <p style={{ margin: 0, color: 'var(--text-secondary)' }}><i>Stand: {timetable.last_modified}</i></p>
           </div>
-
-          {!(currentDay.messages[0] === "" || currentDay.messages.length < 1) && <div>
-            <h2>
-              Nachrichten für {currentDay.day}, den {currentDay.date}
-            </h2>
-            <ol>
-              {currentDay.messages[0] === "" && <li>Nichts!</li>}
-              {currentDay.messages.map((m) => {
-                if (m === "") {
-                  return null;
-                }
-                return <li>{m}</li>;
-              })}
-            </ol>
-          </div>}
         </div>
       )}
     </div>
@@ -1563,6 +1565,12 @@ function Settings(props: { // settings block
       <h2>Einstellungen</h2>
       {loadedData && (<div class="settings-div">
         <h3 class="code">Webseite</h3>
+        <Select
+          text="Erscheinungsbild (Dark Mode):"
+          options={[{value: "system", text: "Systemstandard"}, {value: "light", text: "Hell"}, {value: "dark", text: "Dunkel"}]}
+          updater={(v: string) => updateSetting("theme", v)}
+          value={props.settings.theme !== undefined ? props.settings.theme : "system"}
+        />
         <CheckButton
           text="Easter eggs:"
           updater={(v: boolean) => updateSetting("easterEggs", v)}
@@ -1672,6 +1680,7 @@ export default function DSBWidgets(props: {
       advancedCourses: false,
       yellowPaint: true, // tell me it didn't happen. tell me it didn't snow.
       newDesign: true, // it snew
+      theme: "system",
     } as DSBSettings); // what
 
   const subjectSelectRef = useRef(null);
@@ -1681,6 +1690,14 @@ export default function DSBWidgets(props: {
       setLoggedIn(valid); // log in if the credentials are valid
     });
   }, []);
+
+  useEffect(() => {
+    if (settings.theme) {
+      document.documentElement.setAttribute('data-theme', settings.theme);
+    } else {
+      document.documentElement.setAttribute('data-theme', 'system');
+    }
+  }, [settings.theme]);
 
   return (
     <div>
