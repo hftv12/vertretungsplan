@@ -617,7 +617,8 @@ function DSBTable(props: { // the main feature of this website
           </div>
 
           {getFilteredSubstitutions().length == 0 && (
-            <div key={"nichts-" + currentDay.date} style={{ animation: 'tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards' }}>
+            <div key={"nichts-" + currentDay.date} style={{ animation: 'tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards', marginTop: '20px' }}>
+              <h2 style={{ marginBottom: '12px' }}>Vertretungen</h2>
               <p>
                 <i>nichts...</i>
               </p>
@@ -737,9 +738,8 @@ function DSBTable(props: { // the main feature of this website
                 {currentDay.messages.map((m, idx) => {
                   if (m === "") return null;
                   return (
-                    <div key={idx} class="message-item">
+                    <div key={idx} class="message-item" style={idx < currentDay.messages.length - 1 ? { borderBottom: '1px solid var(--brighter-color)', paddingBottom: '12px', marginBottom: '12px' } : {}}>
                       <p style={{ color: 'var(--text-color)', margin: 0, fontSize: '0.95rem' }}>{m}</p>
-                      {idx < currentDay.messages.length - 1 && <div class="line" style={{ margin: '12px 0', opacity: 0.3 }}></div>}
                     </div>
                   );
                 })}
