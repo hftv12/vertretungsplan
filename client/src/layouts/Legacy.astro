@@ -32,9 +32,10 @@ const { title, icon, version, manifest } = Astro.props;
 	</head>
 	<body>
 		<div id="wrapper">
-			<div id="header">
+			<div id="header" style="position: sticky; top: 0; z-index: 100;">
 				<Header text="DSB Mobile 2.0" homepage='..' logo={icon} width="64" height="64" pixel={true} version={version} client:only>
 				</Header>
+				<div class="top-fade"></div>
 			</div>
 			<div id="main-content">
 				<div class='center'>
