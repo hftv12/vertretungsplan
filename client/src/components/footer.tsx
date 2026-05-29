@@ -4,7 +4,7 @@ export default function Footer() {
             <div>
                 <p class='code'>
                     <b>
-                        © Luis Koch 2024/25
+                        © Luis Koch 2026/27
                     </b>
                 </p>
             </div>

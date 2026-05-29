@@ -513,6 +513,7 @@ function DSBTable(props: { // the main feature of this website
   }, [setTimetable, currentDay, props.settings]);
 
   const changeCurrentDay = useCallback((day: string) => {
+    window.dispatchEvent(new Event('dsb-day-switch'));
     if (day === "day_one") {
       setCurrentDay(timetable.day_one);
       return;
@@ -1199,8 +1200,15 @@ function ExamList(props: { // sorted list of all of your exams (probably the mos
   const [list, setList] = useState(""); // RELEASE THE DSBSCRAPER LIST
 
   const [reloadSuccess, setReloadSuccess] = useState(undefined);
+  const [animationKey, setAnimationKey] = useState(0);
 
   const examListSelectRef = useRef();
+
+  useEffect(() => {
+    const handler = () => setAnimationKey(prev => prev + 1);
+    window.addEventListener('dsb-day-switch', handler);
+    return () => window.removeEventListener('dsb-day-switch', handler);
+  }, []);
 
   // fuck you geeksforgeeks
 
@@ -1401,7 +1409,7 @@ function ExamList(props: { // sorted list of all of your exams (probably the mos
         <h2>Lade, bitte warten...</h2>
       )}
       {availableLists !== undefined && (
-        <div>
+        <div key={animationKey} style={{ animation: 'tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both' }}>
           <h2>Klausuren</h2>
           {(availableLists === null || examList === null) && ( 
             <div class="h-div">
