@@ -315,8 +315,7 @@ header {
     transition: var(--transition-smooth);
 }
 
-header::after {
-    content: '';
+.top-fade {
     position: absolute;
     top: 100%;
     left: 0;
@@ -324,6 +323,7 @@ header::after {
     height: 40px;
     background: linear-gradient(to top, transparent, var(--background-color));
     pointer-events: none;
+    z-index: -1;
 }
 
 .header-left {
