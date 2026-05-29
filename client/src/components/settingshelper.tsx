@@ -111,7 +111,7 @@ export function Select(props: {
     }, []);
 
     return (
-        <div class="option">
+        <div class="option select-option">
             <div>
                 <div>
                     {props.information && (

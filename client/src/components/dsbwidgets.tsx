@@ -5,7 +5,7 @@ import { CheckButton, Select } from "./settingshelper";
 
 //import serializeEvent from "../util/event_helper";
 
-import { EyeIcon, EyeOffIcon, RefreshIcon, ImportantIcon, FilterIcon } from "./icons";
+import { EyeIcon, EyeOffIcon, RefreshIcon, ImportantIcon, FilterIcon, PencilIcon } from "./icons";
 import plink from "../assets/placeholder.gif";
 // import dsbIcon from "/favicons/dsb_simplistic192.png";
 
@@ -731,9 +731,13 @@ function DSBTable(props: { // the main feature of this website
             </div>
           )}
 
-          {!(currentDay.messages[0] === "" || currentDay.messages.length < 1) && (
-            <div key={"messages-" + currentDay.date} style={{ animation: 'tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards', marginTop: '20px' }}>
-              <h2 style={{ marginBottom: '12px' }}>Nachrichten</h2>
+          <div key={"messages-" + currentDay.date} style={{ animation: 'tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards', marginTop: '20px' }}>
+            <h2 style={{ marginBottom: '12px' }}>Nachrichten</h2>
+            {(currentDay.messages[0] === "" || currentDay.messages.length < 1) ? (
+              <p>
+                <i>nichts...</i>
+              </p>
+            ) : (
               <div class="new-s messages-tile" style={{ minHeight: 'auto', padding: '20px' }}>
                 {currentDay.messages.map((m, idx) => {
                   if (m === "") return null;
@@ -744,8 +748,8 @@ function DSBTable(props: { // the main feature of this website
                   );
                 })}
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           <div key={"stand-" + currentDay.date} style={{ textAlign: 'center', marginTop: '24px', marginBottom: '16px', animation: 'tileReveal 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards' }}>
             <p style={{ margin: 0, color: 'var(--text-secondary)' }}><i>Stand: {timetable.last_modified}</i></p>
@@ -818,7 +822,7 @@ function Course(props: { // the courses that you can add
           {!!props.subject ? props.subject + (!!props.course && props.course !== "" ? "-" + props.course : "") : "D:"}
         </h3>
 
-        {!!props.written ? (<ImportantIcon width="20" height="20" class="important-icon" title="Schriftliches Fach" />) : (<div></div>)}
+        {!!props.written ? (<PencilIcon width="20" height="20" class="important-icon" title="Schriftliches Fach" />) : (<div></div>)}
       </div>
       <div>
         <label for={subjectSelectID}>Fach:</label>
@@ -1724,26 +1728,8 @@ export default function DSBWidgets(props: {
                 <p>Aktuell ist das Vertretungsplan-anzeige-ding sehr bloated und unschön. Ich schaue mal, ob ich evtl. <span class="red">farbige Markierungen</span> hinzufüge oder es komplett redesigne.</p>
                 <p>Wahrscheinlich wird das aber das letzte sein, um was ich diese Webseite erweitere. <sup><i>(außer wenn jemand Lust hat, CSS-Themes dieser Seite beizutragen)</i></sup></p> */}
     
-                <p>Hier kannst du den <a rel="noopener noreferrer" target="_blank" href="https://github.com/Kirillathome/DSBScraper">Quellcode dieser Website</a> (und dessen API) auffinden.</p>
+                <p>Diese Webseite basiert auf dem DSB-Scraper von Kirill (kirillathome)</p>
 
-                <Placeholder height='25px' />
-                <h3>Credits:</h3>
-                <p>Für diese Website und das API habe ich (hauptsächlich) verwendet:</p>
-                <ol>
-                    <li>
-                      Die Hilfe von <a rel="noopener noreferrer" target="_blank" href="https://www.instagram.com/luiskoch77/">Luis Koch</a> wegen Design und CSS
-                    </li>
-                    <li>
-                        <a rel="noopener noreferrer" target="_blank" href='https://github.com/TheNoim/DSBAPI'>DSBAPI</a> von TheNoim, lizentiert unter <a rel="noopener noreferrer" target="_blank" href='https://github.com/TheNoim/DSBAPI/blob/master/LICENSE'>Apache License 2.0</a>
-                    </li>
-                    <li>
-                        <a rel="noopener noreferrer" target="_blank" href='https://github.com/taoqf/node-html-parser'>node-html-parser</a> von taoqf, lizentiert unter <a rel="noopener noreferrer" target="_blank" href='https://github.com/taoqf/node-html-parser/blob/main/LICENSE'>MIT</a>
-                    </li>
-                    <li>
-                      <a rel="noopener noreferrer" target="_blank" href='https://github.com/modesty/pdf2json'>pdf2json</a> von modesty, lizensiert unter <a rel="noopener noreferrer" target="_blank" href='https://github.com/modesty/pdf2json/blob/master/license.txt'>Apache License 2.0</a>
-                    </li>
-
-                </ol>
                 <Placeholder height='20px' />
     
                 <p>Version der Website: <b><span class='code'>{props.version}</span></b></p>
