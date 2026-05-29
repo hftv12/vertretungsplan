@@ -1499,6 +1499,19 @@ a.fakebutton:active {
 }
 /*#endregion*/
 
+/*#region Bottom Fade Overlay*/
+.bottom-fade {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 40px;
+    background: linear-gradient(to bottom, transparent, var(--background-color));
+    pointer-events: none;
+    z-index: 90;
+}
+/*#endregion*/
+
 /*#region Social Media widgets*/
 .social-media-widgets {
     display: flex;
@@ -1604,6 +1617,17 @@ a.fakebutton:active {
     footer {
         justify-content: center;
         padding: 20px 16px;
+    }
+
+    /* Settings dropdown: stack label and select vertically on mobile */
+    .select-option > div {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .select-option > div select {
+        width: 100%;
     }
 }
 
