@@ -1403,6 +1403,65 @@ function ExamList(props: { // sorted list of all of your exams (probably the mos
 
   // console.log(props.settings)
 
+  const getUpcomingExams = useCallback(() => {
+    if (!examList || examList.length === 0) return [];
+    
+    let upcoming = [];
+    const today = new Date(date);
+    today.setHours(0, 0, 0, 0);
+
+    const prettify = (course: string): string => {
+      let split = course.split("-");
+      let n = "";
+      for (const c of props.courses) {
+        if (c.subject === split[0]) {
+          n = c.subject_name;
+          if (c.course === "" || c.course === split[1]) return `${n} ${split[1]}`;
+        }
+      }
+      if (n !== "") return `${n} ${split[1]}`;
+      if (!!props.subjectSelectRef.current) {
+        for (let o of Array.from((props.subjectSelectRef.current as HTMLSelectElement).options)) {
+          if (o.value === split[0]) return `${o.text} ${split[1]}`;
+        }
+      }
+      return course;
+    };
+
+    examList.forEach(dayGroup => {
+      const examDate = stringToDate(dayGroup[0].date);
+      examDate.setHours(0, 0, 0, 0);
+      
+      const diffTime = examDate.valueOf() - today.valueOf();
+      if (diffTime < 0) return; // past
+      
+      const daysUntil = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      dayGroup.forEach(ed => {
+        ed.exams.forEach(e => {
+          let isRelevant = false;
+          let color = 'var(--accent-color)';
+          if (props.settings.exams === ExamVisibility.ALL) {
+            isRelevant = true;
+          } else {
+            const matches = props.courses.filter(c => {
+              return !!c.written && (c.course === "" ? c.subject === e.course.split("-")[0] : c.subject === e.course.split("-")[0] && c.course === e.course.split("-")[1]);
+            });
+            if (matches.length > 0) {
+              isRelevant = true;
+              if (matches[0].color) color = matches[0].color;
+            }
+          }
+          if (isRelevant) {
+            upcoming.push({ name: prettify(e.course), daysUntil, color });
+          }
+        });
+      });
+    });
+    
+    return upcoming;
+  }, [examList, props.courses, props.settings.exams, props.subjectSelectRef, date, stringToDate]);
+
   return props.settings.exams !== ExamVisibility.NONE && (
     <div class="default-div">
       {(availableLists === undefined || examList === undefined) && (  // this logic is slightly broken I think but who cares
@@ -1422,6 +1481,28 @@ function ExamList(props: { // sorted list of all of your exams (probably the mos
               {/* <p>WIP, schaut bitte noch auf den offiziellen Klausurplan, wenn ihr nicht gamblen wollt.</p> */}
               {/* <p>WIP, schaut bitte noch auf den offiziellen Klausurplan, das Ding funktioniert aktuell nur so halb.</p> */}
               <p>Heute ist <b>{week[date.getDay()]}</b>, der <b>{date.getDate() < 10 ? 0 : null}{date.getDate()}.{date.getMonth() + 1 < 10 ? 0 : null}{date.getMonth() + 1}.{date.getFullYear()}</b>.</p>
+              {getUpcomingExams().length > 0 && (
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '16px', marginBottom: '16px' }}>
+                  {getUpcomingExams().map((e, idx) => (
+                    <div key={idx} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '6px 12px',
+                      backgroundColor: 'var(--input-bg)',
+                      border: `1px solid ${e.color}`,
+                      borderRadius: 'var(--rounding-sm)',
+                      fontSize: '0.9rem',
+                      animation: `tileReveal 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) ${0.1 + idx * 0.05}s both`
+                    }}>
+                      <b style={{ color: e.color }}>{e.name}</b>
+                      <span style={{ color: 'var(--text-secondary)' }}>
+                        {e.daysUntil === 0 ? 'heute' : `in ${e.daysUntil} ${e.daysUntil === 1 ? 'Tag' : 'Tagen'}`}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
               {/* {getWeek() & 1 ? (<p><b>Ungerade</b> Woche! <b>({getWeek()})</b></p>) : <p><b>Gerade</b> Woche! <b>({getWeek()})</b></p>} */}
               {props.settings.easterEggs && (date.getFullYear() === 1987 || date.getFullYear() === 1983) && (
                 <div class="center">
