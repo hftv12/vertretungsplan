@@ -20,7 +20,15 @@ const { title, icon, version, manifest } = Astro.props;
 		{!!manifest && <link rel="manifest" href={manifest} />}
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>{title}</title>
-
+		<script is:inline>
+			try {
+				const s = localStorage.getItem("DSBSettings");
+				if (s) {
+					const parsed = JSON.parse(s);
+					if (parsed.theme) document.documentElement.setAttribute('data-theme', parsed.theme);
+				}
+			} catch (e) {}
+		</script>
 	</head>
 	<body>
 		<div id="wrapper">
