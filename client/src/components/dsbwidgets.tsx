@@ -341,9 +341,9 @@ function DSBTableToolbar(props: { // toolbar for switching day & filtering optio
   );
 }
 
-function DSBSubstitution(props: Substitution) { // old design substitution
+function DSBSubstitution(props: Substitution & { idx?: number }) { // old design substitution
   return (
-    <tr>
+    <tr style={props.idx !== undefined ? { animation: `tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) ${0.1 + props.idx * 0.05}s both` } : {}}>
       <th>{props.classes}</th>
       <th>{props.hours}</th>
       {/* <th>{props.usual_subject !== "&nbsp;" ? props.usual_subject : "\u21B3"}</th> */}
@@ -360,7 +360,7 @@ function DSBSubstitution(props: Substitution) { // old design substitution
   );
 }
 
-function DSBNewSubstitution(props: Substitution) { // new design substitution
+function DSBNewSubstitution(props: Substitution & { idx?: number }) { // new design substitution
   const getType = useCallback((): SubstitutionType => {
     if (props.room === "PS1" || props.room === "---") {
       return SubstitutionType.FREE;
@@ -376,7 +376,7 @@ function DSBNewSubstitution(props: Substitution) { // new design substitution
 
   return (
     // <div class="new-s" style={`rotate: ${(Math.random() - 0.5) * 15}deg`}> // for that one screenshot
-    <div class="new-s">
+    <div class="new-s" style={props.idx !== undefined ? { animation: `tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) ${0.1 + props.idx * 0.05}s both` } : {}}>
       {getType() === SubstitutionType.FREE ? // Ausfall
         <div>
           <div class="s-free">
@@ -652,7 +652,7 @@ function DSBTable(props: { // the main feature of this website
                   </tr>
                 </thead>
                 <tbody>
-                  {getFilteredSubstitutions().map((s) => {
+                  {getFilteredSubstitutions().map((s, idx) => {
                     if (s.usual_subject.includes("AG")) {
                       switch (props.settings.parasites) {
                         case ParasitesHandler.NONE:
@@ -666,6 +666,7 @@ function DSBTable(props: { // the main feature of this website
                               room={s.room}
                               usual_subject={s.usual_subject}
                               replacement={s.replacement}
+                              idx={idx}
                             />
                           );
                         case ParasitesHandler.EXTERMINATE:
@@ -680,6 +681,7 @@ function DSBTable(props: { // the main feature of this website
                         room={s.room}
                         usual_subject={s.usual_subject}
                         replacement={s.replacement}
+                        idx={idx}
                       />
                     );
                   })}
@@ -695,7 +697,7 @@ function DSBTable(props: { // the main feature of this website
               <h2 style={{ marginBottom: '12px' }}>Vertretungen</h2>
               <div id="new-slist">
                 {/* <h1>NEUES DESIGN</h1> */}
-                {getFilteredSubstitutions().map((s) => {
+                {getFilteredSubstitutions().map((s, idx) => {
                     if (s.usual_subject.includes("AG")) {
                       switch (props.settings.parasites) {
                         case ParasitesHandler.NONE:
@@ -709,6 +711,7 @@ function DSBTable(props: { // the main feature of this website
                               room={s.room}
                               usual_subject={s.usual_subject}
                               replacement={s.replacement}
+                              idx={idx}
                             />
                           );
                         case ParasitesHandler.EXTERMINATE:
@@ -723,6 +726,7 @@ function DSBTable(props: { // the main feature of this website
                         room={s.room}
                         usual_subject={s.usual_subject}
                         replacement={s.replacement}
+                        idx={idx}
                       />
                     );
                   })}
