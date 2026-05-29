@@ -601,7 +601,7 @@ function DSBTable(props: { // the main feature of this website
       )}
       {currentDay !== null && (
         <div>
-          <div key={"header-" + currentDay.date} style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', animation: 'slideUpFade 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards' }}>
+          <div key={"header-" + currentDay.date} style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', animation: 'slideUpFade 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both' }}>
             <div style={{ backgroundColor: 'var(--input-bg)', padding: '8px 16px', borderRadius: 'var(--rounding-sm)', border: '1px solid var(--brighter-color)' }}>
               <h2 style={{ margin: 0, fontSize: '1.2rem' }}>
                 {currentDay.day.substring(0, 2)}, {currentDay.date}
@@ -617,7 +617,7 @@ function DSBTable(props: { // the main feature of this website
           </div>
 
           {getFilteredSubstitutions().length == 0 && (
-            <div key={"nichts-" + currentDay.date} style={{ animation: 'tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards', marginTop: '20px' }}>
+            <div key={"nichts-" + currentDay.date} style={{ animation: 'tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) 0.05s both', marginTop: '20px' }}>
               <h2 style={{ marginBottom: '12px' }}>Vertretungen</h2>
               <p>
                 <i>nichts...</i>
@@ -691,7 +691,7 @@ function DSBTable(props: { // the main feature of this website
           )}
 
           {getFilteredSubstitutions().length > 0 && props.settings.newDesign === true && (
-            <div key={"subst-" + currentDay.date} style={{ animation: 'tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards', marginTop: '20px' }}>
+            <div key={"subst-" + currentDay.date} style={{ animation: 'tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) 0.05s both', marginTop: '20px' }}>
               <h2 style={{ marginBottom: '12px' }}>Vertretungen</h2>
               <div id="new-slist">
                 {/* <h1>NEUES DESIGN</h1> */}
@@ -731,7 +731,7 @@ function DSBTable(props: { // the main feature of this website
             </div>
           )}
 
-          <div key={"messages-" + currentDay.date} style={{ animation: 'tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards', marginTop: '20px' }}>
+          <div key={"messages-" + currentDay.date} style={{ animation: 'tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) 0.1s both', marginTop: '20px' }}>
             <h2 style={{ marginBottom: '12px' }}>Nachrichten</h2>
             {(currentDay.messages[0] === "" || currentDay.messages.length < 1) ? (
               <p>
@@ -751,7 +751,7 @@ function DSBTable(props: { // the main feature of this website
             )}
           </div>
 
-          <div key={"stand-" + currentDay.date} style={{ textAlign: 'center', marginTop: '24px', marginBottom: '16px', animation: 'tileReveal 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards' }}>
+          <div key={"stand-" + currentDay.date} style={{ textAlign: 'center', marginTop: '24px', marginBottom: '16px', animation: 'tileReveal 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) 0.15s both' }}>
             <p style={{ margin: 0, color: 'var(--text-secondary)' }}><i>Stand: {timetable.last_modified}</i></p>
           </div>
         </div>
@@ -1456,9 +1456,13 @@ function ExamList(props: { // sorted list of all of your exams (probably the mos
                   </div>
                 </div>
                 <div id="exam-list">
-                  {canDisplay() ? examList.map((e) => {
-                    return shouldDisplayDay(e, props.settings, props.courses, date) && (<ExamDayDisplay examDays={e} subjectSelectRef={props.subjectSelectRef} settings={props.settings} courses={props.courses} list={list} />)
-                  }) : (<div>
+                  {canDisplay() ? examList.map((e, idx) => {
+                    return shouldDisplayDay(e, props.settings, props.courses, date) && (
+                      <div key={list + "-" + e[0].date} style={{ animation: `tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) ${0.05 + (idx * 0.05)}s both` }}>
+                        <ExamDayDisplay examDays={e} subjectSelectRef={props.subjectSelectRef} settings={props.settings} courses={props.courses} list={list} />
+                      </div>
+                    )
+                  }) : (<div style={{ animation: 'tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both' }}>
                     <span class="blue">Herzlichen Glückwunsch</span><span>. Du hast keine Klausuren!</span>
                   </div>)}
                 </div>
