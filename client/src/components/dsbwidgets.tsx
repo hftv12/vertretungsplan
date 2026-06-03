@@ -2120,7 +2120,7 @@ function Homework(props: {
     setTimeout(() => {
       saveHomework(homeworkList.filter(h => h.id !== id));
       setAnimatingOut(prev => prev.filter(p => p !== id));
-    }, 400); 
+    }, 1400); 
   };
 
   const getDaysUntil = (d: string) => {
@@ -2153,17 +2153,17 @@ function Homework(props: {
     <div class="default-div" id="hausaufgaben">
       <h2>Hausaufgaben</h2>
       <form onSubmit={handleAdd} style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '12px' }}>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <select value={selectedCourse} onChange={handleCourseSelect} style={{ flex: 1 }} required>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <select value={selectedCourse} onChange={handleCourseSelect} required>
             <option value="" disabled>Kurs wählen...</option>
             {props.courses.map(c => {
               const val = c.subject + (c.course ? "-" + c.course : "");
               return <option value={val} key={val}>{c.subject_name} {c.course}</option>;
             })}
           </select>
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-            <label style={{ position: 'absolute', left: '8px', fontSize: '0.75rem', color: 'var(--text-secondary)', pointerEvents: 'none', top: '2px' }}>Datum</label>
-            <input type="date" value={date} onChange={(e) => setDate((e.target as HTMLInputElement).value)} style={{ width: '140px', padding: '14px 8px 6px 8px' }} required />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Abgabe bis:</label>
+            <input type="date" value={date} onChange={(e) => setDate((e.target as HTMLInputElement).value)} style={{ flex: 1, padding: '10px 8px' }} required />
           </div>
         </div>
         <input type="text" placeholder="Aufgabe (z.B. S. 42 Nr. 3)" value={text} onChange={(e) => setText((e.target as HTMLInputElement).value)} style={{ width: '100%', boxSizing: 'border-box' }} required />
@@ -2182,15 +2182,15 @@ function Homework(props: {
               backgroundColor: overdue ? 'var(--s-free-bg)' : 'var(--input-bg)',
               border: `1px solid ${overdue ? 'var(--s-free-border)' : (course?.color || 'var(--brighter-color)')}`,
               borderRadius: 'var(--rounding-sm)',
-              animation: animating ? 'slideOutFade 0.4s forwards' : 'slideUpFade 0.3s forwards',
+              animation: animating ? 'slideOutFade 0.4s 1s forwards' : 'slideUpFade 0.3s forwards',
               opacity: animating ? 1 : 0
             }}>
               <button
                 onClick={() => handleCheck(hw.id)}
                 style={{
                   width: '28px', height: '28px', flexShrink: 0,
-                  borderRadius: '50%', border: `2px solid ${overdue ? 'var(--s-free-border)' : 'var(--accent-color)'}`,
-                  background: animating ? 'var(--accent-color)' : 'transparent',
+                  borderRadius: '50%', border: `2px solid ${overdue && !animating ? 'var(--s-free-border)' : (course?.color || 'var(--accent-color)')}`,
+                  background: animating ? (course?.color || 'var(--accent-color)') : 'transparent',
                   cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   transition: 'var(--transition-fast)', color: animating ? '#fff' : 'transparent',
                   padding: 0
@@ -2217,7 +2217,11 @@ function Homework(props: {
           )
         })}
         {homeworkList.length === 0 && (
-          <p style={{ textAlign: 'center', marginTop: '12px', color: 'var(--text-secondary)' }}>Keine offenen Hausaufgaben.</p>
+          <div style={{ textAlign: 'center', padding: '32px 16px', backgroundColor: 'var(--input-bg)', borderRadius: 'var(--rounding-md)', border: '1px solid var(--brighter-color)' }}>
+            <span style={{ fontSize: '1.2rem', display: 'block', marginBottom: '8px' }}>🎉</span>
+            <b>Keine offenen Hausaufgaben</b>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '4px' }}>Trage oben eine neue Hausaufgabe ein, um sie hier zu sehen.</p>
+          </div>
         )}
       </div>
     </div>
