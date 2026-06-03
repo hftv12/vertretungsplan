@@ -587,7 +587,7 @@ function DSBTable(props: { // the main feature of this website
   }, [currentDay]);
 
   return (
-    <div class="default-div">
+    <div class="default-div" id="vertretungsplan">
       <DSBTableToolbar
         getData={getData}
         setFilterStage={setFilterStage}
@@ -1490,7 +1490,7 @@ function ExamList(props: { // sorted list of all of your exams (probably the mos
   }, [examList, props.courses, props.settings.exams, props.subjectSelectRef, date, stringToDate]);
 
   return props.settings.exams !== ExamVisibility.NONE && (
-    <div class="default-div">
+    <div class="default-div" id="klausuren">
       {(availableLists === undefined || examList === undefined) && (  // this logic is slightly broken I think but who cares
         <h2>Lade, bitte warten...</h2>
       )}
@@ -1616,6 +1616,7 @@ function Settings(props: { // settings block
     s[setting] = value;
     props.setSettings({...s})
     localStorage.setItem("DSBSettings", JSON.stringify(s));
+    window.dispatchEvent(new CustomEvent('dsb-settings-change', { detail: s }));
   }, [props.setSettings, props.settings]);
 
   const uploadCourse = useCallback(async () => {
@@ -1689,7 +1690,7 @@ function Settings(props: { // settings block
   }, []);
 
   return (
-    <div class="default-div">
+    <div class="default-div" id="einstellungen">
       <h2>Einstellungen</h2>
       {loadedData && (<div class="settings-div">
         <h3 class="code">Webseite</h3>
@@ -1901,7 +1902,7 @@ function PersonalTimetable(props: {
   };
 
   return (
-    <div class="default-div">
+    <div class="default-div" id="stundenplan">
       <div class="timetable-header-row">
         <h2>Stundenplan</h2>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
@@ -2018,7 +2019,7 @@ export default function DSBWidgets(props: {
             <PersonalTimetable courses={courses} settings={settings} />
             <Settings settings={settings} setSettings={setSettings} grade={grade} courses={courses} setCourses={setCourses} />
             {settings.showCredits && (
-              <div class="default-div">
+              <div class="default-div" id="informationen">
                 <h2>Informationen</h2>
     
 
