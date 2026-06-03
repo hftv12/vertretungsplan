@@ -24,7 +24,7 @@ export default function BottomNav() {
 		
 		const handleSettingsChange = (e: any) => {
 			if (e.detail) {
-				setSettings(e.detail);
+				setSettings({...e.detail});
 			}
 		};
 		window.addEventListener('dsb-settings-change', handleSettingsChange);
@@ -82,6 +82,7 @@ export default function BottomNav() {
 
 	return (
 		<nav class="bottom-nav">
+			<div class="bottom-nav-fade"></div>
 			{menuItems.map((item) => {
 				const IconComponent = item.icon;
 				const isActive = activeId === item.id;

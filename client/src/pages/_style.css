@@ -2114,7 +2114,7 @@ a.fakebutton:active {
 
 .bottom-nav-item:hover {
     color: var(--text-color);
-    background: var(--input-bg);
+    background: transparent;
 }
 
 .bottom-nav-item.active {
@@ -2150,5 +2150,16 @@ a.fakebutton:active {
     #main-content {
         padding-bottom: 70px;
     }
+}
+
+.bottom-nav-fade {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    right: 0;
+    height: 40px;
+    background: linear-gradient(to bottom, transparent, var(--background-color));
+    pointer-events: none;
+    z-index: -1;
 }
 /*#endregion*/
