@@ -1956,6 +1956,7 @@ a.fakebutton:active {
     min-width: 100%;
     scroll-snap-align: start;
     padding-bottom: 8px;
+    padding-right: 24px;
 }
 
 .timetable-day-header {
