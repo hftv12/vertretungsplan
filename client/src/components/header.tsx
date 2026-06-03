@@ -48,6 +48,15 @@ export default function Header(props: {
 		setMenuOpen(false);
 	};
 
+	const menuItems = [
+		{ id: 'vertretungsplan', label: 'Vertretungsplan', show: true },
+		{ id: 'klausuren', label: 'Klausuren', show: settings.exams !== "none" },
+		{ id: 'course-selection', label: 'Kurswahl', show: settings.showCourses !== false },
+		{ id: 'stundenplan', label: 'Stundenplan', show: true },
+		{ id: 'einstellungen', label: 'Einstellungen', show: true },
+		{ id: 'informationen', label: 'Informationen', show: settings.showCredits !== false },
+	].filter(item => item.show);
+
 	return (
 		<header>
 			<div class="header-left">
@@ -74,22 +83,19 @@ export default function Header(props: {
 					
 					{menuOpen && (
 						<div class="burger-menu-dropdown">
-							<button onClick={() => scrollTo('vertretungsplan')} style={{ padding: '14px 16px', background: 'transparent', border: 'none', textAlign: 'left', cursor: 'pointer', borderBottom: '1px solid var(--brighter-color)', fontWeight: 500, color: 'var(--text-color)', fontSize: '0.95rem' }}>Vertretungsplan</button>
-							
-							{settings.exams !== "none" && (
-								<button onClick={() => scrollTo('klausuren')} style={{ padding: '14px 16px', background: 'transparent', border: 'none', textAlign: 'left', cursor: 'pointer', borderBottom: '1px solid var(--brighter-color)', fontWeight: 500, color: 'var(--text-color)', fontSize: '0.95rem' }}>Klausuren</button>
-							)}
-							
-							{settings.showCourses !== false && (
-								<button onClick={() => scrollTo('course-selection')} style={{ padding: '14px 16px', background: 'transparent', border: 'none', textAlign: 'left', cursor: 'pointer', borderBottom: '1px solid var(--brighter-color)', fontWeight: 500, color: 'var(--text-color)', fontSize: '0.95rem' }}>Kurswahl</button>
-							)}
-							
-							<button onClick={() => scrollTo('stundenplan')} style={{ padding: '14px 16px', background: 'transparent', border: 'none', textAlign: 'left', cursor: 'pointer', borderBottom: '1px solid var(--brighter-color)', fontWeight: 500, color: 'var(--text-color)', fontSize: '0.95rem' }}>Stundenplan</button>
-							<button onClick={() => scrollTo('einstellungen')} style={{ padding: '14px 16px', background: 'transparent', border: 'none', textAlign: 'left', cursor: 'pointer', borderBottom: settings.showCredits !== false ? '1px solid var(--brighter-color)' : 'none', fontWeight: 500, color: 'var(--text-color)', fontSize: '0.95rem' }}>Einstellungen</button>
-							
-							{settings.showCredits !== false && (
-								<button onClick={() => scrollTo('informationen')} style={{ padding: '14px 16px', background: 'transparent', border: 'none', textAlign: 'left', cursor: 'pointer', fontWeight: 500, color: 'var(--text-color)', fontSize: '0.95rem' }}>Informationen</button>
-							)}
+							{menuItems.map((item, idx) => (
+								<button 
+									key={item.id}
+									class="burger-menu-item"
+									onClick={() => scrollTo(item.id)}
+									style={{ 
+										animationDelay: `${0.05 + idx * 0.05}s`,
+										borderBottom: idx < menuItems.length - 1 ? '1px solid var(--brighter-color)' : 'none'
+									}}
+								>
+									{item.label}
+								</button>
+							))}
 						</div>
 					)}
 				</div>
