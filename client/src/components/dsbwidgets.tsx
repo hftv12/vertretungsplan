@@ -579,6 +579,12 @@ function DSBTable(props: { // the main feature of this website
     getDataAndUpdate();
   }, []);
 
+  useEffect(() => {
+    if (currentDay && currentDay.day) {
+      window.dispatchEvent(new CustomEvent('dsb-week-switch', { detail: { week: currentDay.day } }));
+    }
+  }, [currentDay]);
+
   return (
     <div class="default-div">
       <DSBTableToolbar
@@ -1763,6 +1769,140 @@ function Settings(props: { // settings block
 }
 //#endregion
 
+//#region Personal Timetable
+function PersonalTimetable(props: {
+  courses: CourseInfo[],
+  settings: DSBSettings,
+}) {
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [currentWeek, setCurrentWeek] = useState<"A" | "B">("A");
+  const [currentDayIdx, setCurrentDayIdx] = useState(0);
+  const [timetableData, setTimetableData] = useState<any>({ A: {}, B: {} });
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const days = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
+  const hours = [
+    { num: 1, label: "1. Stunde", type: "hour" },
+    { num: 2, label: "2. Stunde", type: "hour" },
+    { num: -1, label: "1. große Pause", type: "pause" },
+    { num: 3, label: "3. Stunde", type: "hour" },
+    { num: 4, label: "4. Stunde", type: "hour" },
+    { num: -2, label: "2. große Pause", type: "pause" },
+    { num: 5, label: "5. Stunde", type: "hour" },
+    { num: 6, label: "6. Stunde", type: "hour" },
+    { num: 7, label: "7. Stunde", type: "hour" },
+    { num: 8, label: "8. Stunde", type: "hour" },
+    { num: 9, label: "9. Stunde", type: "hour" },
+    { num: 10, label: "10. Stunde", type: "hour" },
+    { num: 11, label: "11. Stunde", type: "hour" },
+    { num: 12, label: "12. Stunde", type: "hour" },
+  ];
+
+  useEffect(() => {
+    const data = localStorage.getItem("PersonalTimetableData");
+    if (data) {
+      try { setTimetableData(JSON.parse(data)); } catch (e) { }
+    }
+    const handler = (e: any) => {
+      if (e.detail?.week) {
+        setCurrentWeek(e.detail.week.includes("A") ? "A" : "B");
+      }
+    };
+    window.addEventListener("dsb-week-switch", handler);
+    return () => window.removeEventListener("dsb-week-switch", handler);
+  }, []);
+
+  const saveTimetableData = (newData: any) => {
+    setTimetableData(newData);
+    localStorage.setItem("PersonalTimetableData", JSON.stringify(newData));
+  };
+
+  const handleCourseChange = (day: string, hourNum: number, value: string) => {
+    const newData = { ...timetableData };
+    if (!newData[currentWeek]) newData[currentWeek] = {};
+    if (!newData[currentWeek][day]) newData[currentWeek][day] = {};
+    newData[currentWeek][day][hourNum] = value;
+    saveTimetableData(newData);
+  };
+
+  const scrollToDay = (idx: number) => {
+    setCurrentDayIdx(idx);
+    if (containerRef.current) {
+      const width = containerRef.current.clientWidth;
+      containerRef.current.scrollTo({ left: idx * width, behavior: "smooth" });
+    }
+  };
+
+  const handleScroll = () => {
+    if (containerRef.current) {
+      const width = containerRef.current.clientWidth;
+      const scrollLeft = containerRef.current.scrollLeft;
+      const newIdx = Math.round(scrollLeft / width);
+      if (newIdx !== currentDayIdx) setCurrentDayIdx(newIdx);
+    }
+  };
+
+  const getCourseInfo = (courseStr: string) => {
+    return props.courses.find(c => (c.subject + (c.course ? "-" + c.course : "")) === courseStr);
+  };
+
+  return (
+    <div class="default-div">
+      <div class="timetable-header-row">
+        <h2>Stundenplan</h2>
+        <div class="timetable-week-switch">
+          <button class={currentWeek === "A" ? "active" : ""} onClick={() => setCurrentWeek("A")}>A-Woche</button>
+          <button class={currentWeek === "B" ? "active" : ""} onClick={() => setCurrentWeek("B")}>B-Woche</button>
+        </div>
+        <input type="button" class="fakebutton" value={isEditMode ? "Speichern" : "Bearbeiten"} onClick={() => setIsEditMode(!isEditMode)} />
+      </div>
+
+      <div class="timetable-tabs">
+        {days.map((day, idx) => (
+          <div key={day} class={`timetable-tab ${idx === currentDayIdx ? "active" : ""}`} onClick={() => scrollToDay(idx)}>
+            {day}
+          </div>
+        ))}
+      </div>
+
+      <div class="timetable-container" ref={containerRef} onScroll={handleScroll}>
+        {days.map((day) => (
+          <div key={day} class="timetable-day-wrapper">
+            {hours.map((h) => (
+              <div key={h.num} class="timetable-row">
+                <div class="timetable-time">{h.label}</div>
+                {h.type === "pause" ? (
+                  <div class="timetable-course timetable-pause">Pause</div>
+                ) : isEditMode ? (
+                  <select class="timetable-edit-select" value={timetableData[currentWeek]?.[day]?.[h.num] || ""} onChange={(e) => handleCourseChange(day, h.num, (e.target as HTMLSelectElement).value)}>
+                    <option value="">--- Frei ---</option>
+                    {props.courses.map(c => {
+                      const val = c.subject + (c.course ? "-" + c.course : "");
+                      return <option value={val} key={val}>{c.subject_name} {c.course}</option>;
+                    })}
+                  </select>
+                ) : (
+                  <div class={`timetable-course ${!timetableData[currentWeek]?.[day]?.[h.num] ? "empty" : ""}`} style={{ borderColor: getCourseInfo(timetableData[currentWeek]?.[day]?.[h.num])?.color || "var(--brighter-color)" }}>
+                    {timetableData[currentWeek]?.[day]?.[h.num] ? (
+                      <>
+                        <span>{getCourseInfo(timetableData[currentWeek]?.[day]?.[h.num])?.subject_name || timetableData[currentWeek]?.[day]?.[h.num]}</span>
+                        <span style={{ color: getCourseInfo(timetableData[currentWeek]?.[day]?.[h.num])?.color || "inherit" }}>
+                          {getCourseInfo(timetableData[currentWeek]?.[day]?.[h.num])?.course}
+                        </span>
+                      </>
+                    ) : "Frei"}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+//#endregion
+
 //#region the big one
 export default function DSBWidgets(props: {
   version: string;
@@ -1814,6 +1954,7 @@ export default function DSBWidgets(props: {
             <DSBTable grade={grade} courses={courses} settings={settings} />
             {(grade.gradeName === "EF" || grade.gradeName === "Q1" || grade.gradeName === "Q2") && (<ExamList settings={settings} subjectSelectRef={subjectSelectRef} courses={courses} grade={grade} />)}
             <CourseList grade={grade} setGrade={setGrade} courses={courses} setCourses={setCourses} subjectSelectRef={subjectSelectRef} settings={settings} />
+            <PersonalTimetable courses={courses} settings={settings} />
             <Settings settings={settings} setSettings={setSettings} grade={grade} courses={courses} setCourses={setCourses} />
             {settings.showCredits && (
               <div class="default-div">

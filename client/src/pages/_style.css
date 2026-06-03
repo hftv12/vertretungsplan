@@ -1802,3 +1802,143 @@ a.fakebutton:active {
 }
 
 /*#endregion*/
+
+/*#region Personal Timetable*/
+.timetable-container {
+    width: 100%;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    display: flex;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox */
+}
+.timetable-container::-webkit-scrollbar {
+    display: none; /* Safari and Chrome */
+}
+
+.timetable-day-wrapper {
+    min-width: 100%;
+    scroll-snap-align: start;
+    padding-bottom: 8px;
+}
+
+.timetable-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+}
+.timetable-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+.timetable-tab {
+    padding: 8px 16px;
+    background: var(--input-bg);
+    border: 1px solid var(--brighter-color);
+    border-radius: var(--rounding-sm);
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    transition: var(--transition-fast);
+    white-space: nowrap;
+}
+.timetable-tab.active {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+    color: #ffffff;
+}
+
+.timetable-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.timetable-week-switch {
+    display: flex;
+    background: var(--input-bg);
+    border-radius: var(--rounding-sm);
+    padding: 4px;
+    border: 1px solid var(--brighter-color);
+}
+.timetable-week-switch button {
+    border: none;
+    background: transparent;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text-secondary);
+    transition: var(--transition-fast);
+}
+.timetable-week-switch button.active {
+    background: var(--foreground-color);
+    color: var(--text-color);
+    box-shadow: var(--shadow-card);
+}
+
+.timetable-row {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--brighter-color);
+    gap: 16px;
+}
+.timetable-row:last-child {
+    border-bottom: none;
+}
+
+.timetable-time {
+    width: 80px;
+    flex-shrink: 0;
+    font-weight: 600;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    text-align: right;
+}
+
+.timetable-course {
+    flex-grow: 1;
+    background: var(--input-bg);
+    padding: 10px 16px;
+    border-radius: var(--rounding-sm);
+    border: 1px solid var(--brighter-color);
+    font-weight: 600;
+    color: var(--text-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.timetable-course.empty {
+    background: transparent;
+    border: 1px dashed var(--brighter-color);
+    color: var(--text-secondary);
+    opacity: 0.7;
+}
+
+.timetable-pause {
+    background: var(--background-color);
+    justify-content: center;
+    color: var(--text-secondary);
+    font-style: italic;
+    border: none;
+    font-weight: 500;
+}
+
+.timetable-edit-select {
+    width: 100%;
+    padding: 8px 12px;
+    border-radius: var(--rounding-sm);
+    background: var(--input-bg);
+    border: 1px solid var(--accent-color);
+    color: var(--text-color);
+    font-weight: 600;
+}
+/*#endregion*/
