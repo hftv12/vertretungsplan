@@ -1907,7 +1907,6 @@ a.fakebutton:active {
     padding: 10px 12px;
     margin: 0 -12px;
     border-left: 4px solid var(--accent-color);
-    box-shadow: 0 4px 12px var(--accent-glow);
     z-index: 1;
     position: relative;
 }
@@ -1915,7 +1914,6 @@ a.fakebutton:active {
     background-color: var(--accent-light);
     border-radius: var(--rounding-sm);
     border-left: 4px solid var(--accent-color);
-    box-shadow: 0 4px 12px var(--accent-glow);
     z-index: 1;
     position: relative;
 }
