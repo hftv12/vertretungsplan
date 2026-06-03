@@ -39,6 +39,7 @@ interface CourseInfo { // uhhhh something important I think
   course: string;
   written?: boolean;
   color?: string;
+  room?: string;
 }
 
 interface GradeInfo { // maybe this is important too? (I don't rember)
@@ -778,6 +779,7 @@ function Course(props: { // the courses that you can add
   index: number,
   written?: boolean,
   color?: string,
+  room?: string,
 
   advanced: boolean,
 
@@ -786,11 +788,13 @@ function Course(props: { // the courses that you can add
 }) {
   const subjectSelectID = useId();
   const courseSelectID = useId();
+  const roomSelectID = useId();
   const writtenSelectID = useId();
   const colorSelectID = useId();
 
   const writtenRef = useRef();
   const colorRef = useRef();
+  const roomRef = useRef();
 
   const handleButtonClick = useCallback(() => {
     const courses = props.courses.filter((_c, i) => { // inefficient implementation but fuck javascript ig
@@ -824,6 +828,16 @@ function Course(props: { // the courses that you can add
     }
   }, [props, colorRef])
 
+  const handleRoomChange = useCallback(() => {
+    if (!!roomRef) {
+      const courses = props.courses.filter(() => {return true;});
+      courses[props.index].room = (roomRef.current as HTMLInputElement).value;
+
+      localStorage.setItem('courses', JSON.stringify(courses));
+      props.setCourses(courses);
+    }
+  }, [props, roomRef])
+
   return (
     <div class='course'>
       <div>
@@ -841,6 +855,9 @@ function Course(props: { // the courses that you can add
 
         <label for={courseSelectID}>Kurs:</label>
         <span id={courseSelectID}>{!!props.course ? props.course : "---"}</span>
+
+        <label for={roomSelectID}>Raum:</label>
+        <div class="flex"><input id={roomSelectID} name={roomSelectID} type="text" placeholder="z.B. PS1" value={props.room || ""} ref={roomRef} onBlur={handleRoomChange} /></div>
 
         {props.advanced && (<label for={writtenSelectID}>Schriftlich:</label>)}
         {props.advanced && (<div class="flex"><input id={writtenSelectID} name={writtenSelectID} type="checkbox" checked={!!props.written} ref={writtenRef} onClick={handleWrittenClick} /></div>)}
@@ -1087,7 +1104,7 @@ function CourseList(props: { // thing for displaying your courses & the course a
         <div id='course-list'>
           {loadedData && props.courses.map((c, i) => {
             return ( // style guidelines hate this one simple trick: (hope you know how to scroll horizontally)
-              <Course subject={c.subject} subject_name={c.subject_name} course={c.course} courses={props.courses} setCourses={props.setCourses} index={i} written={c.written} color={c.color} advanced={props.settings.advancedCourses} />
+              <Course subject={c.subject} subject_name={c.subject_name} course={c.course} room={c.room} courses={props.courses} setCourses={props.setCourses} index={i} written={c.written} color={c.color} advanced={props.settings.advancedCourses} />
             );
           })}
           <CourseAdder courses={props.courses} setCourses={props.setCourses} subjectSelectRef={props.subjectSelectRef} />
@@ -1780,7 +1797,13 @@ function PersonalTimetable(props: {
   const [timetableData, setTimetableData] = useState<any>({ A: {}, B: {} });
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const days = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
+  const days = [
+    { full: "Montag", short: "Mo" },
+    { full: "Dienstag", short: "Di" },
+    { full: "Mittwoch", short: "Mi" },
+    { full: "Donnerstag", short: "Do" },
+    { full: "Freitag", short: "Fr" }
+  ];
   const hours = [
     { num: 1, label: "1. Stunde", type: "hour" },
     { num: 2, label: "2. Stunde", type: "hour" },
@@ -1850,31 +1873,33 @@ function PersonalTimetable(props: {
     <div class="default-div">
       <div class="timetable-header-row">
         <h2>Stundenplan</h2>
-        <div class="timetable-week-switch">
-          <button class={currentWeek === "A" ? "active" : ""} onClick={() => setCurrentWeek("A")}>A-Woche</button>
-          <button class={currentWeek === "B" ? "active" : ""} onClick={() => setCurrentWeek("B")}>B-Woche</button>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <div class="timetable-week-switch">
+            <button class={currentWeek === "A" ? "active" : ""} onClick={() => setCurrentWeek("A")}>A-Woche</button>
+            <button class={currentWeek === "B" ? "active" : ""} onClick={() => setCurrentWeek("B")}>B-Woche</button>
+          </div>
+          <input type="button" class="fakebutton" value={isEditMode ? "Speichern" : "Bearbeiten"} onClick={() => setIsEditMode(!isEditMode)} />
         </div>
-        <input type="button" class="fakebutton" value={isEditMode ? "Speichern" : "Bearbeiten"} onClick={() => setIsEditMode(!isEditMode)} />
       </div>
 
       <div class="timetable-tabs">
         {days.map((day, idx) => (
-          <div key={day} class={`timetable-tab ${idx === currentDayIdx ? "active" : ""}`} onClick={() => scrollToDay(idx)}>
-            {day}
+          <div key={day.full} class={`timetable-tab ${idx === currentDayIdx ? "active" : ""}`} onClick={() => scrollToDay(idx)}>
+            {day.short}
           </div>
         ))}
       </div>
 
       <div class="timetable-container" ref={containerRef} onScroll={handleScroll}>
         {days.map((day) => (
-          <div key={day} class="timetable-day-wrapper">
+          <div key={day.full} class="timetable-day-wrapper">
             {hours.map((h) => (
               <div key={h.num} class="timetable-row">
                 <div class="timetable-time">{h.label}</div>
                 {h.type === "pause" ? (
                   <div class="timetable-course timetable-pause">Pause</div>
                 ) : isEditMode ? (
-                  <select class="timetable-edit-select" value={timetableData[currentWeek]?.[day]?.[h.num] || ""} onChange={(e) => handleCourseChange(day, h.num, (e.target as HTMLSelectElement).value)}>
+                  <select class="timetable-edit-select" value={timetableData[currentWeek]?.[day.full]?.[h.num] || ""} onChange={(e) => handleCourseChange(day.full, h.num, (e.target as HTMLSelectElement).value)}>
                     <option value="">--- Frei ---</option>
                     {props.courses.map(c => {
                       const val = c.subject + (c.course ? "-" + c.course : "");
@@ -1882,12 +1907,12 @@ function PersonalTimetable(props: {
                     })}
                   </select>
                 ) : (
-                  <div class={`timetable-course ${!timetableData[currentWeek]?.[day]?.[h.num] ? "empty" : ""}`} style={{ borderColor: getCourseInfo(timetableData[currentWeek]?.[day]?.[h.num])?.color || "var(--brighter-color)" }}>
-                    {timetableData[currentWeek]?.[day]?.[h.num] ? (
+                  <div class={`timetable-course ${!timetableData[currentWeek]?.[day.full]?.[h.num] ? "empty" : ""}`} style={{ borderColor: getCourseInfo(timetableData[currentWeek]?.[day.full]?.[h.num])?.color || "var(--brighter-color)" }}>
+                    {timetableData[currentWeek]?.[day.full]?.[h.num] ? (
                       <>
-                        <span>{getCourseInfo(timetableData[currentWeek]?.[day]?.[h.num])?.subject_name || timetableData[currentWeek]?.[day]?.[h.num]}</span>
-                        <span style={{ color: getCourseInfo(timetableData[currentWeek]?.[day]?.[h.num])?.color || "inherit" }}>
-                          {getCourseInfo(timetableData[currentWeek]?.[day]?.[h.num])?.course}
+                        <span>{getCourseInfo(timetableData[currentWeek]?.[day.full]?.[h.num])?.subject_name || timetableData[currentWeek]?.[day.full]?.[h.num]}</span>
+                        <span style={{ color: getCourseInfo(timetableData[currentWeek]?.[day.full]?.[h.num])?.color || "inherit" }}>
+                          {getCourseInfo(timetableData[currentWeek]?.[day.full]?.[h.num])?.room || getCourseInfo(timetableData[currentWeek]?.[day.full]?.[h.num])?.course}
                         </span>
                       </>
                     ) : "Frei"}
