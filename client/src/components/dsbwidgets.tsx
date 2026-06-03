@@ -1801,6 +1801,13 @@ function PersonalTimetable(props: {
   const [timetableData, setTimetableData] = useState<any>({ A: {}, B: {} });
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+    return () => clearInterval(timer);
+  }, []);
+
   const days = [
     { full: "Montag", short: "Mo" },
     { full: "Dienstag", short: "Di" },
@@ -1809,21 +1816,34 @@ function PersonalTimetable(props: {
     { full: "Freitag", short: "Fr" }
   ];
   const hours = [
-    { num: 1, label: "1. Stunde", type: "hour" },
-    { num: 2, label: "2. Stunde", type: "hour" },
-    { num: -1, label: "1. große Pause", type: "pause" },
-    { num: 3, label: "3. Stunde", type: "hour" },
-    { num: 4, label: "4. Stunde", type: "hour" },
-    { num: -2, label: "2. große Pause", type: "pause" },
-    { num: 5, label: "5. Stunde", type: "hour" },
-    { num: 6, label: "6. Stunde", type: "hour" },
-    { num: 7, label: "7. Stunde", type: "hour" },
-    { num: 8, label: "8. Stunde", type: "hour" },
-    { num: 9, label: "9. Stunde", type: "hour" },
-    { num: 10, label: "10. Stunde", type: "hour" },
-    { num: 11, label: "11. Stunde", type: "hour" },
-    { num: 12, label: "12. Stunde", type: "hour" },
+    { num: 1, label: "1. Stunde", type: "hour", start: "08:00", end: "08:45" },
+    { num: 2, label: "2. Stunde", type: "hour", start: "08:45", end: "09:30" },
+    { num: -1, label: "1. große Pause", type: "pause", start: "09:30", end: "09:50" },
+    { num: 3, label: "3. Stunde", type: "hour", start: "09:50", end: "10:35" },
+    { num: 4, label: "4. Stunde", type: "hour", start: "10:35", end: "11:20" },
+    { num: -2, label: "2. große Pause", type: "pause", start: "11:20", end: "11:40" },
+    { num: 5, label: "5. Stunde", type: "hour", start: "11:40", end: "12:25" },
+    { num: 6, label: "6. Stunde", type: "hour", start: "12:25", end: "13:10" },
+    { num: -3, label: "3. große Pause", type: "pause", start: "13:10", end: "13:30" },
+    { num: 7, label: "7. Stunde", type: "hour", start: "13:30", end: "14:15" },
+    { num: 8, label: "8. Stunde", type: "hour", start: "14:15", end: "15:00" },
+    { num: 9, label: "9. Stunde", type: "hour", start: "15:00", end: "15:45" },
+    { num: 10, label: "10. Stunde", type: "hour", start: "15:45", end: "16:30" },
   ];
+
+  const isCurrentHour = (dayIdx: number, start?: string, end?: string) => {
+    if (currentTime.getDay() !== dayIdx + 1) return false;
+    if (!start || !end) return false;
+
+    const currentMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
+    const startParts = start.split(":");
+    const endParts = end.split(":");
+    
+    const startMinutes = parseInt(startParts[0]) * 60 + parseInt(startParts[1]);
+    const endMinutes = parseInt(endParts[0]) * 60 + parseInt(endParts[1]);
+
+    return currentMinutes >= startMinutes && currentMinutes < endMinutes;
+  };
 
   useEffect(() => {
     const data = localStorage.getItem("PersonalTimetableData");
@@ -1903,15 +1923,17 @@ function PersonalTimetable(props: {
       </div>
 
       <div class="timetable-container" ref={containerRef} onScroll={handleScroll}>
-        {days.map((day) => (
+        {days.map((day, dayIdx) => (
           <div key={day.full} class="timetable-day-wrapper">
             <h3 class="timetable-day-header">{day.full}</h3>
-            {hours.map((h) => (
-              h.type === "pause" ? (
-                <div key={h.num} class="timetable-spacer"></div>
+            {hours.map((h) => {
+              const activeHighlight = isCurrentHour(dayIdx, h.start, h.end) ? "active-hour-highlight" : "";
+              
+              return h.type === "pause" ? (
+                <div key={h.num} class={`timetable-spacer ${activeHighlight}`}></div>
               ) : (
-              <div key={h.num} class="timetable-row">
-                <div class="timetable-time">{h.label}</div>
+              <div key={h.num} class={`timetable-row ${activeHighlight}`}>
+                <div class="timetable-time">{h.label} <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", display: "block" }}>{h.start} - {h.end}</span></div>
                 {isEditMode ? (
                   <select class="timetable-edit-select" value={timetableData[currentWeek]?.[day.full]?.[h.num] || ""} onChange={(e) => handleCourseChange(day.full, h.num, (e.target as HTMLSelectElement).value)}>
                     <option value="">--- Frei ---</option>
@@ -1934,7 +1956,7 @@ function PersonalTimetable(props: {
                 )}
               </div>
               )
-            ))}
+            })}
           </div>
         ))}
       </div>
