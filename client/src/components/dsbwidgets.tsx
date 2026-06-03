@@ -1713,6 +1713,11 @@ function Settings(props: { // settings block
           information="Verschiedene Tipps, wie du den DSBScraper effektiver nutzen kannst. Falls du aber schon ein Experte bist, kannst du diese ausschalten."
         />
         <CheckButton
+          text="Hausaufgaben anzeigen:"
+          updater={(v: boolean) => updateSetting("showHomework", v)}
+          checked={props.settings.showHomework !== false}
+        />
+        <CheckButton
           text="Informationskasten anzeigen:"
           updater={(v: boolean) => updateSetting("showCredits", v)}
           checked={props.settings.showCredits !== undefined ? props.settings.showCredits : true}
@@ -1781,6 +1786,11 @@ function Settings(props: { // settings block
           text="Klausuren-Button:"
           updater={(v: boolean) => updateSetting("navKlausuren", v)}
           checked={props.settings.navKlausuren !== false}
+        />
+        <CheckButton
+          text="Hausaufgaben-Button:"
+          updater={(v: boolean) => updateSetting("navHausaufgaben", v)}
+          checked={props.settings.navHausaufgaben !== false}
         />
         <CheckButton
           text="Kurswahl-Button:"
@@ -1992,6 +2002,194 @@ function PersonalTimetable(props: {
 }
 //#endregion
 
+//#region Hausaufgaben
+export interface HomeworkItem {
+  id: string;
+  course: string;
+  text: string;
+  date: string; // YYYY-MM-DD
+}
+
+function Homework(props: {
+  courses: CourseInfo[],
+  settings: DSBSettings,
+}) {
+  const [homeworkList, setHomeworkList] = useState<HomeworkItem[]>([]);
+  const [currentWeek, setCurrentWeek] = useState<"A" | "B">("A");
+  const [timetableData, setTimetableData] = useState<any>({ A: {}, B: {} });
+
+  const [selectedCourse, setSelectedCourse] = useState("");
+  const [text, setText] = useState("");
+  const [date, setDate] = useState("");
+  
+  const [animatingOut, setAnimatingOut] = useState<string[]>([]);
+
+  useEffect(() => {
+    const data = localStorage.getItem("DSBHomework");
+    if (data) {
+      try { setHomeworkList(JSON.parse(data)); } catch (e) {}
+    }
+    const ttData = localStorage.getItem("PersonalTimetableData");
+    if (ttData) {
+      try { setTimetableData(JSON.parse(ttData)); } catch (e) {}
+    }
+
+    const handler = (e: any) => {
+      if (e.detail?.week) {
+        setCurrentWeek(e.detail.week.includes("A") ? "A" : "B");
+      }
+    };
+    window.addEventListener("dsb-week-switch", handler);
+    return () => window.removeEventListener("dsb-week-switch", handler);
+  }, []);
+
+  const saveHomework = (newList: HomeworkItem[]) => {
+    setHomeworkList(newList);
+    localStorage.setItem("DSBHomework", JSON.stringify(newList));
+  };
+
+  const calculateNextOccurrence = (courseId: string) => {
+    if (!courseId || !timetableData) return "";
+    
+    const days = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
+    const today = new Date();
+    today.setHours(0,0,0,0);
+
+    for (let i = 1; i <= 14; i++) {
+      const checkDate = new Date(today);
+      checkDate.setDate(today.getDate() + i);
+      const dayName = days[checkDate.getDay()];
+      
+      let startDay = today.getDay();
+      startDay = startDay === 0 ? 7 : startDay;
+      let weekOffset = Math.floor((startDay - 1 + i) / 7);
+      let weekIsA = currentWeek === "A";
+      if (weekOffset % 2 !== 0) {
+        weekIsA = !weekIsA;
+      }
+      const checkWeek = weekIsA ? "A" : "B";
+
+      const dayData = timetableData[checkWeek]?.[dayName];
+      if (dayData) {
+        for (const hour in dayData) {
+          if (dayData[hour] === courseId) {
+            // Found it! Use local timezone offset so ISOString doesn't flip day backwards
+            const localDate = new Date(checkDate.getTime() - (checkDate.getTimezoneOffset() * 60000));
+            return localDate.toISOString().split("T")[0];
+          }
+        }
+      }
+    }
+    return ""; 
+  };
+
+  const handleCourseSelect = (e: any) => {
+    const val = e.target.value;
+    setSelectedCourse(val);
+    const nextDate = calculateNextOccurrence(val);
+    if (nextDate) {
+      setDate(nextDate);
+    } else {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const localDate = new Date(tomorrow.getTime() - (tomorrow.getTimezoneOffset() * 60000));
+      setDate(localDate.toISOString().split("T")[0]);
+    }
+  };
+
+  const handleAdd = (e: any) => {
+    e.preventDefault();
+    if (!text || !selectedCourse || !date) return;
+    
+    const newItem: HomeworkItem = {
+      id: Date.now().toString(),
+      course: selectedCourse,
+      text,
+      date
+    };
+    saveHomework([...homeworkList, newItem]);
+    setText("");
+  };
+
+  const handleCheck = (id: string) => {
+    setAnimatingOut(prev => [...prev, id]);
+    setTimeout(() => {
+      saveHomework(homeworkList.filter(h => h.id !== id));
+      setAnimatingOut(prev => prev.filter(p => p !== id));
+    }, 400); 
+  };
+
+  const isOverdue = (d: string) => {
+    const hwDate = new Date(d);
+    hwDate.setHours(0,0,0,0);
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    return hwDate.valueOf() <= today.valueOf();
+  };
+  
+  const getCourseInfo = (courseStr: string) => {
+    return props.courses.find(c => (c.subject + (c.course ? "-" + c.course : "")) === courseStr);
+  };
+
+  if (props.settings.showHomework === false) return null;
+
+  return (
+    <div class="default-div" id="hausaufgaben">
+      <h2>Hausaufgaben</h2>
+      <form onSubmit={handleAdd} style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '12px' }}>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <select value={selectedCourse} onChange={handleCourseSelect} style={{ flex: 1 }} required>
+            <option value="" disabled>Kurs wählen...</option>
+            {props.courses.map(c => {
+              const val = c.subject + (c.course ? "-" + c.course : "");
+              return <option value={val} key={val}>{c.subject_name} {c.course}</option>;
+            })}
+          </select>
+          <input type="date" value={date} onChange={(e) => setDate((e.target as HTMLInputElement).value)} style={{ width: '130px', padding: '10px 8px' }} required />
+        </div>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <input type="text" placeholder="Aufgabe (z.B. S. 42 Nr. 3)" value={text} onChange={(e) => setText((e.target as HTMLInputElement).value)} style={{ flex: 1 }} required />
+          <input type="submit" class="fakebutton" value="Hinzu" style={{ margin: 0, height: '42px', padding: '0 16px' }} />
+        </div>
+      </form>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '16px' }}>
+        {homeworkList.sort((a,b) => a.date.localeCompare(b.date)).map(hw => {
+          const course = getCourseInfo(hw.course);
+          const overdue = isOverdue(hw.date);
+          const animating = animatingOut.includes(hw.id);
+          
+          return (
+            <div key={hw.id} style={{
+              display: 'flex', alignItems: 'center', gap: '12px', padding: '12px',
+              backgroundColor: overdue ? 'var(--s-free-bg)' : 'var(--input-bg)',
+              border: `1px solid ${overdue ? 'var(--s-free-border)' : (course?.color || 'var(--brighter-color)')}`,
+              borderRadius: 'var(--rounding-sm)',
+              animation: animating ? 'slideOutFade 0.4s forwards' : 'slideUpFade 0.3s forwards',
+              opacity: animating ? 1 : 0
+            }}>
+              <input type="checkbox" onChange={() => handleCheck(hw.id)} checked={animating} />
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <b style={{ color: course?.color || 'var(--text-color)', fontSize: '0.85rem' }}>{course?.subject_name} {course?.course}</b>
+                  <span style={{ fontSize: '0.8rem', color: overdue ? 'var(--s-free-text)' : 'var(--text-secondary)', fontWeight: overdue ? 600 : 400 }}>
+                    {overdue ? 'Überfällig!' : new Date(hw.date).toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' })}
+                  </span>
+                </div>
+                <span style={{ fontSize: '0.95rem', wordWrap: 'break-word' }}>{hw.text}</span>
+              </div>
+            </div>
+          )
+        })}
+        {homeworkList.length === 0 && (
+          <p style={{ textAlign: 'center', marginTop: '12px', color: 'var(--text-secondary)' }}>Keine offenen Hausaufgaben.</p>
+        )}
+      </div>
+    </div>
+  );
+}
+//#endregion
+
 //#region the big one
 export default function DSBWidgets(props: {
   version: string;
@@ -2043,7 +2241,8 @@ export default function DSBWidgets(props: {
             <DSBTable grade={grade} courses={courses} settings={settings} />
             {(grade.gradeName === "EF" || grade.gradeName === "Q1" || grade.gradeName === "Q2") && (<ExamList settings={settings} subjectSelectRef={subjectSelectRef} courses={courses} grade={grade} />)}
             <CourseList grade={grade} setGrade={setGrade} courses={courses} setCourses={setCourses} subjectSelectRef={subjectSelectRef} settings={settings} />
-            <PersonalTimetable courses={courses} settings={settings} />
+            <PersonalTimetable settings={settings} courses={courses} />
+            <Homework settings={settings} courses={courses} />
             <Settings settings={settings} setSettings={setSettings} grade={grade} courses={courses} setCourses={setCourses} />
             {settings.showCredits && (
               <div class="default-div" id="informationen">

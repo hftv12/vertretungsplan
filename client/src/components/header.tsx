@@ -53,6 +53,7 @@ export default function Header(props: {
 		{ id: 'klausuren', label: 'Klausuren', show: settings.exams !== "none" && settings.navKlausuren !== false },
 		{ id: 'course-selection', label: 'Kurswahl', show: settings.showCourses !== false && settings.navKurswahl !== false },
 		{ id: 'stundenplan', label: 'Stundenplan', show: settings.navStundenplan !== false },
+		{ id: 'hausaufgaben', label: 'Hausaufgaben', show: settings.showHomework !== false && settings.navHausaufgaben !== false },
 		{ id: 'einstellungen', label: 'Einstellungen', show: true },
 		{ id: 'informationen', label: 'Informationen', show: settings.showCredits !== false && settings.navInfo !== false },
 	].filter(item => item.show);
