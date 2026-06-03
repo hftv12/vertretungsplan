@@ -1595,7 +1595,48 @@ function ExamList(props: { // sorted list of all of your exams (probably the mos
   );
 }
 
-function Settings(props: { // settings block
+const ThemeSelector = (props: { currentTheme: string, onSelect: (t: string) => void }) => {
+  const themes = [
+    { id: 'default', color: '#2563eb' },
+    { id: 'emerald', color: '#10b981' },
+    { id: 'rose', color: '#f43f5e' },
+    { id: 'violet', color: '#8b5cf6' },
+    { id: 'amber', color: '#f59e0b' },
+    { id: 'cyan', color: '#06b6d4' },
+    { id: 'slate', color: '#64748b' },
+    { id: 'cherry', color: '#e11d48' },
+    { id: 'mint', color: '#22c55e' },
+    { id: 'sunset', color: '#f97316' }
+  ];
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+      <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Farb-Theme:</label>
+      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+        {themes.map(t => {
+          const isActive = (props.currentTheme || 'default') === t.id;
+          return (
+            <button
+              key={t.id}
+              onClick={() => props.onSelect(t.id)}
+              style={{
+                width: '36px', height: '36px', borderRadius: '50%',
+                border: isActive ? '2px solid var(--text-color)' : '1px solid var(--brighter-color)',
+                padding: 0, cursor: 'pointer', transition: 'var(--transition-fast)',
+                background: `conic-gradient(var(--background-color) 0deg 180deg, var(--brighter-color) 180deg 270deg, ${t.color} 270deg 360deg)`,
+                transform: isActive ? 'scale(1.1)' : 'scale(1)',
+                boxShadow: isActive ? '0 0 12px rgba(0,0,0,0.1)' : 'none'
+              }}
+              aria-label={`Theme ${t.id}`}
+            />
+          )
+        })}
+      </div>
+    </div>
+  );
+};
+
+export function Settings(props: { // settings block
   settings: DSBSettings,
   setSettings: Function,
   grade: GradeInfo,
@@ -1699,6 +1740,13 @@ function Settings(props: { // settings block
           options={[{value: "system", text: "Systemstandard"}, {value: "light", text: "Hell"}, {value: "dark", text: "Dunkel"}]}
           updater={(v: string) => updateSetting("theme", v)}
           value={props.settings.theme !== undefined ? props.settings.theme : "system"}
+        />
+        <ThemeSelector 
+          currentTheme={props.settings.colorTheme || 'default'} 
+          onSelect={(v: string) => {
+            updateSetting("colorTheme", v);
+            document.documentElement.setAttribute('data-color-theme', v);
+          }} 
         />
         <CheckButton
           text="Easter eggs:"
