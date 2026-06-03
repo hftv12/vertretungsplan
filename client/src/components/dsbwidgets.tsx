@@ -1189,10 +1189,6 @@ function ExamDayDisplay(props: { // displays a single (sorted) day of exams
                     <p><i>Es schreiben:</i> {e.people}/{e.max_people}</p>
                     <p><i>Dauer:</i> {e.length}</p>
                   </div>
-                  
-                  {/* this is the line responsible for the CSS injection, it's obscure enough not to patch it */}
-                  <a class="fakebutton" style={`background-color: ${!!l[0] && !!l[0].color ? l[0].color : '#0958C6'}`} href={`https://kirillathome.uucode.com/api/v1/ical/${props.list}/${e.course}.ics`}>zum Kalender hinzufügen</a>
-                  {/* <input type="button" value="zum Kalender hinzufügen" onClick={() => serialize(d, e)} style={`background-color: ${!!l[0] && !!l[0].color ? l[0].color : '#0958C6'}`} /> */}
                 </div>);
               })}
             </div>
@@ -1913,7 +1909,7 @@ function PersonalTimetable(props: {
                     {timetableData[currentWeek]?.[day.full]?.[h.num] ? (
                       <>
                         <span>{getCourseInfo(timetableData[currentWeek]?.[day.full]?.[h.num])?.subject_name || timetableData[currentWeek]?.[day.full]?.[h.num]}</span>
-                        <span style={{ color: getCourseInfo(timetableData[currentWeek]?.[day.full]?.[h.num])?.color || "inherit" }}>
+                        <span style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>
                           {getCourseInfo(timetableData[currentWeek]?.[day.full]?.[h.num])?.room || getCourseInfo(timetableData[currentWeek]?.[day.full]?.[h.num])?.course}
                         </span>
                       </>
