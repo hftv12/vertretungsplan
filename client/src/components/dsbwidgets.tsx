@@ -1621,8 +1621,8 @@ const ThemeSelector = (props: { currentTheme: string, onSelect: (t: string) => v
       <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
         {themes.map(t => {
           const isActive = (props.currentTheme || 'default') === t.id;
-          const bgCol = t.bg || 'var(--background-color)';
-          const hlCol = t.hl || 'var(--brighter-color)';
+          const bgCol = t.bg || 'var(--standard-bg)';
+          const hlCol = t.hl || 'var(--standard-hl)';
           return (
             <button
               key={t.id}

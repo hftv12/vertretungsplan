@@ -49,12 +49,14 @@
     /* DEFAULT (LIGHT MODE) TOKENS */
     --header-bg: rgba(255, 255, 255, 0.82);
     --background-color: #f8fafc;
+    --standard-bg: #f8fafc;
     /* Slate 50 */
     --foreground-color: #ffffff;
     /* Pure White Card */
     --darker-color: #ffffff;
     /* Pure White Header/Footer */
     --brighter-color: #e2e8f0;
+    --standard-hl: #e2e8f0;
     /* Slate 200 Border */
     --input-bg: #f1f5f9;
     /* Slate 100 input */
@@ -112,12 +114,14 @@
     /* DARK MODE TOKENS */
     --header-bg: rgba(15, 15, 17, 0.82);
     --background-color: #09090b;
+    --standard-bg: #09090b;
     /* Zinc 950 */
     --foreground-color: #18181b;
     /* Zinc 900 Card */
     --darker-color: #0f0f11;
     /* Zinc 950 Header/Footer */
     --brighter-color: #27272a;
+    --standard-hl: #27272a;
     /* Zinc 800 Border */
     --input-bg: #27272a;
     /* Zinc 800 Input */
@@ -219,12 +223,14 @@ html:root[data-color-theme="sunset"] {
         /* DARK MODE TOKENS */
         --header-bg: rgba(15, 15, 17, 0.82);
         --background-color: #09090b;
+        --standard-bg: #09090b;
         /* Zinc 950 */
         --foreground-color: #18181b;
         /* Zinc 900 Card */
         --darker-color: #0f0f11;
         /* Zinc 950 Header/Footer */
         --brighter-color: #27272a;
+        --standard-hl: #27272a;
         /* Zinc 800 Border */
         --input-bg: #27272a;
         /* Zinc 800 Input */
