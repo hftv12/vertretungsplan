@@ -850,28 +850,31 @@ function Course(props: { // the courses that you can add
         {!!props.written ? (<PencilIcon width="20" height="20" class="important-icon" title="Schriftliches Fach" />) : (<div></div>)}
       </div>
       <div>
-        <div style={{ display: 'flex', gap: '16px', marginBottom: '8px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
-            <label for={subjectSelectID}>Fach:</label>
-            <span id={subjectSelectID} style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{!!props.subject_name ? props.subject_name : ":'("}</span>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-            <label for={courseSelectID}>Kurs:</label>
-            <span id={courseSelectID}>{!!props.course ? props.course : "---"}</span>
-          </div>
+        <div style={{ display: 'flex', gap: '16px', marginBottom: '12px' }}>
+          <span id={subjectSelectID} style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', flex: 1, fontWeight: 600 }}>{!!props.subject_name ? props.subject_name : ":'("}</span>
+          <span id={courseSelectID} style={{ flex: 1, fontWeight: 600 }}>{!!props.course ? props.course : "---"}</span>
         </div>
 
-        <label for={roomSelectID}>Raum:</label>
-        <div class="flex"><input id={roomSelectID} name={roomSelectID} type="text" placeholder="z.B. PS1" value={props.room || ""} ref={roomRef} onBlur={handleRoomChange} /></div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+          <label for={roomSelectID} style={{ margin: 0, width: '45px' }}>Raum:</label>
+          <input id={roomSelectID} name={roomSelectID} type="text" placeholder="z.B. PS1" value={props.room || ""} ref={roomRef} onBlur={handleRoomChange} style={{ flex: 1, padding: '6px 10px' }} />
+        </div>
 
-        {props.advanced && (<label for={writtenSelectID}>Schriftlich:</label>)}
-        {props.advanced && (<div class="flex"><input id={writtenSelectID} name={writtenSelectID} type="checkbox" checked={!!props.written} ref={writtenRef} onClick={handleWrittenClick} /></div>)}
+        {props.advanced && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+            <label for={writtenSelectID} style={{ margin: 0, width: '80px' }}>Schriftlich:</label>
+            <input id={writtenSelectID} name={writtenSelectID} type="checkbox" checked={!!props.written} ref={writtenRef} onClick={handleWrittenClick} />
+          </div>
+        )}
 
-        {props.advanced && (<label for={colorSelectID}>Farbe:</label>)}
-        {props.advanced && (<div class="flex"><input id={colorSelectID} name={colorSelectID} list="course-color-list" type="color" value={!!props.color ? props.color : "#0958C6"} ref={colorRef} onChange={handleColorChange} /></div>)}
+        {props.advanced && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+            <label for={colorSelectID} style={{ margin: 0, width: '45px' }}>Farbe:</label>
+            <input id={colorSelectID} name={colorSelectID} list="course-color-list" type="color" value={!!props.color ? props.color : "#0958C6"} ref={colorRef} onChange={handleColorChange} style={{ margin: 0 }} />
+          </div>
+        )}
 
-        <Placeholder height='26px' />
-        <input type='button' value='Entfernen' onClick={handleButtonClick} />
+        <input type='button' value='Entfernen' onClick={handleButtonClick} style={{ marginTop: '8px' }} />
       </div>
 
     </div>
