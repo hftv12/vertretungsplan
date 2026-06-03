@@ -1893,12 +1893,14 @@ function PersonalTimetable(props: {
       <div class="timetable-container" ref={containerRef} onScroll={handleScroll}>
         {days.map((day) => (
           <div key={day.full} class="timetable-day-wrapper">
+            <h3 class="timetable-day-header">{day.full}</h3>
             {hours.map((h) => (
+              h.type === "pause" ? (
+                <div key={h.num} class="timetable-spacer"></div>
+              ) : (
               <div key={h.num} class="timetable-row">
                 <div class="timetable-time">{h.label}</div>
-                {h.type === "pause" ? (
-                  <div class="timetable-course timetable-pause">Pause</div>
-                ) : isEditMode ? (
+                {isEditMode ? (
                   <select class="timetable-edit-select" value={timetableData[currentWeek]?.[day.full]?.[h.num] || ""} onChange={(e) => handleCourseChange(day.full, h.num, (e.target as HTMLSelectElement).value)}>
                     <option value="">--- Frei ---</option>
                     {props.courses.map(c => {
@@ -1919,6 +1921,7 @@ function PersonalTimetable(props: {
                   </div>
                 )}
               </div>
+              )
             ))}
           </div>
         ))}
