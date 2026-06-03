@@ -850,11 +850,16 @@ function Course(props: { // the courses that you can add
         {!!props.written ? (<PencilIcon width="20" height="20" class="important-icon" title="Schriftliches Fach" />) : (<div></div>)}
       </div>
       <div>
-        <label for={subjectSelectID}>Fach:</label>
-        <span id={subjectSelectID}>{!!props.subject_name ? props.subject_name : ":'("}</span>
-
-        <label for={courseSelectID}>Kurs:</label>
-        <span id={courseSelectID}>{!!props.course ? props.course : "---"}</span>
+        <div style={{ display: 'flex', gap: '16px', marginBottom: '8px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+            <label for={subjectSelectID}>Fach:</label>
+            <span id={subjectSelectID} style={{ textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{!!props.subject_name ? props.subject_name : ":'("}</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+            <label for={courseSelectID}>Kurs:</label>
+            <span id={courseSelectID}>{!!props.course ? props.course : "---"}</span>
+          </div>
+        </div>
 
         <label for={roomSelectID}>Raum:</label>
         <div class="flex"><input id={roomSelectID} name={roomSelectID} type="text" placeholder="z.B. PS1" value={props.room || ""} ref={roomRef} onBlur={handleRoomChange} /></div>
