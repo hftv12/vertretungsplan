@@ -1908,7 +1908,6 @@ a.fakebutton:active {
     margin: 0 -12px;
     border-left: 4px solid var(--accent-color);
     box-shadow: 0 4px 12px var(--accent-glow);
-    border-bottom: none;
     z-index: 1;
     position: relative;
 }

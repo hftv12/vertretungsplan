@@ -1816,19 +1816,18 @@ function PersonalTimetable(props: {
     { full: "Freitag", short: "Fr" }
   ];
   const hours = [
-    { num: 1, label: "1. Stunde", type: "hour", start: "08:00", end: "08:45" },
-    { num: 2, label: "2. Stunde", type: "hour", start: "08:45", end: "09:30" },
-    { num: -1, label: "1. große Pause", type: "pause", start: "09:30", end: "09:50" },
-    { num: 3, label: "3. Stunde", type: "hour", start: "09:50", end: "10:35" },
-    { num: 4, label: "4. Stunde", type: "hour", start: "10:35", end: "11:20" },
-    { num: -2, label: "2. große Pause", type: "pause", start: "11:20", end: "11:40" },
-    { num: 5, label: "5. Stunde", type: "hour", start: "11:40", end: "12:25" },
-    { num: 6, label: "6. Stunde", type: "hour", start: "12:25", end: "13:10" },
-    { num: -3, label: "3. große Pause", type: "pause", start: "13:10", end: "13:30" },
-    { num: 7, label: "7. Stunde", type: "hour", start: "13:30", end: "14:15" },
-    { num: 8, label: "8. Stunde", type: "hour", start: "14:15", end: "15:00" },
-    { num: 9, label: "9. Stunde", type: "hour", start: "15:00", end: "15:45" },
-    { num: 10, label: "10. Stunde", type: "hour", start: "15:45", end: "16:30" },
+    { num: 1, label: "1. Stunde", type: "hour", start: "07:50", end: "08:35" },
+    { num: 2, label: "2. Stunde", type: "hour", start: "08:40", end: "09:25" },
+    { num: -1, label: "1. große Pause", type: "pause", start: "09:25", end: "09:40" },
+    { num: 3, label: "3. Stunde", type: "hour", start: "09:40", end: "10:25" },
+    { num: 4, label: "4. Stunde", type: "hour", start: "10:30", end: "11:15" },
+    { num: -2, label: "2. große Pause", type: "pause", start: "11:15", end: "11:30" },
+    { num: 5, label: "5. Stunde", type: "hour", start: "11:30", end: "12:15" },
+    { num: 6, label: "6. Stunde", type: "hour", start: "12:20", end: "13:05" },
+    { num: 7, label: "7. Std. / Mittag", type: "hour", start: "13:10", end: "13:55" },
+    { num: 8, label: "8. Stunde", type: "hour", start: "14:00", end: "14:45" },
+    { num: 9, label: "9. Stunde", type: "hour", start: "14:45", end: "15:30" },
+    { num: 10, label: "10. Stunde", type: "hour", start: "15:30", end: "16:15" },
   ];
 
   const isCurrentHour = (dayIdx: number, start?: string, end?: string) => {
