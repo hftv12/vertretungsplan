@@ -31,7 +31,7 @@ export default function Header(props: {
 		
 		const handleSettingsChange = (e: any) => {
 			if (e.detail) {
-				setSettings(e.detail);
+				setSettings({...e.detail});
 			}
 		};
 		window.addEventListener('dsb-settings-change', handleSettingsChange);
@@ -49,12 +49,12 @@ export default function Header(props: {
 	};
 
 	const menuItems = [
-		{ id: 'vertretungsplan', label: 'Vertretungsplan', show: true },
-		{ id: 'klausuren', label: 'Klausuren', show: settings.exams !== "none" },
-		{ id: 'course-selection', label: 'Kurswahl', show: settings.showCourses !== false },
-		{ id: 'stundenplan', label: 'Stundenplan', show: true },
+		{ id: 'vertretungsplan', label: 'Vertretungsplan', show: settings.navVertretung !== false },
+		{ id: 'klausuren', label: 'Klausuren', show: settings.exams !== "none" && settings.navKlausuren !== false },
+		{ id: 'course-selection', label: 'Kurswahl', show: settings.showCourses !== false && settings.navKurswahl !== false },
+		{ id: 'stundenplan', label: 'Stundenplan', show: settings.navStundenplan !== false },
 		{ id: 'einstellungen', label: 'Einstellungen', show: true },
-		{ id: 'informationen', label: 'Informationen', show: settings.showCredits !== false },
+		{ id: 'informationen', label: 'Informationen', show: settings.showCredits !== false && settings.navInfo !== false },
 	].filter(item => item.show);
 
 	return (

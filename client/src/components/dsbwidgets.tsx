@@ -1771,6 +1771,33 @@ function Settings(props: { // settings block
           disabled={props.settings === undefined || props.settings.exams !== ExamVisibility.SORTED}
         />
 
+        <h3 class="code">Navigation (Menü)</h3>
+        <CheckButton
+          text="Vertretungsplan-Button:"
+          updater={(v: boolean) => updateSetting("navVertretung", v)}
+          checked={props.settings.navVertretung !== false}
+        />
+        <CheckButton
+          text="Klausuren-Button:"
+          updater={(v: boolean) => updateSetting("navKlausuren", v)}
+          checked={props.settings.navKlausuren !== false}
+        />
+        <CheckButton
+          text="Kurswahl-Button:"
+          updater={(v: boolean) => updateSetting("navKurswahl", v)}
+          checked={props.settings.navKurswahl !== false}
+        />
+        <CheckButton
+          text="Stundenplan-Button:"
+          updater={(v: boolean) => updateSetting("navStundenplan", v)}
+          checked={props.settings.navStundenplan !== false}
+        />
+        <CheckButton
+          text="Info-Button:"
+          updater={(v: boolean) => updateSetting("navInfo", v)}
+          checked={props.settings.navInfo !== false}
+        />
+
         <h3 class="code">Verschiedenes</h3>
         <div id="reset-div">
           <input class="fakebutton" type="button" value="Ausloggen" onClick={logout} />
@@ -1825,7 +1852,7 @@ function PersonalTimetable(props: {
     { num: -2, label: "2. große Pause", type: "pause", start: "11:15", end: "11:30" },
     { num: 5, label: "5. Stunde", type: "hour", start: "11:30", end: "12:15" },
     { num: 6, label: "6. Stunde", type: "hour", start: "12:20", end: "13:05" },
-    { num: 7, label: "7. Std. / Mittag", type: "hour", start: "13:10", end: "13:55" },
+    { num: 7, label: "7. Stunde", type: "hour", start: "13:10", end: "13:55" },
     { num: 8, label: "8. Stunde", type: "hour", start: "14:00", end: "14:45" },
     { num: 9, label: "9. Stunde", type: "hour", start: "14:45", end: "15:30" },
     { num: 10, label: "10. Stunde", type: "hour", start: "15:30", end: "16:15" },

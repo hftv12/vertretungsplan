@@ -32,12 +32,12 @@ export default function BottomNav() {
 	}, []);
 
 	const menuItems = [
-		{ id: 'vertretungsplan', label: 'Vertretung', icon: CalendarIcon, show: true },
-		{ id: 'klausuren', label: 'Klausuren', icon: DocumentTextIcon, show: settings.exams !== "none" },
-		{ id: 'course-selection', label: 'Kurswahl', icon: CheckBadgeIcon, show: settings.showCourses !== false },
-		{ id: 'stundenplan', label: 'Stundenplan', icon: ClockIcon, show: true },
+		{ id: 'vertretungsplan', label: 'Vertretung', icon: CalendarIcon, show: settings.navVertretung !== false },
+		{ id: 'klausuren', label: 'Klausuren', icon: DocumentTextIcon, show: settings.exams !== "none" && settings.navKlausuren !== false },
+		{ id: 'course-selection', label: 'Kurswahl', icon: CheckBadgeIcon, show: settings.showCourses !== false && settings.navKurswahl !== false },
+		{ id: 'stundenplan', label: 'Stundenplan', icon: ClockIcon, show: settings.navStundenplan !== false },
 		{ id: 'einstellungen', label: 'Optionen', icon: CogIcon, show: true },
-		{ id: 'informationen', label: 'Info', icon: InfoIcon, show: settings.showCredits !== false },
+		{ id: 'informationen', label: 'Info', icon: InfoIcon, show: settings.showCredits !== false && settings.navInfo !== false },
 	].filter(item => item.show);
 
 	useEffect(() => {
@@ -81,9 +81,10 @@ export default function BottomNav() {
 	};
 
 	return (
-		<nav class="bottom-nav">
+		<div class="bottom-nav-container">
 			<div class="bottom-nav-fade"></div>
-			{menuItems.map((item) => {
+			<nav class="bottom-nav">
+				{menuItems.map((item) => {
 				const IconComponent = item.icon;
 				const isActive = activeId === item.id;
 				return (
@@ -97,6 +98,7 @@ export default function BottomNav() {
 					</button>
 				);
 			})}
-		</nav>
+			</nav>
+		</div>
 	);
 }
