@@ -2026,7 +2026,7 @@ function PersonalTimetable(props: {
                 <div key={h.num} class={`timetable-spacer ${activeHighlight}`}></div>
               ) : (
               <div key={h.num} class={`timetable-row ${activeHighlight}`}>
-                <div class="timetable-time">{h.label} <span style={{ fontSize: "0.75rem", color: "var(--text-secondary)", display: "block" }}>{h.start} - {h.end}</span></div>
+                <div class="timetable-time">{h.label} <span style={{ fontSize: "0.68rem", color: "var(--text-secondary)", display: "block", whiteSpace: "nowrap" }}>{h.start} - {h.end}</span></div>
                 {isEditMode ? (
                   <select class="timetable-edit-select" value={timetableData[currentWeek]?.[day.full]?.[h.num] || ""} onChange={(e) => handleCourseChange(day.full, h.num, (e.target as HTMLSelectElement).value)}>
                     <option value="">--- Frei ---</option>

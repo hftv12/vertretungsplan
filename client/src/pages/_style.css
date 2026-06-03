@@ -2056,11 +2056,11 @@ a.fakebutton:active {
 }
 
 .timetable-time {
-    width: 80px;
+    width: 84px;
     flex-shrink: 0;
     font-weight: 600;
     color: var(--text-secondary);
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     text-align: right;
 }
 
