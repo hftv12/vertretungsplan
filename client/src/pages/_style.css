@@ -107,7 +107,7 @@
     --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.03), 0 2px 4px -2px rgba(0, 0, 0, 0.03), 0 0 0 1px rgba(0, 0, 0, 0.015);
     --shadow-hover: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(0, 0, 0, 0.01);
     --shadow-header: 0 1px 3px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.04);
-    --shadow-tile: 0 0 12px 2px rgba(255, 255, 255, 0.7), var(--shadow-card);
+    --shadow-tile: var(--shadow-card);
 }
 
 :root[data-theme="dark"] {
@@ -159,7 +159,7 @@
     --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -2px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.02);
     --shadow-hover: 0 12px 30px -5px rgba(0, 0, 0, 0.4), 0 8px 16px -8px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.03);
     --shadow-header: 0 4px 20px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.02);
-    --shadow-tile: 0 0 12px 2px rgba(255, 255, 255, 0.05), var(--shadow-card);
+    --shadow-tile: var(--shadow-card);
 }
 
 /* --- Color Themes --- */
@@ -268,7 +268,7 @@ html:root[data-color-theme="sunset"] {
         --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -2px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.02);
         --shadow-hover: 0 12px 30px -5px rgba(0, 0, 0, 0.4), 0 8px 16px -8px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.03);
         --shadow-header: 0 4px 20px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.02);
-        --shadow-tile: 0 0 12px 2px rgba(255, 255, 255, 0.05), var(--shadow-card);
+        --shadow-tile: var(--shadow-card);
     }
 }
 
@@ -1403,7 +1403,7 @@ tbody tr:last-child td {
     padding: 12px;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: flex-start;
     transition: var(--transition-smooth);
     min-height: auto;
     box-shadow: var(--shadow-card);
