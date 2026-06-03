@@ -2020,7 +2020,15 @@ function Homework(props: {
 
   const [selectedCourse, setSelectedCourse] = useState("");
   const [text, setText] = useState("");
-  const [date, setDate] = useState("");
+  
+  // Default date to tomorrow
+  const getDefaultDate = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const localDate = new Date(tomorrow.getTime() - (tomorrow.getTimezoneOffset() * 60000));
+    return localDate.toISOString().split("T")[0];
+  };
+  const [date, setDate] = useState(getDefaultDate());
   
   const [animatingOut, setAnimatingOut] = useState<string[]>([]);
 
@@ -2073,7 +2081,6 @@ function Homework(props: {
       if (dayData) {
         for (const hour in dayData) {
           if (dayData[hour] === courseId) {
-            // Found it! Use local timezone offset so ISOString doesn't flip day backwards
             const localDate = new Date(checkDate.getTime() - (checkDate.getTimezoneOffset() * 60000));
             return localDate.toISOString().split("T")[0];
           }
@@ -2090,10 +2097,7 @@ function Homework(props: {
     if (nextDate) {
       setDate(nextDate);
     } else {
-      const tomorrow = new Date();
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      const localDate = new Date(tomorrow.getTime() - (tomorrow.getTimezoneOffset() * 60000));
-      setDate(localDate.toISOString().split("T")[0]);
+      setDate(getDefaultDate());
     }
   };
 
@@ -2117,6 +2121,18 @@ function Homework(props: {
       saveHomework(homeworkList.filter(h => h.id !== id));
       setAnimatingOut(prev => prev.filter(p => p !== id));
     }, 400); 
+  };
+
+  const getDaysUntil = (d: string) => {
+    const hwDate = new Date(d);
+    hwDate.setHours(0,0,0,0);
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const diff = Math.round((hwDate.valueOf() - today.valueOf()) / (1000 * 60 * 60 * 24));
+    if (diff < 0) return `vor ${Math.abs(diff)} Tag${Math.abs(diff) !== 1 ? 'en' : ''}`;
+    if (diff === 0) return "heute";
+    if (diff === 1) return "morgen";
+    return `in ${diff} Tagen`;
   };
 
   const isOverdue = (d: string) => {
@@ -2145,12 +2161,13 @@ function Homework(props: {
               return <option value={val} key={val}>{c.subject_name} {c.course}</option>;
             })}
           </select>
-          <input type="date" value={date} onChange={(e) => setDate((e.target as HTMLInputElement).value)} style={{ width: '130px', padding: '10px 8px' }} required />
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <label style={{ position: 'absolute', left: '8px', fontSize: '0.75rem', color: 'var(--text-secondary)', pointerEvents: 'none', top: '2px' }}>Datum</label>
+            <input type="date" value={date} onChange={(e) => setDate((e.target as HTMLInputElement).value)} style={{ width: '140px', padding: '14px 8px 6px 8px' }} required />
+          </div>
         </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <input type="text" placeholder="Aufgabe (z.B. S. 42 Nr. 3)" value={text} onChange={(e) => setText((e.target as HTMLInputElement).value)} style={{ flex: 1 }} required />
-          <input type="submit" class="fakebutton" value="Hinzu" style={{ margin: 0, height: '42px', padding: '0 16px' }} />
-        </div>
+        <input type="text" placeholder="Aufgabe (z.B. S. 42 Nr. 3)" value={text} onChange={(e) => setText((e.target as HTMLInputElement).value)} style={{ width: '100%', boxSizing: 'border-box' }} required />
+        <input type="submit" class="fakebutton" value="Hinzufügen" style={{ margin: 0, width: '100%', height: '42px', padding: '0 16px', boxSizing: 'border-box' }} />
       </form>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '16px' }}>
@@ -2168,12 +2185,30 @@ function Homework(props: {
               animation: animating ? 'slideOutFade 0.4s forwards' : 'slideUpFade 0.3s forwards',
               opacity: animating ? 1 : 0
             }}>
-              <input type="checkbox" onChange={() => handleCheck(hw.id)} checked={animating} />
+              <button
+                onClick={() => handleCheck(hw.id)}
+                style={{
+                  width: '28px', height: '28px', flexShrink: 0,
+                  borderRadius: '50%', border: `2px solid ${overdue ? 'var(--s-free-border)' : 'var(--accent-color)'}`,
+                  background: animating ? 'var(--accent-color)' : 'transparent',
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'var(--transition-fast)', color: animating ? '#fff' : 'transparent',
+                  padding: 0
+                }}
+                aria-label="Erledigt"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </button>
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <b style={{ color: course?.color || 'var(--text-color)', fontSize: '0.85rem' }}>{course?.subject_name} {course?.course}</b>
                   <span style={{ fontSize: '0.8rem', color: overdue ? 'var(--s-free-text)' : 'var(--text-secondary)', fontWeight: overdue ? 600 : 400 }}>
-                    {overdue ? 'Überfällig!' : new Date(hw.date).toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' })}
+                    {overdue
+                      ? 'Überfällig!'
+                      : `${new Date(hw.date).toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit' })} (${getDaysUntil(hw.date)})`
+                    }
                   </span>
                 </div>
                 <span style={{ fontSize: '0.95rem', wordWrap: 'break-word' }}>{hw.text}</span>
