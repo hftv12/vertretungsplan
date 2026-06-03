@@ -489,19 +489,15 @@ header {
     flex-direction: column;
     overflow: hidden;
     transform-origin: top right;
-    animation: menuFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: menuFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes menuFadeIn {
-    0% {
+    from {
         opacity: 0;
-        transform: scale(0.9) translateY(-15px);
+        transform: scale(0.95) translateY(-10px);
     }
-    60% {
-        opacity: 1;
-        transform: scale(1.02) translateY(2px);
-    }
-    100% {
+    to {
         opacity: 1;
         transform: scale(1) translateY(0);
     }
@@ -518,7 +514,7 @@ header {
     font-size: 0.95rem;
     transition: var(--transition-fast);
     opacity: 0;
-    animation: menuItemFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: menuItemFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .burger-menu-item:hover {
@@ -530,7 +526,7 @@ header {
 @keyframes menuItemFadeIn {
     from {
         opacity: 0;
-        transform: translateX(-10px);
+        transform: translateX(15px);
     }
     to {
         opacity: 1;
