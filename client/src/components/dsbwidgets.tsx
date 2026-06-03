@@ -2120,7 +2120,7 @@ function Homework(props: {
     setTimeout(() => {
       saveHomework(homeworkList.filter(h => h.id !== id));
       setAnimatingOut(prev => prev.filter(p => p !== id));
-    }, 1400); 
+    }, 700); 
   };
 
   const getDaysUntil = (d: string) => {
@@ -2171,7 +2171,7 @@ function Homework(props: {
       </form>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '16px' }}>
-        {homeworkList.sort((a,b) => a.date.localeCompare(b.date)).map(hw => {
+        {homeworkList.sort((a,b) => new Date(a.date).valueOf() - new Date(b.date).valueOf()).map(hw => {
           const course = getCourseInfo(hw.course);
           const overdue = isOverdue(hw.date);
           const animating = animatingOut.includes(hw.id);
@@ -2181,9 +2181,9 @@ function Homework(props: {
               display: 'flex', alignItems: 'center', gap: '12px', padding: '12px',
               backgroundColor: overdue ? 'var(--s-free-bg)' : 'var(--input-bg)',
               border: `1px solid ${overdue ? 'var(--s-free-border)' : (course?.color || 'var(--brighter-color)')}`,
-              borderRadius: 'var(--rounding-sm)',
-              animation: animating ? 'slideOutFade 0.4s 1s forwards' : 'slideUpFade 0.3s forwards',
-              opacity: animating ? 1 : 0
+              borderRadius: 'var(--rounding-lg)',
+              animation: animating ? 'slideOutFade 0.4s 0.3s forwards' : 'tileReveal 0.4s ease-out backwards',
+              opacity: animating ? 1 : undefined
             }}>
               <button
                 onClick={() => handleCheck(hw.id)}
@@ -2217,10 +2217,9 @@ function Homework(props: {
           )
         })}
         {homeworkList.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '32px 16px', backgroundColor: 'var(--input-bg)', borderRadius: 'var(--rounding-md)', border: '1px solid var(--brighter-color)' }}>
-            <span style={{ fontSize: '1.2rem', display: 'block', marginBottom: '8px' }}>🎉</span>
-            <b>Keine offenen Hausaufgaben</b>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '4px' }}>Trage oben eine neue Hausaufgabe ein, um sie hier zu sehen.</p>
+          <div style={{ textAlign: 'center', padding: '32px 16px', backgroundColor: 'var(--input-bg)', borderRadius: 'var(--rounding-lg)', border: '1px solid var(--brighter-color)', animation: 'tileReveal 0.4s ease-out backwards' }}>
+            <b style={{ display: 'block', fontSize: '1.05rem' }}>Keine offenen Hausaufgaben</b>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '6px' }}>Trage oben eine neue Hausaufgabe ein, um sie hier zu sehen.</p>
           </div>
         )}
       </div>
