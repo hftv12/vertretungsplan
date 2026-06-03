@@ -2181,7 +2181,7 @@ function Homework(props: {
               display: 'flex', alignItems: 'center', gap: '12px', padding: '12px',
               backgroundColor: overdue ? 'var(--s-free-bg)' : 'var(--input-bg)',
               border: `1px solid ${overdue ? 'var(--s-free-border)' : (course?.color || 'var(--brighter-color)')}`,
-              borderRadius: 'var(--rounding-lg)',
+              borderRadius: 'var(--rounding)',
               animation: animating ? 'slideOutFade 0.4s 0.3s forwards' : 'tileReveal 0.4s ease-out backwards',
               opacity: animating ? 1 : undefined
             }}>
@@ -2217,7 +2217,7 @@ function Homework(props: {
           )
         })}
         {homeworkList.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '32px 16px', backgroundColor: 'var(--input-bg)', borderRadius: 'var(--rounding-lg)', border: '1px solid var(--brighter-color)', animation: 'tileReveal 0.4s ease-out backwards' }}>
+          <div style={{ textAlign: 'center', padding: '32px 16px', backgroundColor: 'var(--input-bg)', borderRadius: 'var(--rounding)', border: '1px solid var(--brighter-color)', animation: 'tileReveal 0.4s ease-out backwards' }}>
             <b style={{ display: 'block', fontSize: '1.05rem' }}>Keine offenen Hausaufgaben</b>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginTop: '6px' }}>Trage oben eine neue Hausaufgabe ein, um sie hier zu sehen.</p>
           </div>
