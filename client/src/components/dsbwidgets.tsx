@@ -1832,7 +1832,15 @@ function PersonalTimetable(props: {
     }
     const handler = (e: any) => {
       if (e.detail?.week) {
-        setCurrentWeek(e.detail.week.includes("A") ? "A" : "B");
+        const weekStr = e.detail.week as string;
+        setCurrentWeek(weekStr.includes("A") ? "A" : "B");
+        
+        // Auto-select day
+        if (weekStr.includes("Montag")) scrollToDay(0);
+        else if (weekStr.includes("Dienstag")) scrollToDay(1);
+        else if (weekStr.includes("Mittwoch")) scrollToDay(2);
+        else if (weekStr.includes("Donnerstag")) scrollToDay(3);
+        else if (weekStr.includes("Freitag")) scrollToDay(4);
       }
     };
     window.addEventListener("dsb-week-switch", handler);
