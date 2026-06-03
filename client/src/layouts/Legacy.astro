@@ -1,6 +1,7 @@
 ---
 import Header from "../components/header"
 import Footer from "../components/footer"
+import BottomNav from "../components/bottomnav"
 
 interface Props {
 	title: string,
@@ -48,6 +49,7 @@ const { title, icon, version, manifest } = Astro.props;
 				<Footer />
 			</div>
 			<div class="bottom-fade"></div>
+			<BottomNav client:only />
 		</div>
 	</body>
 </html>

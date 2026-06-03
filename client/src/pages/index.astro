@@ -1,14 +1,19 @@
 ---
-import Legacy from "../layouts/Legacy.astro"
-import DSBWidgets from "../components/dsbwidgets"
-import OnlineIndicator from "../components/onlineindicator"
+import Legacy from "../layouts/Legacy.astro";
+import DSBWidgets from "../components/dsbwidgets";
+import OnlineIndicator from "../components/onlineindicator";
 
-import './_style.css'
+import "./_style.css";
 
-const version = "v2.4.6";
+const version = "v2.4.7";
 ---
 
-<Legacy title="DSB Vertretungsplan" icon="/bird.png" version={version} manifest="/dsb.webmanifest">
+<Legacy
+    title="DSB Vertretungsplan"
+    icon="/bird.png"
+    version={version}
+    manifest="/dsb.webmanifest"
+>
     <OnlineIndicator client:only />
 
     <DSBWidgets client:load version={version} />
