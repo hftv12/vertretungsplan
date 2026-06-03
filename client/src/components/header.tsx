@@ -73,7 +73,7 @@ export default function Header(props: {
 					</button>
 					
 					{menuOpen && (
-						<div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, background: 'var(--foreground-color)', border: '1px solid var(--brighter-color)', borderRadius: 'var(--rounding-sm)', boxShadow: 'var(--shadow-hover)', minWidth: '220px', zIndex: 200, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+						<div class="burger-menu-dropdown">
 							<button onClick={() => scrollTo('vertretungsplan')} style={{ padding: '14px 16px', background: 'transparent', border: 'none', textAlign: 'left', cursor: 'pointer', borderBottom: '1px solid var(--brighter-color)', fontWeight: 500, color: 'var(--text-color)', fontSize: '0.95rem' }}>Vertretungsplan</button>
 							
 							{settings.exams !== "none" && (
