@@ -1606,7 +1606,13 @@ const ThemeSelector = (props: { currentTheme: string, onSelect: (t: string) => v
     { id: 'slate', color: '#64748b' },
     { id: 'cherry', color: '#e11d48' },
     { id: 'mint', color: '#22c55e' },
-    { id: 'sunset', color: '#f97316' }
+    { id: 'sunset', color: '#f97316' },
+    { id: 'midnight', color: '#818cf8', bg: '#0f172a', hl: '#334155' },
+    { id: 'forest', color: '#4ade80', bg: '#052e16', hl: '#166534' },
+    { id: 'nord', color: '#88c0d0', bg: '#2e3440', hl: '#434c5e' },
+    { id: 'latte', color: '#d97706', bg: '#fdf6e3', hl: '#fde047' },
+    { id: 'blossom', color: '#db2777', bg: '#fdf2f8', hl: '#fbcfe8' },
+    { id: 'dracula', color: '#ff79c6', bg: '#282a36', hl: '#6272a4' }
   ];
 
   return (
@@ -1615,6 +1621,8 @@ const ThemeSelector = (props: { currentTheme: string, onSelect: (t: string) => v
       <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
         {themes.map(t => {
           const isActive = (props.currentTheme || 'default') === t.id;
+          const bgCol = t.bg || 'var(--background-color)';
+          const hlCol = t.hl || 'var(--brighter-color)';
           return (
             <button
               key={t.id}
@@ -1623,7 +1631,7 @@ const ThemeSelector = (props: { currentTheme: string, onSelect: (t: string) => v
                 width: '36px', height: '36px', borderRadius: '50%',
                 border: isActive ? '2px solid var(--text-color)' : '1px solid var(--brighter-color)',
                 padding: 0, cursor: 'pointer', transition: 'var(--transition-fast)',
-                background: `conic-gradient(var(--background-color) 0deg 180deg, var(--brighter-color) 180deg 270deg, ${t.color} 270deg 360deg)`,
+                background: `conic-gradient(${bgCol} 0deg 180deg, ${hlCol} 180deg 270deg, ${t.color} 270deg 360deg)`,
                 transform: isActive ? 'scale(1.1)' : 'scale(1)',
                 boxShadow: isActive ? '0 0 12px rgba(0,0,0,0.1)' : 'none'
               }}
