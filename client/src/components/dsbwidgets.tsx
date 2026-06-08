@@ -1628,7 +1628,7 @@ const ThemeSelector = (props: { currentTheme: string, onSelect: (t: string) => v
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px', padding: '16px', backgroundColor: 'var(--input-bg)', border: '1px solid var(--brighter-color)', borderRadius: 'var(--rounding-sm)' }}>
       <label style={{ fontSize: '0.9rem', color: 'var(--text-color)', fontWeight: 600 }}>Farb-Themes:</label>
-      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '4px' }}>
+      <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', marginTop: '4px', justifyContent: 'center' }}>
         {themes.map(t => {
           const isActive = (props.currentTheme || 'default') === t.id;
           const bgCol = t.bg || 'var(--standard-bg)';
@@ -2306,12 +2306,12 @@ function Homework(props: {
                   key={c.id}
                   onClick={() => selectCourse(c.id)}
                   style={{ 
-                    padding: '4px 12px', 
-                    borderRadius: '16px', 
+                    padding: '6px 14px', 
+                    borderRadius: 'var(--rounding-sm)', 
                     backgroundColor: selectedCourse === c.id ? 'var(--accent-color)' : 'var(--input-bg)', 
                     color: selectedCourse === c.id ? '#fff' : 'var(--text-color)', 
                     border: `1px solid ${selectedCourse === c.id ? 'var(--accent-color)' : 'var(--brighter-color)'}`,
-                    fontSize: '0.85rem',
+                    fontSize: '0.9rem',
                     fontWeight: 600,
                     cursor: 'pointer',
                     whiteSpace: 'nowrap',
@@ -2420,8 +2420,8 @@ function WelcomeBox(props: {
         Hier ein paar Tipps für den Einstieg:
       </p>
       <ul style={{ color: 'var(--text-color)', fontSize: '0.95rem' }}>
-        <li>Unter <b>Kurswahl</b> kannst du deine Stufe sowie deine genauen Fächer eintragen. Dann werden dir im Vertretungsplan nur noch Stunden angezeigt, die dich wirklich betreffen.</li>
-        <li>Deine Kurswahl wird außerdem verwendet, um den <b>Stundenplan</b> und die <b>Hausaufgaben</b> automatisch mit deinen Fächern auszufüllen.</li>
+        <li>Unter <b>Kurswahl</b> kannst du deine Stufe sowie deine genauen Fächer eintragen. Dann werden dir im Vertretungsplan nur noch Stunden angezeigt, die dich wirklich betreffen (dafür musst du den Filter bei den Vertretungen auf "Nur deine Kurse/Fächer" ändern).</li>
+        <li>Deine Kurswahl macht es dir außerdem viel leichter, deinen eigenen <b>Stundenplan</b> und deine <b>Hausaufgaben</b> mit deinen Fächern auszufüllen.</li>
         <li>In den <b>Einstellungen</b> kannst du die Navigationsleiste komplett personalisieren und das Erscheinungsbild der Seite mit Themes anpassen.</li>
       </ul>
     </div>
