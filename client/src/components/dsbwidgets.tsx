@@ -2399,8 +2399,30 @@ function Homework(props: {
 
 //#region WelcomeBox
 function WelcomeBox(props: {
-  onDismiss: () => void
+  onDismiss: () => void,
+  grade: GradeInfo,
+  setGrade: Function
 }) {
+  const handleGradeChange = (e: any) => {
+    const val = (e.target as HTMLSelectElement).value;
+    // For grades 5-10, split into name + letter (e.g. "7a" -> gradeName "7", gradeLetter "a")
+    // For EF/Q1/Q2, just set gradeName
+    let gradeName = val;
+    let gradeLetter = "";
+    const match = val.match(/^(\d+)([a-e])$/);
+    if (match) {
+      gradeName = match[1];
+      gradeLetter = match[2];
+    }
+    const newGrade: GradeInfo = { gradeName, gradeLetter };
+    localStorage.setItem('grade', JSON.stringify(newGrade));
+    props.setGrade(newGrade);
+  };
+
+  const currentValue = props.grade.gradeLetter 
+    ? props.grade.gradeName + props.grade.gradeLetter 
+    : props.grade.gradeName;
+
   return (
     <div class="default-div" style={{ borderColor: 'var(--accent-color)', backgroundColor: 'var(--accent-light)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
@@ -2416,11 +2438,54 @@ function WelcomeBox(props: {
           </svg>
         </button>
       </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', flexWrap: 'wrap' }}>
+        <label style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-color)' }}>Deine Stufe/Klasse:</label>
+        <select 
+          value={currentValue} 
+          onChange={handleGradeChange}
+          style={{ flex: '0 0 auto', width: 'auto', minWidth: '80px' }}
+        >
+          <option value="" disabled>Wählen...</option>
+          <option value="5a">5a</option>
+          <option value="5b">5b</option>
+          <option value="5c">5c</option>
+          <option value="5d">5d</option>
+          <option value="5e">5e</option>
+          <option value="6a">6a</option>
+          <option value="6b">6b</option>
+          <option value="6c">6c</option>
+          <option value="6d">6d</option>
+          <option value="6e">6e</option>
+          <option value="7a">7a</option>
+          <option value="7b">7b</option>
+          <option value="7c">7c</option>
+          <option value="7d">7d</option>
+          <option value="7e">7e</option>
+          <option value="8a">8a</option>
+          <option value="8b">8b</option>
+          <option value="8c">8c</option>
+          <option value="8d">8d</option>
+          <option value="8e">8e</option>
+          <option value="9a">9a</option>
+          <option value="9b">9b</option>
+          <option value="9c">9c</option>
+          <option value="9d">9d</option>
+          <option value="9e">9e</option>
+          <option value="10a">10a</option>
+          <option value="10b">10b</option>
+          <option value="10c">10c</option>
+          <option value="10d">10d</option>
+          <option value="10e">10e</option>
+          <option value="EF">EF</option>
+          <option value="Q1">Q1</option>
+          <option value="Q2">Q2</option>
+        </select>
+      </div>
       <p style={{ color: 'var(--text-color)' }}>
         Hier ein paar Tipps für den Einstieg:
       </p>
       <ul style={{ color: 'var(--text-color)', fontSize: '0.95rem' }}>
-        <li>Unter <b>Kurswahl</b> kannst du deine Stufe sowie deine genauen Fächer eintragen. Dann werden dir im Vertretungsplan nur noch Stunden angezeigt, die dich wirklich betreffen (dafür musst du den Filter bei den Vertretungen auf "Nur deine Kurse/Fächer" ändern).</li>
+        <li>Unter <b>Kurswahl</b> kannst du deine genauen Fächer eintragen. Dann werden dir im Vertretungsplan nur noch Stunden angezeigt, die dich wirklich betreffen (dafür musst du den Filter bei den Vertretungen auf "Nur deine Kurse/Fächer" ändern).</li>
         <li>Deine Kurswahl macht es dir außerdem viel leichter, deinen eigenen <b>Stundenplan</b> und deine <b>Hausaufgaben</b> mit deinen Fächern auszufüllen.</li>
         <li>In den <b>Einstellungen</b> kannst du die Navigationsleiste komplett personalisieren und das Erscheinungsbild der Seite mit Themes anpassen.</li>
       </ul>
@@ -2487,7 +2552,7 @@ export default function DSBWidgets(props: {
         {loggedIn === false && <DSBLogin setLoggedIn={setLoggedIn} />}
         {loggedIn && (
           <div class="center-rows">
-            {showWelcome && <WelcomeBox onDismiss={dismissWelcome} />}
+            {showWelcome && <WelcomeBox onDismiss={dismissWelcome} grade={grade} setGrade={setGrade} />}
             <DSBTable grade={grade} courses={courses} settings={settings} />
             {(grade.gradeName === "EF" || grade.gradeName === "Q1" || grade.gradeName === "Q2") && (<ExamList settings={settings} subjectSelectRef={subjectSelectRef} courses={courses} grade={grade} />)}
             <CourseList grade={grade} setGrade={setGrade} courses={courses} setCourses={setCourses} subjectSelectRef={subjectSelectRef} settings={settings} />
