@@ -2239,6 +2239,20 @@ a.fakebutton:active {
 }
 /*#endregion*/
 
+.events-iframe-container {
+    position: relative;
+    width: 100%;
+    padding-bottom: 75%;
+    height: 0;
+    overflow: hidden;
+}
+
+@media (max-width: 768px) {
+    .events-iframe-container {
+        padding-bottom: 150%;
+    }
+}
+
 /* --- Full Themes (Overrides everything including dark mode) --- */
 html:root[data-color-theme="midnight"] {
     --background-color: #0f172a;

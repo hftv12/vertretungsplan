@@ -1878,6 +1878,12 @@ export function Settings(props: { // settings block
           updater={(v: boolean) => updateSetting("navEinstellungen", v)}
           checked={props.settings.navEinstellungen === true}
         />
+        <div style={{ marginTop: '16px' }}>
+          <input type="button" class="fakebutton" value="Willkommens-Box wieder anzeigen" onClick={() => {
+            localStorage.removeItem("dismissedWelcome");
+            window.location.reload();
+          }} />
+        </div>
 
         <h3 class="code">Verschiedenes</h3>
         <div id="reset-div">
@@ -2021,7 +2027,7 @@ function PersonalTimetable(props: {
     <div class="default-div" id="stundenplan">
       <div class="timetable-header-row">
         <h2>Stundenplan</h2>
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
           <div class="timetable-week-switch">
             <button class={currentWeek === "A" ? "active" : ""} onClick={() => setCurrentWeek("A")}>A-Woche</button>
             <button class={currentWeek === "B" ? "active" : ""} onClick={() => setCurrentWeek("B")}>B-Woche</button>
@@ -2094,7 +2100,7 @@ function Events(props: {
     <div class="default-div" id="termine">
       <h2>Termine</h2>
       <div style={{ marginTop: '12px', width: '100%', borderRadius: 'var(--rounding)', overflow: 'hidden', backgroundColor: 'var(--input-bg)' }}>
-        <div style={{ position: 'relative', width: '100%', paddingBottom: '75%', height: 0, overflow: 'hidden' }}>
+        <div class="events-iframe-container">
           <iframe 
             src="https://calendar.google.com/calendar/embed?src=mut3fti3ni5ts1af44jls8bi86efnil7%40import.calendar.google.com&ctz=Europe%2FBerlin&mode=AGENDA&showTitle=0&showPrint=0&showTabs=0&showCalendars=0&showTz=0" 
             style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: 'calc(100% + 60px)', border: 0 }} 
@@ -2334,11 +2340,45 @@ function Homework(props: {
 }
 //#endregion
 
+//#region WelcomeBox
+function WelcomeBox(props: {
+  onDismiss: () => void
+}) {
+  return (
+    <div class="default-div" style={{ borderColor: 'var(--accent-color)', backgroundColor: 'var(--accent-light)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+        <h2 style={{ color: 'var(--accent-color)', margin: 0 }}>Willkommen beim DSB-Vertretungsplan!</h2>
+        <button 
+          onClick={props.onDismiss}
+          style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '4px' }}
+          aria-label="Schließen"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+      <p style={{ color: 'var(--text-color)' }}>
+        Hier ein paar Tipps für den Einstieg:
+      </p>
+      <ul style={{ color: 'var(--text-color)', fontSize: '0.95rem' }}>
+        <li>Wähle unten in den <b>Einstellungen</b> deine Stufe/Klasse aus, um nur relevante Vertretungen zu sehen.</li>
+        <li>Unter <b>Kurswahl</b> kannst du deine genauen Fächer eintragen. Dann werden dir im Vertretungsplan nur noch Stunden angezeigt, die dich wirklich betreffen.</li>
+        <li>Deine Kurswahl wird außerdem verwendet, um den <b>Stundenplan</b> und die <b>Hausaufgaben</b> automatisch mit deinen Fächern auszufüllen.</li>
+        <li>Alle Daten werden lokal auf deinem Gerät gespeichert.</li>
+      </ul>
+    </div>
+  );
+}
+//#endregion
+
 //#region the big one
 export default function DSBWidgets(props: {
   version: string;
 }) { // main component that nests everything
   const [loggedIn, setLoggedIn] = useState(undefined); // hack to not show the login panel on page load
+  const [showWelcome, setShowWelcome] = useState(false);
   const [grade, setGrade] = useState({gradeName: "Q1", gradeLetter: ""} as GradeInfo); // it has to be this way cause fuck me I guess
   const [courses, setCourses] = useState(Array<CourseInfo>(0));
   const [settings, setSettings] = useState(
@@ -2361,7 +2401,16 @@ export default function DSBWidgets(props: {
     validateCredentials().then((valid) => {
       setLoggedIn(valid); // log in if the credentials are valid
     });
+    
+    if (localStorage.getItem("dismissedWelcome") !== "true") {
+      setShowWelcome(true);
+    }
   }, []);
+
+  const dismissWelcome = () => {
+    localStorage.setItem("dismissedWelcome", "true");
+    setShowWelcome(false);
+  };
 
   useEffect(() => {
     if (settings.theme) {
@@ -2382,6 +2431,7 @@ export default function DSBWidgets(props: {
         {loggedIn === false && <DSBLogin setLoggedIn={setLoggedIn} />}
         {loggedIn && (
           <div class="center-rows">
+            {showWelcome && <WelcomeBox onDismiss={dismissWelcome} />}
             <DSBTable grade={grade} courses={courses} settings={settings} />
             {(grade.gradeName === "EF" || grade.gradeName === "Q1" || grade.gradeName === "Q2") && (<ExamList settings={settings} subjectSelectRef={subjectSelectRef} courses={courses} grade={grade} />)}
             <CourseList grade={grade} setGrade={setGrade} courses={courses} setCourses={setCourses} subjectSelectRef={subjectSelectRef} settings={settings} />
