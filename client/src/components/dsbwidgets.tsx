@@ -1607,18 +1607,28 @@ const ThemeSelector = (props: { currentTheme: string, onSelect: (t: string) => v
     { id: 'cherry', color: '#e11d48' },
     { id: 'mint', color: '#22c55e' },
     { id: 'sunset', color: '#f97316' },
+    { id: 'indigo', color: '#4f46e5' },
+    { id: 'teal', color: '#0d9488' },
+    { id: 'fuchsia', color: '#c026d3' },
+    { id: 'ocean', color: '#0284c7' },
+    { id: 'crimson', color: '#dc2626' },
     { id: 'midnight', color: '#818cf8', bg: '#0f172a', hl: '#334155' },
     { id: 'forest', color: '#4ade80', bg: '#052e16', hl: '#166534' },
     { id: 'nord', color: '#88c0d0', bg: '#2e3440', hl: '#434c5e' },
     { id: 'latte', color: '#d97706', bg: '#fdf6e3', hl: '#fde047' },
     { id: 'blossom', color: '#db2777', bg: '#fdf2f8', hl: '#fbcfe8' },
-    { id: 'dracula', color: '#ff79c6', bg: '#282a36', hl: '#6272a4' }
+    { id: 'dracula', color: '#ff79c6', bg: '#282a36', hl: '#6272a4' },
+    { id: 'coffee', color: '#ffb300', bg: '#3e2723', hl: '#5d4037' },
+    { id: 'abyss', color: '#0ea5e9', bg: '#020617', hl: '#1e293b' },
+    { id: 'neon', color: '#f0abfc', bg: '#120024', hl: '#3c096c' },
+    { id: 'monokai', color: '#a6e22e', bg: '#272822', hl: '#49483e' },
+    { id: 'hacker', color: '#4ade80', bg: '#000000', hl: '#1a1a1a' }
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
-      <label style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Farb-Theme:</label>
-      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px', padding: '16px', backgroundColor: 'var(--input-bg)', border: '1px solid var(--brighter-color)', borderRadius: 'var(--rounding-sm)' }}>
+      <label style={{ fontSize: '0.9rem', color: 'var(--text-color)', fontWeight: 600 }}>Farb-Themes:</label>
+      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginTop: '4px' }}>
         {themes.map(t => {
           const isActive = (props.currentTheme || 'default') === t.id;
           const bgCol = t.bg || 'var(--standard-bg)';
@@ -2347,7 +2357,7 @@ function WelcomeBox(props: {
   return (
     <div class="default-div" style={{ borderColor: 'var(--accent-color)', backgroundColor: 'var(--accent-light)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-        <h2 style={{ color: 'var(--accent-color)', margin: 0 }}>Willkommen beim DSB-Vertretungsplan!</h2>
+        <h2 style={{ color: 'var(--accent-color)', margin: 0 }}>Willkommen zu DSB Mobile 2.0!</h2>
         <button 
           onClick={props.onDismiss}
           style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '4px' }}
@@ -2363,10 +2373,9 @@ function WelcomeBox(props: {
         Hier ein paar Tipps für den Einstieg:
       </p>
       <ul style={{ color: 'var(--text-color)', fontSize: '0.95rem' }}>
-        <li>Wähle unten in den <b>Einstellungen</b> deine Stufe/Klasse aus, um nur relevante Vertretungen zu sehen.</li>
-        <li>Unter <b>Kurswahl</b> kannst du deine genauen Fächer eintragen. Dann werden dir im Vertretungsplan nur noch Stunden angezeigt, die dich wirklich betreffen.</li>
+        <li>Unter <b>Kurswahl</b> kannst du deine Stufe sowie deine genauen Fächer eintragen. Dann werden dir im Vertretungsplan nur noch Stunden angezeigt, die dich wirklich betreffen.</li>
         <li>Deine Kurswahl wird außerdem verwendet, um den <b>Stundenplan</b> und die <b>Hausaufgaben</b> automatisch mit deinen Fächern auszufüllen.</li>
-        <li>Alle Daten werden lokal auf deinem Gerät gespeichert.</li>
+        <li>In den <b>Einstellungen</b> kannst du die Navigationsleiste komplett personalisieren und das Erscheinungsbild der Seite mit Themes anpassen.</li>
       </ul>
     </div>
   );
@@ -2444,12 +2453,12 @@ export default function DSBWidgets(props: {
                 <h2>Informationen</h2>
     
 
-
                 {/* <p>Der "zum Kalender hinzufügen"-Knopf macht nichts. Er ist nur sehr ästhetisch.</p>
                 <p>Aktuell ist das Vertretungsplan-anzeige-ding sehr bloated und unschön. Ich schaue mal, ob ich evtl. <span class="red">farbige Markierungen</span> hinzufüge oder es komplett redesigne.</p>
                 <p>Wahrscheinlich wird das aber das letzte sein, um was ich diese Webseite erweitere. <sup><i>(außer wenn jemand Lust hat, CSS-Themes dieser Seite beizutragen)</i></sup></p> */}
     
                 <p>Diese Webseite basiert auf dem DSB-Scraper von Kirill (kirillathome)</p>
+                <p><b>Hinweis:</b> Alle deine eingetragenen Daten (wie Kurse, Stundenplan und Einstellungen) werden ausschließlich lokal auf deinem Gerät gespeichert.</p>
 
                 <Placeholder height='20px' />
     
