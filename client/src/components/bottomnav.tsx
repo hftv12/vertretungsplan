@@ -1,5 +1,5 @@
 import { useState, useEffect } from "preact/hooks";
-import { CalendarIcon, DocumentTextIcon, CheckBadgeIcon, ClockIcon, PencilIcon, CogIcon, InfoIcon } from "./icons";
+import { CalendarIcon, DocumentTextIcon, CheckBadgeIcon, ClockIcon, PencilIcon, CogIcon, InfoIcon, EventsIcon } from "./icons";
 
 export default function BottomNav() {
 	const [settings, setSettings] = useState<any>({
@@ -36,6 +36,7 @@ export default function BottomNav() {
 		{ id: 'klausuren', label: 'Klausuren', icon: DocumentTextIcon, show: settings.exams !== "none" && settings.navKlausuren !== false },
 		{ id: 'course-selection', label: 'Kurswahl', icon: CheckBadgeIcon, show: settings.showCourses !== false && settings.navKurswahl !== false },
 		{ id: 'stundenplan', label: 'Stundenplan', icon: ClockIcon, show: settings.navStundenplan !== false },
+		{ id: 'termine', label: 'Termine', icon: EventsIcon, show: settings.showTermine !== false && settings.navTermine !== false },
 		{ id: 'hausaufgaben', label: 'Aufgaben', icon: PencilIcon, show: settings.showHomework !== false && settings.navHausaufgaben !== false },
 		{ id: 'einstellungen', label: 'Optionen', icon: CogIcon, show: true },
 		{ id: 'informationen', label: 'Info', icon: InfoIcon, show: settings.showCredits !== false && settings.navInfo !== false },

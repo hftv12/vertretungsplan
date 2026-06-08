@@ -1774,6 +1774,11 @@ export function Settings(props: { // settings block
           checked={props.settings.showHomework !== false}
         />
         <CheckButton
+          text="Termine anzeigen:"
+          updater={(v: boolean) => updateSetting("showTermine", v)}
+          checked={props.settings.showTermine !== false}
+        />
+        <CheckButton
           text="Informationskasten anzeigen:"
           updater={(v: boolean) => updateSetting("showCredits", v)}
           checked={props.settings.showCredits !== undefined ? props.settings.showCredits : true}
@@ -1847,6 +1852,11 @@ export function Settings(props: { // settings block
           text="Hausaufgaben-Button:"
           updater={(v: boolean) => updateSetting("navHausaufgaben", v)}
           checked={props.settings.navHausaufgaben !== false}
+        />
+        <CheckButton
+          text="Termine-Button:"
+          updater={(v: boolean) => updateSetting("navTermine", v)}
+          checked={props.settings.navTermine !== false}
         />
         <CheckButton
           text="Kurswahl-Button:"
@@ -2052,6 +2062,30 @@ function PersonalTimetable(props: {
             })}
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+//#endregion
+
+//#region Termine
+function Events(props: {
+  settings: DSBSettings,
+}) {
+  if (props.settings.showTermine === false) return null;
+
+  return (
+    <div class="default-div" id="termine">
+      <h2>Termine</h2>
+      <div style={{ marginTop: '12px', width: '100%', borderRadius: 'var(--rounding)', overflow: 'hidden', backgroundColor: 'var(--input-bg)' }}>
+        <div style={{ position: 'relative', width: '100%', paddingBottom: '75%', height: 0 }}>
+          <iframe 
+            src="https://calendar.google.com/calendar/embed?src=mut3fti3ni5ts1af44jls8bi86efnil7%40import.calendar.google.com&ctz=Europe%2FBerlin" 
+            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }} 
+            frameborder="0" 
+            scrolling="no">
+          </iframe>
+        </div>
       </div>
     </div>
   );
@@ -2336,6 +2370,7 @@ export default function DSBWidgets(props: {
             {(grade.gradeName === "EF" || grade.gradeName === "Q1" || grade.gradeName === "Q2") && (<ExamList settings={settings} subjectSelectRef={subjectSelectRef} courses={courses} grade={grade} />)}
             <CourseList grade={grade} setGrade={setGrade} courses={courses} setCourses={setCourses} subjectSelectRef={subjectSelectRef} settings={settings} />
             <PersonalTimetable settings={settings} courses={courses} />
+            <Events settings={settings} />
             <Homework settings={settings} courses={courses} />
             <Settings settings={settings} setSettings={setSettings} grade={grade} courses={courses} setCourses={setCourses} />
             {settings.showCredits && (
