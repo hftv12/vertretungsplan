@@ -55,8 +55,8 @@ export default function Header(props: {
 		{ id: 'stundenplan', label: 'Stundenplan', show: settings.navStundenplan !== false },
 		{ id: 'termine', label: 'Termine', show: settings.showTermine !== false && settings.navTermine !== false },
 		{ id: 'hausaufgaben', label: 'Hausaufgaben', show: settings.showHomework !== false && settings.navHausaufgaben !== false },
-		{ id: 'einstellungen', label: 'Einstellungen', show: true },
-		{ id: 'informationen', label: 'Informationen', show: settings.showCredits !== false && settings.navInfo !== false },
+		{ id: 'einstellungen', label: 'Einstellungen', show: settings.navEinstellungen === true },
+		{ id: 'informationen', label: 'Informationen', show: settings.showCredits !== false && settings.navInfo === true },
 	].filter(item => item.show);
 
 	return (

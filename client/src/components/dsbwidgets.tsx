@@ -1871,7 +1871,12 @@ export function Settings(props: { // settings block
         <CheckButton
           text="Info-Button:"
           updater={(v: boolean) => updateSetting("navInfo", v)}
-          checked={props.settings.navInfo !== false}
+          checked={props.settings.navInfo === true}
+        />
+        <CheckButton
+          text="Einstellungen-Button:"
+          updater={(v: boolean) => updateSetting("navEinstellungen", v)}
+          checked={props.settings.navEinstellungen === true}
         />
 
         <h3 class="code">Verschiedenes</h3>
@@ -1975,6 +1980,14 @@ function PersonalTimetable(props: {
     localStorage.setItem("PersonalTimetableData", JSON.stringify(newData));
   };
 
+  const copyWeek = () => {
+    if (!confirm(`Sicher, dass du die ${currentWeek}-Woche in die ${currentWeek === "A" ? "B" : "A"}-Woche kopieren möchtest?`)) return;
+    const newData = { ...timetableData };
+    const targetWeek = currentWeek === "A" ? "B" : "A";
+    newData[targetWeek] = JSON.parse(JSON.stringify(newData[currentWeek] || {}));
+    saveTimetableData(newData);
+  };
+
   const handleCourseChange = (day: string, hourNum: number, value: string) => {
     const newData = { ...timetableData };
     if (!newData[currentWeek]) newData[currentWeek] = {};
@@ -2013,6 +2026,9 @@ function PersonalTimetable(props: {
             <button class={currentWeek === "A" ? "active" : ""} onClick={() => setCurrentWeek("A")}>A-Woche</button>
             <button class={currentWeek === "B" ? "active" : ""} onClick={() => setCurrentWeek("B")}>B-Woche</button>
           </div>
+          {isEditMode && (
+            <input type="button" class="fakebutton" value={`${currentWeek}-Woche kopieren`} onClick={copyWeek} />
+          )}
           <input type="button" class="fakebutton" value={isEditMode ? "Speichern" : "Bearbeiten"} onClick={() => setIsEditMode(!isEditMode)} />
         </div>
       </div>
@@ -2078,10 +2094,10 @@ function Events(props: {
     <div class="default-div" id="termine">
       <h2>Termine</h2>
       <div style={{ marginTop: '12px', width: '100%', borderRadius: 'var(--rounding)', overflow: 'hidden', backgroundColor: 'var(--input-bg)' }}>
-        <div style={{ position: 'relative', width: '100%', paddingBottom: '75%', height: 0 }}>
+        <div style={{ position: 'relative', width: '100%', paddingBottom: '75%', height: 0, overflow: 'hidden' }}>
           <iframe 
-            src="https://calendar.google.com/calendar/embed?src=mut3fti3ni5ts1af44jls8bi86efnil7%40import.calendar.google.com&ctz=Europe%2FBerlin" 
-            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 0 }} 
+            src="https://calendar.google.com/calendar/embed?src=mut3fti3ni5ts1af44jls8bi86efnil7%40import.calendar.google.com&ctz=Europe%2FBerlin&mode=AGENDA&showTitle=0&showPrint=0&showTabs=0&showCalendars=0&showTz=0" 
+            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: 'calc(100% + 60px)', border: 0 }} 
             frameborder="0" 
             scrolling="no">
           </iframe>

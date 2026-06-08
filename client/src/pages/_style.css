@@ -2042,15 +2042,12 @@ a.fakebutton:active {
     background-color: var(--accent-light);
     border-radius: var(--rounding-sm);
     padding: 10px 12px;
-    margin: 0 -12px;
-    border-left: 4px solid var(--accent-color);
     z-index: 1;
     position: relative;
 }
 .timetable-spacer.active-hour-highlight {
     background-color: var(--accent-light);
     border-radius: var(--rounding-sm);
-    border-left: 4px solid var(--accent-color);
     z-index: 1;
     position: relative;
 }

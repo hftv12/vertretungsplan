@@ -38,8 +38,8 @@ export default function BottomNav() {
 		{ id: 'stundenplan', label: 'Stundenplan', icon: ClockIcon, show: settings.navStundenplan !== false },
 		{ id: 'termine', label: 'Termine', icon: EventsIcon, show: settings.showTermine !== false && settings.navTermine !== false },
 		{ id: 'hausaufgaben', label: 'Aufgaben', icon: PencilIcon, show: settings.showHomework !== false && settings.navHausaufgaben !== false },
-		{ id: 'einstellungen', label: 'Optionen', icon: CogIcon, show: true },
-		{ id: 'informationen', label: 'Info', icon: InfoIcon, show: settings.showCredits !== false && settings.navInfo !== false },
+		{ id: 'einstellungen', label: 'Optionen', icon: CogIcon, show: settings.navEinstellungen === true },
+		{ id: 'informationen', label: 'Info', icon: InfoIcon, show: settings.showCredits !== false && settings.navInfo === true },
 	].filter(item => item.show);
 
 	useEffect(() => {
