@@ -2212,8 +2212,7 @@ function Homework(props: {
     return ""; 
   };
 
-  const handleCourseSelect = (e: any) => {
-    const val = e.target.value;
+  const selectCourse = (val: string) => {
     setSelectedCourse(val);
     const nextDate = calculateNextOccurrence(val);
     if (nextDate) {
@@ -2221,6 +2220,10 @@ function Homework(props: {
     } else {
       setDate(getDefaultDate());
     }
+  };
+
+  const handleCourseSelect = (e: any) => {
+    selectCourse(e.target.value);
   };
 
   const handleAdd = (e: any) => {
@@ -2269,13 +2272,57 @@ function Homework(props: {
     return props.courses.find(c => (c.subject + (c.course ? "-" + c.course : "")) === courseStr);
   };
 
+  const getTodaysCourses = () => {
+    const days = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
+    const today = new Date();
+    const dayName = days[today.getDay()];
+    
+    const dayData = timetableData[currentWeek]?.[dayName];
+    if (!dayData) return [];
+    
+    const courseIds = Object.values(dayData).filter(Boolean) as string[];
+    const uniqueCourseIds = [...new Set(courseIds)];
+    
+    return uniqueCourseIds.map(id => {
+      const course = props.courses.find(c => (c.subject + (c.course ? "-" + c.course : "")) === id);
+      return course ? { id, subject: course.subject } : null;
+    }).filter(Boolean);
+  };
+
   if (props.settings.showHomework === false) return null;
+
+  const todaysCourses = getTodaysCourses();
 
   return (
     <div class="default-div" id="hausaufgaben">
       <h2>Hausaufgaben</h2>
       <form onSubmit={handleAdd} style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '12px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {todaysCourses.length > 0 && (
+            <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+              {todaysCourses.map(c => (
+                <button 
+                  type="button" 
+                  key={c.id}
+                  onClick={() => selectCourse(c.id)}
+                  style={{ 
+                    padding: '4px 12px', 
+                    borderRadius: '16px', 
+                    backgroundColor: selectedCourse === c.id ? 'var(--accent-color)' : 'var(--input-bg)', 
+                    color: selectedCourse === c.id ? '#fff' : 'var(--text-color)', 
+                    border: `1px solid ${selectedCourse === c.id ? 'var(--accent-color)' : 'var(--brighter-color)'}`,
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    transition: 'var(--transition-fast)'
+                  }}
+                >
+                  {c.subject}
+                </button>
+              ))}
+            </div>
+          )}
           <select value={selectedCourse} onChange={handleCourseSelect} required>
             <option value="" disabled>Kurs wählen...</option>
             {props.courses.map(c => {

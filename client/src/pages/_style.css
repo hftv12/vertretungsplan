@@ -752,6 +752,7 @@ li {
 /*#region Forms & Inputs*/
 input[type='text'],
 input[type='password'],
+input[type='date'],
 select {
     width: 100%;
     padding: 10px 14px;
@@ -768,6 +769,7 @@ select {
 
 input[type='text']:focus,
 input[type='password']:focus,
+input[type='date']:focus,
 select:focus {
     border-color: var(--accent-color);
     background-color: var(--foreground-color);
