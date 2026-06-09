@@ -2219,54 +2219,161 @@ const parseICal = (icsData: string): AppEvent[] => {
 function Events(props: {
   settings: DSBSettings,
 }) {
-  const [events, setEvents] = useState<AppEvent[]>([]);
+  const [allEvents, setAllEvents] = useState<AppEvent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAll, setShowAll] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState<string>(""); // "YYYY-MM"
+  const [availableMonths, setAvailableMonths] = useState<string[]>([]);
   
+  const getMonthName = (month: number) => ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"][month];
+  const getFullMonthName = (month: number) => ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"][month];
+
   useEffect(() => {
-    const fetchEvents = async () => {
+    const fetchAllEvents = async () => {
       try {
-        const targetUrl = "https://www.stiftisches.de/termine/monat/?ical=1";
-        const proxyUrl = "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(targetUrl);
-        const res = await fetch(proxyUrl);
-        if (!res.ok) throw new Error("Network response was not ok");
-        const text = await res.text();
-        const parsed = parseICal(text);
-        
         const now = new Date();
-        now.setHours(0,0,0,0);
+        const currentYear = now.getFullYear();
+        const currentMonth = now.getMonth(); // 0-indexed
         
-        const upcoming = parsed.filter(e => {
+        // Build list of months to fetch: current month through end of year (or at least September)
+        const monthsToFetch: {year: number, month: number}[] = [];
+        const endMonth = Math.max(8, currentMonth); // at least until September (index 8)
+        for (let m = currentMonth; m <= endMonth; m++) {
+          monthsToFetch.push({ year: currentYear, month: m });
+        }
+        
+        // Fetch all months in parallel
+        const allParsed: AppEvent[] = [];
+        const seenIds = new Set<string>();
+        
+        await Promise.all(monthsToFetch.map(async ({ year, month }) => {
+          try {
+            const monthStr = String(month + 1).padStart(2, '0');
+            const targetUrl = `https://www.stiftisches.de/termine/monat/${year}-${monthStr}/?ical=1`;
+            const proxyUrl = "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(targetUrl);
+            const res = await fetch(proxyUrl);
+            if (!res.ok) return;
+            const text = await res.text();
+            const parsed = parseICal(text);
+            for (const evt of parsed) {
+              // Deduplicate by title + date combo (since cross-month events appear in multiple fetches)
+              const evtKey = `${evt.title}_${evt.date.getTime()}_${evt.endDate?.getTime() || ''}`;
+              if (!seenIds.has(evtKey)) {
+                seenIds.add(evtKey);
+                allParsed.push(evt);
+              }
+            }
+          } catch (err) {
+            console.error(`Failed to fetch month ${month + 1}`, err);
+          }
+        }));
+        
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        
+        const upcoming = allParsed.filter(e => {
           const checkDate = e.endDate ? e.endDate : e.date;
-          return checkDate.getTime() >= now.getTime();
+          return checkDate.getTime() >= today.getTime();
         }).sort((a,b) => a.date.getTime() - b.date.getTime());
-                               
-        setEvents(upcoming);
+        
+        setAllEvents(upcoming);
+        
+        // Determine which months have events (including cross-month events)
+        const monthSet = new Set<string>();
+        for (const evt of upcoming) {
+          // Add start month
+          const startKey = `${evt.date.getFullYear()}-${String(evt.date.getMonth() + 1).padStart(2, '0')}`;
+          monthSet.add(startKey);
+          
+          // For multi-day events, add all months they span
+          if (evt.endDate) {
+            let inclusiveEnd = new Date(evt.endDate.getTime());
+            if (evt.allDay && inclusiveEnd.getTime() > evt.date.getTime()) {
+              inclusiveEnd.setDate(inclusiveEnd.getDate() - 1);
+            }
+            const cursor = new Date(evt.date.getFullYear(), evt.date.getMonth(), 1);
+            const endCursor = new Date(inclusiveEnd.getFullYear(), inclusiveEnd.getMonth(), 1);
+            while (cursor <= endCursor) {
+              const key = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`;
+              monthSet.add(key);
+              cursor.setMonth(cursor.getMonth() + 1);
+            }
+          }
+        }
+        
+        const sortedMonths = Array.from(monthSet).sort();
+        setAvailableMonths(sortedMonths);
+        
+        // Pre-select current month (or first available if current has no events)
+        const currentKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        if (sortedMonths.includes(currentKey)) {
+          setSelectedMonth(currentKey);
+        } else if (sortedMonths.length > 0) {
+          setSelectedMonth(sortedMonths[0]);
+        }
+        
       } catch (err) {
         console.error("Failed to fetch events", err);
       } finally {
         setLoading(false);
       }
     };
-    fetchEvents();
+    fetchAllEvents();
   }, []);
 
   if (props.settings.showTermine === false) return null;
 
-  const visibleEvents = showAll ? events : events.slice(0, 5);
-  const getMonthName = (month: number) => ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"][month];
+  // Filter events for the selected month (including multi-day events that span into this month)
+  const filteredEvents = selectedMonth ? allEvents.filter(evt => {
+    const [yearStr, monthStr] = selectedMonth.split('-');
+    const selYear = parseInt(yearStr);
+    const selMonth = parseInt(monthStr) - 1; // 0-indexed
+    
+    const monthStart = new Date(selYear, selMonth, 1);
+    const monthEnd = new Date(selYear, selMonth + 1, 0, 23, 59, 59, 999); // last moment of month
+    
+    let inclusiveEnd = evt.endDate ? new Date(evt.endDate.getTime()) : null;
+    if (inclusiveEnd && evt.allDay && inclusiveEnd.getTime() > evt.date.getTime()) {
+      inclusiveEnd.setDate(inclusiveEnd.getDate() - 1);
+    }
+    const eventEnd = inclusiveEnd || evt.date;
+    
+    // Event overlaps with selected month if it starts before month ends AND ends after month starts
+    return evt.date.getTime() <= monthEnd.getTime() && eventEnd.getTime() >= monthStart.getTime();
+  }) : allEvents;
+
+  const handleMonthChange = useCallback((e: any) => {
+    setSelectedMonth((e.target as HTMLSelectElement).value);
+  }, []);
 
   return (
     <div class="default-div" id="termine">
-      <h2>Termine</h2>
+      <div class="events-header">
+        <h2>Termine</h2>
+        {!loading && availableMonths.length > 0 && (
+          <select 
+            class="events-month-select"
+            value={selectedMonth} 
+            onChange={handleMonthChange}
+          >
+            {availableMonths.map(monthKey => {
+              const [y, m] = monthKey.split('-');
+              return (
+                <option key={monthKey} value={monthKey}>
+                  {getFullMonthName(parseInt(m) - 1)} {y}
+                </option>
+              );
+            })}
+          </select>
+        )}
+      </div>
       <p>Heute ist <b>{week[new Date().getDay()]}</b>, der <b>{new Date().getDate() < 10 ? 0 : null}{new Date().getDate()}.{new Date().getMonth() + 1 < 10 ? 0 : null}{new Date().getMonth() + 1}.{new Date().getFullYear()}</b>.</p>
       {loading ? (
         <p style={{ marginTop: '12px' }}><i>Lade Termine...</i></p>
-      ) : events.length === 0 ? (
-        <p style={{ marginTop: '12px' }}><i>Keine anstehenden Termine.</i></p>
+      ) : filteredEvents.length === 0 ? (
+        <p style={{ marginTop: '12px' }}><i>Keine Termine in diesem Monat.</i></p>
       ) : (
         <div class="events-list">
-          {visibleEvents.map((evt, idx) => {
+          {filteredEvents.map((evt, idx) => {
             let inclusiveEnd = evt.endDate ? new Date(evt.endDate.getTime()) : null;
             if (inclusiveEnd && evt.allDay && inclusiveEnd.getTime() > evt.date.getTime()) {
               inclusiveEnd.setDate(inclusiveEnd.getDate() - 1);
@@ -2274,7 +2381,7 @@ function Events(props: {
             const isMultiDay = inclusiveEnd && inclusiveEnd.getTime() !== evt.date.getTime() && inclusiveEnd.getTime() > evt.date.getTime();
 
             return (
-              <div key={evt.id} class="event-card" style={{ animation: `tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) ${0.1 + idx * 0.05}s both` }}>
+              <div key={evt.id + "-" + selectedMonth} class="event-card" style={{ animation: `tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) ${0.1 + idx * 0.05}s both` }}>
                 <div class="event-date">
                   <span class="day">{evt.date.getDate()}</span>
                   <span class="month">{getMonthName(evt.date.getMonth())}</span>
@@ -2295,15 +2402,6 @@ function Events(props: {
               </div>
             );
           })}
-          
-          {events.length > 5 && (
-            <button 
-              class="events-more-btn" 
-              onClick={() => setShowAll(!showAll)}
-            >
-              {showAll ? "Weniger anzeigen" : `Alle ${events.length} Termine anzeigen`}
-            </button>
-          )}
         </div>
       )}
     </div>

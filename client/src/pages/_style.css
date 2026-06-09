@@ -2325,6 +2325,37 @@ a.fakebutton:active {
     color: var(--text-color);
     border-color: var(--accent-color);
 }
+.events-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+}
+.events-header h2 {
+    margin: 0;
+}
+.events-month-select {
+    padding: 8px 14px;
+    border-radius: var(--rounding-sm);
+    background-color: var(--input-bg);
+    border: 1px solid var(--brighter-color);
+    color: var(--text-color);
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    appearance: auto;
+}
+.events-month-select:hover {
+    border-color: var(--accent-color);
+}
+.events-month-select:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+}
 /*#endregion*/
 
 /* --- Full Themes (Overrides everything including dark mode) --- */
