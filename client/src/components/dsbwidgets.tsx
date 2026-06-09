@@ -2150,24 +2150,138 @@ function PersonalTimetable(props: {
 //#endregion
 
 //#region Termine
+export interface AppEvent {
+  id: string;
+  title: string;
+  date: Date;
+  location: string;
+  allDay: boolean;
+}
+
+const parseICal = (icsData: string): AppEvent[] => {
+  const events: AppEvent[] = [];
+  const lines = icsData.split(/\r?\n/);
+  
+  let currentEvent: Partial<AppEvent> | null = null;
+  
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i];
+    while (i + 1 < lines.length && (lines[i+1].startsWith(' ') || lines[i+1].startsWith('\t'))) {
+      line += lines[++i].substring(1);
+    }
+    
+    if (line.startsWith('BEGIN:VEVENT')) {
+      currentEvent = { id: Math.random().toString(36).substr(2, 9), allDay: true, location: '' };
+    } else if (line.startsWith('END:VEVENT')) {
+      if (currentEvent && currentEvent.title && currentEvent.date) {
+        events.push(currentEvent as AppEvent);
+      }
+      currentEvent = null;
+    } else if (currentEvent) {
+      if (line.startsWith('SUMMARY:')) {
+        currentEvent.title = line.substring(8).replace(/\\,/g, ',').replace(/\\;/g, ';');
+      } else if (line.startsWith('LOCATION:')) {
+        currentEvent.location = line.substring(9).replace(/\\,/g, ',').replace(/\\;/g, ';');
+      } else if (line.startsWith('DTSTART')) {
+        const parts = line.split(':');
+        if (parts.length > 1) {
+          const dateStr = parts[1];
+          if (dateStr.length === 8) {
+            currentEvent.date = new Date(parseInt(dateStr.substring(0,4)), parseInt(dateStr.substring(4,6))-1, parseInt(dateStr.substring(6,8)));
+            currentEvent.allDay = true;
+          } else if (dateStr.length >= 15) {
+            const y = parseInt(dateStr.substring(0,4));
+            const m = parseInt(dateStr.substring(4,6))-1;
+            const d = parseInt(dateStr.substring(6,8));
+            const h = parseInt(dateStr.substring(9,11));
+            const min = parseInt(dateStr.substring(11,13));
+            currentEvent.date = new Date(Date.UTC(y, m, d, h, min));
+            currentEvent.allDay = false;
+          }
+        }
+      }
+    }
+  }
+  return events;
+};
+
 function Events(props: {
   settings: DSBSettings,
 }) {
+  const [events, setEvents] = useState<AppEvent[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showAll, setShowAll] = useState(false);
+  
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const targetUrl = "https://www.stiftisches.de/termine/monat/?ical=1";
+        const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(targetUrl);
+        const res = await fetch(proxyUrl);
+        if (!res.ok) throw new Error("Network response was not ok");
+        const text = await res.text();
+        const parsed = parseICal(text);
+        
+        const now = new Date();
+        now.setHours(0,0,0,0);
+        
+        const upcoming = parsed.filter(e => e.date.getTime() >= now.getTime())
+                               .sort((a,b) => a.date.getTime() - b.date.getTime());
+                               
+        setEvents(upcoming);
+      } catch (err) {
+        console.error("Failed to fetch events", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchEvents();
+  }, []);
+
   if (props.settings.showTermine === false) return null;
+
+  const visibleEvents = showAll ? events : events.slice(0, 5);
+  const getMonthName = (month: number) => ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"][month];
 
   return (
     <div class="default-div" id="termine">
       <h2>Termine</h2>
-      <div style={{ marginTop: '12px', width: '100%', borderRadius: 'var(--rounding)', overflow: 'hidden', backgroundColor: 'var(--input-bg)' }}>
-        <div class="events-iframe-container">
-          <iframe 
-            src="https://calendar.google.com/calendar/embed?src=mut3fti3ni5ts1af44jls8bi86efnil7%40import.calendar.google.com&ctz=Europe%2FBerlin&mode=AGENDA&showTitle=0&showPrint=0&showTabs=0&showCalendars=0&showTz=0" 
-            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: 'calc(100% + 60px)', border: 0 }} 
-            frameborder="0" 
-            scrolling="no">
-          </iframe>
+      {loading ? (
+        <p style={{ marginTop: '12px' }}><i>Lade Termine...</i></p>
+      ) : events.length === 0 ? (
+        <p style={{ marginTop: '12px' }}><i>Keine anstehenden Termine.</i></p>
+      ) : (
+        <div class="events-list">
+          {visibleEvents.map((evt, idx) => (
+            <div key={evt.id} class="event-card" style={{ animation: `tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) ${0.1 + idx * 0.05}s both` }}>
+              <div class="event-date">
+                <span class="day">{evt.date.getDate()}</span>
+                <span class="month">{getMonthName(evt.date.getMonth())}</span>
+              </div>
+              <div class="event-details">
+                <p class="event-title">{evt.title}</p>
+                <div class="event-time-loc">
+                  {!evt.allDay && (
+                    <span>{String(evt.date.getHours()).padStart(2, '0')}:{String(evt.date.getMinutes()).padStart(2, '0')} Uhr</span>
+                  )}
+                  {evt.location && (
+                    <span>• {evt.location}</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+          
+          {events.length > 5 && (
+            <button 
+              class="events-more-btn" 
+              onClick={() => setShowAll(!showAll)}
+            >
+              {showAll ? "Weniger anzeigen" : `Alle ${events.length} Termine anzeigen`}
+            </button>
+          )}
         </div>
-      </div>
+      )}
     </div>
   );
 }
