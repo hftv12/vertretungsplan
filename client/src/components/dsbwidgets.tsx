@@ -554,14 +554,25 @@ function DSBTable(props: { // the main feature of this website
 
   const getFilteredSubstitutions = useCallback((): Array<Substitution> => {
     if (easterEggActive) {
-      return [{
-        classes: props.grade.gradeName || "Alle",
-        hours: "1-10",
-        subject: "Alle",
-        usual_subject: "Alle",
-        room: "---",
-        replacement: "---",
-      }];
+      if (props.courses && props.courses.length > 0) {
+        return props.courses.map((c) => ({
+          classes: props.grade.gradeName + (props.grade.gradeLetter || ""),
+          hours: "1-10",
+          subject: c.subject,
+          usual_subject: c.subject_name || c.subject,
+          room: "---",
+          replacement: "---",
+        }));
+      } else {
+        return [{
+          classes: props.grade.gradeName + (props.grade.gradeLetter || ""),
+          hours: "1-10",
+          subject: "Alle",
+          usual_subject: "Alle",
+          room: "---",
+          replacement: "---",
+        }];
+      }
     }
     if (currentDay === null) {
       return [];
@@ -605,7 +616,7 @@ function DSBTable(props: { // the main feature of this website
           return false;
       }
     });
-  }, [currentDay, filterStage, props.grade, props.courses]);
+  }, [currentDay, filterStage, props.grade, props.courses, easterEggActive]);
 
   const getDataAndUpdate = useCallback(async () => {
     const status = await getData();
