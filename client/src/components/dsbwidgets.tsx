@@ -2259,7 +2259,7 @@ function Events(props: {
   return (
     <div class="default-div" id="termine">
       <h2>Termine</h2>
-      <p id="dsb-subtitle">Heute ist {["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"][new Date().getDay()]}, {new Date().getDate()}. {["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"][new Date().getMonth()]} {new Date().getFullYear()}</p>
+      <p>Heute ist <b>{week[new Date().getDay()]}</b>, der <b>{new Date().getDate() < 10 ? 0 : null}{new Date().getDate()}.{new Date().getMonth() + 1 < 10 ? 0 : null}{new Date().getMonth() + 1}.{new Date().getFullYear()}</b>.</p>
       {loading ? (
         <p style={{ marginTop: '12px' }}><i>Lade Termine...</i></p>
       ) : events.length === 0 ? (
