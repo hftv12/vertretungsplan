@@ -2336,6 +2336,23 @@ a.fakebutton:active {
 .events-header h2 {
     margin: 0;
 }
+.events-today-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: var(--rounding-sm);
+    background-color: var(--input-bg);
+    border: 1px solid var(--brighter-color);
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-top: 8px;
+}
+.events-today-badge svg {
+    flex-shrink: 0;
+    color: var(--accent-color);
+}
 .events-month-select {
     padding: 8px 14px;
     border-radius: var(--rounding-sm);
