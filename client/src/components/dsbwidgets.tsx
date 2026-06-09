@@ -2259,31 +2259,42 @@ function Events(props: {
   return (
     <div class="default-div" id="termine">
       <h2>Termine</h2>
+      <p id="dsb-subtitle">Heute ist {["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"][new Date().getDay()]}, {new Date().getDate()}. {["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"][new Date().getMonth()]} {new Date().getFullYear()}</p>
       {loading ? (
         <p style={{ marginTop: '12px' }}><i>Lade Termine...</i></p>
       ) : events.length === 0 ? (
         <p style={{ marginTop: '12px' }}><i>Keine anstehenden Termine.</i></p>
       ) : (
         <div class="events-list">
-          {visibleEvents.map((evt, idx) => (
-            <div key={evt.id} class="event-card" style={{ animation: `tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) ${0.1 + idx * 0.05}s both` }}>
-              <div class="event-date">
-                <span class="day">{evt.date.getDate()}</span>
-                <span class="month">{getMonthName(evt.date.getMonth())}</span>
-              </div>
-              <div class="event-details">
-                <p class="event-title">{evt.title}</p>
-                <div class="event-time-loc">
-                  {!evt.allDay && (
-                    <span>{String(evt.date.getHours()).padStart(2, '0')}:{String(evt.date.getMinutes()).padStart(2, '0')} Uhr</span>
-                  )}
-                  {evt.location && (
-                    <span>• {evt.location}</span>
-                  )}
+          {visibleEvents.map((evt, idx) => {
+            let inclusiveEnd = evt.endDate ? new Date(evt.endDate.getTime()) : null;
+            if (inclusiveEnd && evt.allDay && inclusiveEnd.getTime() > evt.date.getTime()) {
+              inclusiveEnd.setDate(inclusiveEnd.getDate() - 1);
+            }
+            const isMultiDay = inclusiveEnd && inclusiveEnd.getTime() !== evt.date.getTime() && inclusiveEnd.getTime() > evt.date.getTime();
+
+            return (
+              <div key={evt.id} class="event-card" style={{ animation: `tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) ${0.1 + idx * 0.05}s both` }}>
+                <div class="event-date">
+                  <span class="day">{evt.date.getDate()}</span>
+                  <span class="month">{getMonthName(evt.date.getMonth())}</span>
+                </div>
+                <div class="event-details">
+                  <p class="event-title">{evt.title}</p>
+                  <div class="event-time-loc">
+                    {isMultiDay ? (
+                      <span>{evt.date.getDate()}. {getMonthName(evt.date.getMonth())} - {inclusiveEnd.getDate()}. {getMonthName(inclusiveEnd.getMonth())}</span>
+                    ) : !evt.allDay ? (
+                      <span>{String(evt.date.getHours()).padStart(2, '0')}:{String(evt.date.getMinutes()).padStart(2, '0')} Uhr</span>
+                    ) : null}
+                    {evt.location && (
+                      <span>• {evt.location}</span>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           
           {events.length > 5 && (
             <button 
