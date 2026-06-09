@@ -2154,6 +2154,7 @@ export interface AppEvent {
   id: string;
   title: string;
   date: Date;
+  endDate?: Date;
   location: string;
   allDay: boolean;
 }
@@ -2186,17 +2187,27 @@ const parseICal = (icsData: string): AppEvent[] => {
         const parts = line.split(':');
         if (parts.length > 1) {
           const dateStr = parts[1];
-          if (dateStr.length === 8) {
+          if (dateStr.length >= 8) {
             currentEvent.date = new Date(parseInt(dateStr.substring(0,4)), parseInt(dateStr.substring(4,6))-1, parseInt(dateStr.substring(6,8)));
-            currentEvent.allDay = true;
-          } else if (dateStr.length >= 15) {
-            const y = parseInt(dateStr.substring(0,4));
-            const m = parseInt(dateStr.substring(4,6))-1;
-            const d = parseInt(dateStr.substring(6,8));
-            const h = parseInt(dateStr.substring(9,11));
-            const min = parseInt(dateStr.substring(11,13));
-            currentEvent.date = new Date(Date.UTC(y, m, d, h, min));
-            currentEvent.allDay = false;
+            if (dateStr.length >= 15) {
+              const y = parseInt(dateStr.substring(0,4));
+              const m = parseInt(dateStr.substring(4,6))-1;
+              const d = parseInt(dateStr.substring(6,8));
+              const h = parseInt(dateStr.substring(9,11));
+              const min = parseInt(dateStr.substring(11,13));
+              currentEvent.date = new Date(Date.UTC(y, m, d, h, min));
+              currentEvent.allDay = false;
+            } else {
+              currentEvent.allDay = true;
+            }
+          }
+        }
+      } else if (line.startsWith('DTEND')) {
+        const parts = line.split(':');
+        if (parts.length > 1) {
+          const dateStr = parts[1];
+          if (dateStr.length >= 8) {
+            currentEvent.endDate = new Date(parseInt(dateStr.substring(0,4)), parseInt(dateStr.substring(4,6))-1, parseInt(dateStr.substring(6,8)));
           }
         }
       }
@@ -2216,7 +2227,7 @@ function Events(props: {
     const fetchEvents = async () => {
       try {
         const targetUrl = "https://www.stiftisches.de/termine/monat/?ical=1";
-        const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(targetUrl);
+        const proxyUrl = "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(targetUrl);
         const res = await fetch(proxyUrl);
         if (!res.ok) throw new Error("Network response was not ok");
         const text = await res.text();
@@ -2225,8 +2236,10 @@ function Events(props: {
         const now = new Date();
         now.setHours(0,0,0,0);
         
-        const upcoming = parsed.filter(e => e.date.getTime() >= now.getTime())
-                               .sort((a,b) => a.date.getTime() - b.date.getTime());
+        const upcoming = parsed.filter(e => {
+          const checkDate = e.endDate ? e.endDate : e.date;
+          return checkDate.getTime() >= now.getTime();
+        }).sort((a,b) => a.date.getTime() - b.date.getTime());
                                
         setEvents(upcoming);
       } catch (err) {
