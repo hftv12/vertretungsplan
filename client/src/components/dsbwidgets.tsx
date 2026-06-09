@@ -443,6 +443,18 @@ function DSBTable(props: { // the main feature of this website
   const [currentDay, setCurrentDay] = useState(null as DayTimetable);
   const [filterStage, setFilterStage] = useState(FilterStage.GRADE);
   const [success, setSuccess] = useState(null);
+  const [easterEggActive, setEasterEggActive] = useState(false);
+
+  useEffect(() => {
+    const handleEasterEgg = () => {
+      setEasterEggActive(true);
+      setTimeout(() => {
+        setEasterEggActive(false);
+      }, 10000);
+    };
+    window.addEventListener('easter-egg-start', handleEasterEgg);
+    return () => window.removeEventListener('easter-egg-start', handleEasterEgg);
+  }, []);
 
   const getData = useCallback(async (): Promise<boolean> => {
     // if (!!props.settings.mockAPI) { // old debug code
@@ -502,7 +514,23 @@ function DSBTable(props: { // the main feature of this website
           setCurrentDay(json.day_one);
         }
       } else {
-        setCurrentDay(json.day_one);
+        const now = new Date();
+        const todayDate = now.getDate();
+        const todayMonth = now.getMonth() + 1;
+        const todayYear = now.getFullYear();
+        const isToday = (dString: string) => {
+          const parts = dString.split('.');
+          if (parts.length >= 3) {
+            return parseInt(parts[0]) === todayDate && parseInt(parts[1]) === todayMonth && parseInt(parts[2]) === todayYear;
+          }
+          return false;
+        };
+
+        if (isToday(json.day_two.date)) {
+          setCurrentDay(json.day_two);
+        } else {
+          setCurrentDay(json.day_one);
+        }
       }
       setTimetable(json);
       return true; // ok
@@ -525,6 +553,16 @@ function DSBTable(props: { // the main feature of this website
   }, [setCurrentDay, timetable]);
 
   const getFilteredSubstitutions = useCallback((): Array<Substitution> => {
+    if (easterEggActive) {
+      return [{
+        classes: props.grade.gradeName || "Alle",
+        hours: "1-10",
+        subject: "Alle",
+        usual_subject: "Alle",
+        room: "---",
+        replacement: "---",
+      }];
+    }
     if (currentDay === null) {
       return [];
     }

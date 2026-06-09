@@ -1,4 +1,5 @@
-import { useState, useEffect } from "preact/hooks";
+import { useState, useEffect, useRef } from "preact/hooks";
+import confetti from "canvas-confetti";
 
 export default function Header(props: {
 	homepage: string,
@@ -16,6 +17,29 @@ export default function Header(props: {
 		exams: "sorted",
 		showCredits: true,
 	});
+
+	const [versionClicks, setVersionClicks] = useState(0);
+	const clickTimeout = useRef<any>(null);
+
+	const handleVersionClick = () => {
+		setVersionClicks((prev) => prev + 1);
+		if (clickTimeout.current) clearTimeout(clickTimeout.current);
+		clickTimeout.current = setTimeout(() => {
+			setVersionClicks(0);
+		}, 1000);
+	};
+
+	useEffect(() => {
+		if (versionClicks >= 5) {
+			setVersionClicks(0);
+			confetti({
+				particleCount: 150,
+				spread: 100,
+				origin: { y: 0.6 }
+			});
+			window.dispatchEvent(new CustomEvent('easter-egg-start'));
+		}
+	}, [versionClicks]);
 
 	useEffect(() => {
 		const loadSettings = () => {
@@ -70,7 +94,7 @@ export default function Header(props: {
 				</div>
 			</div>
 			<div class="header-right" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-				<span class="header-version code">
+				<span class="header-version code" onClick={handleVersionClick} style={{ cursor: 'pointer', userSelect: 'none' }}>
 					{props.version}
 				</span>
 
