@@ -2184,36 +2184,61 @@ const parseICal = (icsData: string): AppEvent[] => {
       } else if (line.startsWith('LOCATION:')) {
         currentEvent.location = line.substring(9).replace(/\\,/g, ',').replace(/\\;/g, ';');
       } else if (line.startsWith('DTSTART')) {
-        const parts = line.split(':');
-        if (parts.length > 1) {
-          const dateStr = parts[1];
+        const colonIdx = line.lastIndexOf(':');
+        if (colonIdx !== -1) {
+          const dateStr = line.substring(colonIdx + 1);
+          const hasTZID = line.includes('TZID=');
           if (dateStr.length >= 8) {
-            currentEvent.date = new Date(parseInt(dateStr.substring(0,4)), parseInt(dateStr.substring(4,6))-1, parseInt(dateStr.substring(6,8)));
+            const y = parseInt(dateStr.substring(0,4));
+            const m = parseInt(dateStr.substring(4,6))-1;
+            const d = parseInt(dateStr.substring(6,8));
             if (dateStr.length >= 15) {
-              const y = parseInt(dateStr.substring(0,4));
-              const m = parseInt(dateStr.substring(4,6))-1;
-              const d = parseInt(dateStr.substring(6,8));
               const h = parseInt(dateStr.substring(9,11));
               const min = parseInt(dateStr.substring(11,13));
-              currentEvent.date = new Date(Date.UTC(y, m, d, h, min));
+              currentEvent.date = hasTZID ? new Date(y, m, d, h, min) : new Date(Date.UTC(y, m, d, h, min));
               currentEvent.allDay = false;
             } else {
+              currentEvent.date = new Date(y, m, d);
               currentEvent.allDay = true;
             }
           }
         }
       } else if (line.startsWith('DTEND')) {
-        const parts = line.split(':');
-        if (parts.length > 1) {
-          const dateStr = parts[1];
+        const colonIdx = line.lastIndexOf(':');
+        if (colonIdx !== -1) {
+          const dateStr = line.substring(colonIdx + 1);
           if (dateStr.length >= 8) {
-            currentEvent.endDate = new Date(parseInt(dateStr.substring(0,4)), parseInt(dateStr.substring(4,6))-1, parseInt(dateStr.substring(6,8)));
+            const y = parseInt(dateStr.substring(0,4));
+            const m = parseInt(dateStr.substring(4,6))-1;
+            const d = parseInt(dateStr.substring(6,8));
+            if (dateStr.length >= 15) {
+              const hasTZID = line.includes('TZID=');
+              const h = parseInt(dateStr.substring(9,11));
+              const min = parseInt(dateStr.substring(11,13));
+              currentEvent.endDate = hasTZID ? new Date(y, m, d, h, min) : new Date(Date.UTC(y, m, d, h, min));
+            } else {
+              currentEvent.endDate = new Date(y, m, d);
+            }
           }
         }
       }
     }
   }
   return events;
+};
+
+const fetchWithCorsProxy = async (targetUrl: string): Promise<string | null> => {
+  const proxies = [
+    (url: string) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+    (url: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+  ];
+  for (const makeProxy of proxies) {
+    try {
+      const res = await fetch(makeProxy(targetUrl));
+      if (res.ok) return await res.text();
+    } catch {}
+  }
+  return null;
 };
 
 function Events(props: {
@@ -2249,10 +2274,8 @@ function Events(props: {
           try {
             const monthStr = String(month + 1).padStart(2, '0');
             const targetUrl = `https://www.stiftisches.de/termine/monat/${year}-${monthStr}/?ical=1`;
-            const proxyUrl = "https://api.codetabs.com/v1/proxy?quest=" + encodeURIComponent(targetUrl);
-            const res = await fetch(proxyUrl);
-            if (!res.ok) return;
-            const text = await res.text();
+            const text = await fetchWithCorsProxy(targetUrl);
+            if (!text) return;
             const parsed = parseICal(text);
             for (const evt of parsed) {
               // Deduplicate by title + date combo (since cross-month events appear in multiple fetches)
