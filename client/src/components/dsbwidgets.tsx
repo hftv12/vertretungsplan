@@ -2963,6 +2963,7 @@ export default function DSBWidgets(props: {
     } as DSBSettings); // what
 
   const subjectSelectRef = useRef(null);
+  const [showLoading, setShowLoading] = useState(false);
 
   useEffect(() => {
     validateCredentials().then((valid) => {
@@ -2972,6 +2973,9 @@ export default function DSBWidgets(props: {
     if (localStorage.getItem("dismissedWelcome") !== "true") {
       setShowWelcome(true);
     }
+
+    const loadingTimeout = setTimeout(() => setShowLoading(true), 2500);
+    return () => clearTimeout(loadingTimeout);
   }, []);
 
   const dismissWelcome = () => {
@@ -2990,8 +2994,8 @@ export default function DSBWidgets(props: {
   return (
     <div>
       <div class="center">
-        {loggedIn === undefined && (
-          <div class="default-div">
+        {loggedIn === undefined && showLoading && (
+          <div class="default-div" style={{ animation: 'fadeInScale 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}>
             <h2>Lade, bitte warten...</h2>
           </div>
         )}
