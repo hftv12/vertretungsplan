@@ -2,6 +2,7 @@ import { useState, useEffect } from "preact/hooks";
 import { CalendarIcon, DocumentTextIcon, CheckBadgeIcon, ClockIcon, PencilIcon, CogIcon, InfoIcon, EventsIcon } from "./icons";
 
 export default function BottomNav() {
+	const [isLoggedIn, setIsLoggedIn] = useState(!!(typeof window !== "undefined" ? localStorage.getItem("user") : false));
 	const [settings, setSettings] = useState<any>({
 		showCourses: true,
 		exams: "sorted",
@@ -11,6 +12,9 @@ export default function BottomNav() {
 	const [activeId, setActiveId] = useState<string>('vertretungsplan');
 
 	useEffect(() => {
+		const handleLogin = () => setIsLoggedIn(true);
+		window.addEventListener('dsb-login', handleLogin);
+
 		const loadSettings = () => {
 			const s = localStorage.getItem("DSBSettings");
 			if (s) {
@@ -28,7 +32,10 @@ export default function BottomNav() {
 			}
 		};
 		window.addEventListener('dsb-settings-change', handleSettingsChange);
-		return () => window.removeEventListener('dsb-settings-change', handleSettingsChange);
+		return () => {
+			window.removeEventListener('dsb-settings-change', handleSettingsChange);
+			window.removeEventListener('dsb-login', handleLogin);
+		};
 	}, []);
 
 	const menuItems = [
@@ -81,6 +88,8 @@ export default function BottomNav() {
 		}
 		setActiveId(id);
 	};
+
+	if (!isLoggedIn) return null;
 
 	return (
 		<div class="bottom-nav-container">

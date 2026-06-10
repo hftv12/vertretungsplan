@@ -26,7 +26,7 @@ const { title, icon, version, manifest } = Astro.props;
 				const s = localStorage.getItem("DSBSettings");
 				if (s) {
 					const parsed = JSON.parse(s);
-					if (parsed.theme) document.documentElement.setAttribute('data-theme', parsed.theme);
+					if (parsed.theme) document.documentElement.setAttribute('data-theme', parsed.theme === 'system' ? 'light' : parsed.theme);
 					if (parsed.colorTheme) document.documentElement.setAttribute('data-color-theme', parsed.colorTheme);
 				}
 			} catch (e) {}

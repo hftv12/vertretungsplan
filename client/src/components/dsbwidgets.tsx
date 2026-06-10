@@ -189,6 +189,7 @@ function DSBLogin(props: { // login panel
         setShowError(!valid); // error
         if (valid) { // no error
           props.setLoggedIn(true);
+          window.dispatchEvent(new Event("dsb-login"));
         }
       });
     },
@@ -1843,9 +1844,9 @@ export function Settings(props: { // settings block
         <h3 class="code">Webseite</h3>
         <Select
           text="Erscheinungsbild (Dark Mode):"
-          options={[{value: "system", text: "Systemstandard"}, {value: "light", text: "Hell"}, {value: "dark", text: "Dunkel"}]}
+          options={[{value: "light", text: "Hell"}, {value: "dark", text: "Dunkel"}]}
           updater={(v: string) => updateSetting("theme", v)}
-          value={props.settings.theme !== undefined ? props.settings.theme : "system"}
+          value={props.settings.theme !== undefined && props.settings.theme !== "system" ? props.settings.theme : "light"}
         />
         <ThemeSelector 
           currentTheme={props.settings.colorTheme || 'default'} 
@@ -2878,7 +2879,7 @@ export default function DSBWidgets(props: {
       advancedCourses: false,
       yellowPaint: true, // tell me it didn't happen. tell me it didn't snow.
       newDesign: true, // it snew
-      theme: "system",
+      theme: "light",
     } as DSBSettings); // what
 
   const subjectSelectRef = useRef(null);
@@ -2899,10 +2900,10 @@ export default function DSBWidgets(props: {
   };
 
   useEffect(() => {
-    if (settings.theme) {
+    if (settings.theme && settings.theme !== "system") {
       document.documentElement.setAttribute('data-theme', settings.theme);
     } else {
-      document.documentElement.setAttribute('data-theme', 'system');
+      document.documentElement.setAttribute('data-theme', 'light');
     }
   }, [settings.theme]);
 
@@ -2914,7 +2915,19 @@ export default function DSBWidgets(props: {
             <h2>Lade, bitte warten...</h2>
           </div>
         )}
-        {loggedIn === false && <DSBLogin setLoggedIn={setLoggedIn} />}
+        {loggedIn === false && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%', maxWidth: '500px', margin: '0 auto' }}>
+            <DSBLogin setLoggedIn={setLoggedIn} />
+            <div class="default-div" style={{ borderColor: 'var(--accent-color)' }}>
+              <h3 style={{ color: 'var(--accent-color)', marginTop: 0, marginBottom: '12px' }}>App installieren (PWA)</h3>
+              <p style={{ color: 'var(--text-color)' }}>Du kannst diese Webseite als Web-App (PWA) auf deinem Handy installieren, um sie wie eine normale App zu nutzen:</p>
+              <ul style={{ fontSize: '0.9rem', color: 'var(--text-color)' }}>
+                <li><b>iOS (Safari):</b> Tippe auf das Teilen-Symbol (Viereck mit Pfeil nach oben) und wähle "Zum Home-Bildschirm".</li>
+                <li><b>Android (Chrome):</b> Tippe auf das Menü (drei Punkte) und wähle "App installieren" oder "Zum Startbildschirm zufügen".</li>
+              </ul>
+            </div>
+          </div>
+        )}
         {loggedIn && (
           <div class="center-rows">
             {showWelcome && <WelcomeBox onDismiss={dismissWelcome} grade={grade} setGrade={setGrade} />}
@@ -2936,6 +2949,7 @@ export default function DSBWidgets(props: {
     
                 <p>Diese Webseite basiert auf dem DSB-Scraper von Kirill (kirillathome)</p>
                 <p><b>Hinweis:</b> Alle deine eingetragenen Daten (wie Kurse, Stundenplan und Einstellungen) werden ausschließlich lokal auf deinem Gerät gespeichert.</p>
+                <p><b>Wichtig:</b> Die hier bereitgestellten Daten (wie der Vertretungsplan) können Fehler aufweisen. Bitte vergewissere dich bei Unklarheiten zusätzlich am schwarzen Brett der Schule.</p>
 
                 <Placeholder height='20px' />
     

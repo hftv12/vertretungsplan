@@ -218,59 +218,7 @@ html:root[data-color-theme="sunset"] {
     --accent-glow: rgba(249, 115, 22, 0.15);
 }
 
-@media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-        /* DARK MODE TOKENS */
-        --header-bg: rgba(15, 15, 17, 0.82);
-        --background-color: #09090b;
-        --standard-bg: #09090b;
-        /* Zinc 950 */
-        --foreground-color: #18181b;
-        /* Zinc 900 Card */
-        --darker-color: #0f0f11;
-        /* Zinc 950 Header/Footer */
-        --brighter-color: #27272a;
-        --standard-hl: #27272a;
-        /* Zinc 800 Border */
-        --input-bg: #27272a;
-        /* Zinc 800 Input */
-        --text-color: #fafafa;
-        /* Zinc 50 */
-        --text-secondary: #a1a1aa;
-        /* Zinc 400 */
 
-        /* Accents & Blue */
-        --accent-color: #3b82f6;
-        /* Medium Blue (Blue 500) */
-        --accent-hover: #60a5fa;
-        /* Blue 400 */
-        --accent-light: rgba(59, 130, 246, 0.1);
-        --accent-glow: rgba(59, 130, 246, 0.2);
-
-        /* Substitutions - Dark Theme Semantic Colors */
-        --s-free-bg: rgba(239, 68, 68, 0.07);
-        --s-free-border: #ef4444;
-        --s-free-text: #fca5a5;
-
-        --s-moved-bg: rgba(59, 130, 246, 0.07);
-        --s-moved-border: #3b82f6;
-        --s-moved-text: #93c5fd;
-
-        --s-exam-bg: rgba(139, 92, 246, 0.07);
-        --s-exam-border: #a78bfa;
-        --s-exam-text: #c084fc;
-
-        --s-subst-bg: rgba(249, 115, 22, 0.07);
-        --s-subst-border: #f97316;
-        --s-subst-text: #ffb74d;
-
-        /* Shadows */
-        --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -2px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(255, 255, 255, 0.02);
-        --shadow-hover: 0 12px 30px -5px rgba(0, 0, 0, 0.4), 0 8px 16px -8px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.03);
-        --shadow-header: 0 4px 20px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(255, 255, 255, 0.02);
-        --shadow-tile: var(--shadow-card);
-    }
-}
 
 /*#endregion*/
 
@@ -299,6 +247,7 @@ body {
 #main-content {
     flex: 1 0 auto;
     width: 100%;
+    animation: fadeInScale 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .center {
@@ -384,6 +333,17 @@ body {
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.98) translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
     }
 }
 
@@ -1954,9 +1914,9 @@ a.fakebutton:active {
 
 .timetable-day-wrapper {
     min-width: 100%;
-    scroll-snap-align: start;
+    scroll-snap-align: center;
     padding-bottom: 8px;
-    padding-right: 24px;
+    padding: 0 12px;
     transition: filter 0.3s ease, opacity 0.3s ease;
     filter: blur(2px);
     opacity: 0.6;
