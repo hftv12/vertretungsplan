@@ -2151,6 +2151,35 @@ function PersonalTimetable(props: {
     return props.courses.find(c => (c.subject + (c.course ? "-" + c.course : "")) === courseStr);
   };
 
+  const getLastHourForDay = (dayName: string): number => {
+    const dayData = timetableData[currentWeek]?.[dayName];
+    if (!dayData) return 0;
+    let lastHour = 0;
+    for (const hourNum in dayData) {
+      if (dayData[hourNum]) {
+        const num = parseInt(hourNum);
+        if (num > lastHour) lastHour = num;
+      }
+    }
+    return lastHour;
+  };
+
+  const getVisibleHours = (dayName: string) => {
+    if (isEditMode) return hours;
+    const lastHour = getLastHourForDay(dayName);
+    if (lastHour === 0) return hours.slice(0, 3); // show at least 1st+2nd hour + pause if empty
+    // Include all hours up to and including lastHour, plus any pauses before it
+    return hours.filter(h => {
+      if (h.type === "pause") {
+        // Include pause if the next hour after it is <= lastHour
+        const pauseIdx = hours.indexOf(h);
+        const nextHour = hours.find((hh, i) => i > pauseIdx && hh.type === "hour");
+        return nextHour ? nextHour.num <= lastHour : false;
+      }
+      return h.num <= lastHour;
+    });
+  };
+
   return (
     <div class="default-div" id="stundenplan">
       <div class="timetable-header-row">
@@ -2175,6 +2204,7 @@ function PersonalTimetable(props: {
         ))}
       </div>
 
+      <AutoHeight>
       <div class="timetable-container" ref={containerRef} onScroll={handleScroll}>
         <div class="timetable-times-column">
           <h3 class="timetable-day-header" style={{ color: "transparent" }}>Zeit</h3>
@@ -2188,10 +2218,12 @@ function PersonalTimetable(props: {
             )
           ))}
         </div>
-        {days.map((day, dayIdx) => (
+        {days.map((day, dayIdx) => {
+          const visibleHours = getVisibleHours(day.full);
+          return (
           <div key={day.full} class={`timetable-day-wrapper ${dayIdx === currentDayIdx ? 'active' : ''}`}>
             <h3 class="timetable-day-header">{day.full}</h3>
-            {hours.map((h) => {
+            {visibleHours.map((h) => {
               const activeHighlight = isCurrentHour(dayIdx, h.start, h.end) ? "active-hour-highlight" : "";
               
               return h.type === "pause" ? (
@@ -2223,8 +2255,10 @@ function PersonalTimetable(props: {
               )
             })}
           </div>
-        ))}
+          );
+        })}
       </div>
+      </AutoHeight>
     </div>
   );
 }
