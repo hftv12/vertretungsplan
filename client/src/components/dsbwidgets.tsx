@@ -6,6 +6,7 @@ import { CheckButton, Select } from "./settingshelper";
 //import serializeEvent from "../util/event_helper";
 
 import { EyeIcon, EyeOffIcon, RefreshIcon, ImportantIcon, FilterIcon, PencilIcon } from "./icons";
+// @ts-ignore
 import plink from "../assets/placeholder.gif";
 // import dsbIcon from "/favicons/dsb_simplistic192.png";
 
@@ -82,16 +83,17 @@ enum SubstitutionType { // for new design
 }
 
 interface DSBSettings {
-  easterEggs: boolean,
-  parasites: ParasitesHandler,
-  exams: ExamVisibility,
-  oldExams: boolean,
-  advancedCourses: boolean,
-  showCourses: boolean,
-  showCredits: boolean,
-  yellowPaint: boolean,
-  newDesign: boolean,
-  theme: string,
+  [key: string]: any;
+  easterEggs?: boolean,
+  parasites?: ParasitesHandler,
+  exams?: ExamVisibility,
+  oldExams?: boolean,
+  advancedCourses?: boolean,
+  showCourses?: boolean,
+  showCredits?: boolean,
+  yellowPaint?: boolean,
+  newDesign?: boolean,
+  theme?: string,
 }
 
 enum FilterStage {
@@ -526,7 +528,10 @@ function DSBTable(props: { // the main feature of this website
           return false;
         };
 
+        const isSchoolDayOver = now.getHours() > 16 || (now.getHours() === 16 && now.getMinutes() >= 15);
         if (isToday(json.day_two.date)) {
+          setCurrentDay(json.day_two);
+        } else if (isToday(json.day_one.date) && isSchoolDayOver) {
           setCurrentDay(json.day_two);
         } else {
           setCurrentDay(json.day_one);
@@ -1356,7 +1361,7 @@ function ExamList(props: { // sorted list of all of your exams (probably the mos
   }, [setExamList]);
 
   useEffect(() => {
-    if (import.meta.env.DEV) { // this code only runs in the debug env (so if you're reading this), you can override the current date for testing
+    if ((import.meta as any).env && (import.meta as any).env.DEV) { // this code only runs in the debug env (so if you're reading this), you can override the current date for testing
       // setDate(stringToDate("13.04.1987"));
       setDate(new Date());
 
@@ -1761,6 +1766,40 @@ export function Settings(props: { // settings block
     }
   }, [props.setCourses, fileRef])
 
+  const exportAllData = useCallback(() => {
+    const data: any = {};
+    const keys = ["user", "key", "filterStage", "courses", "grade", "examList", "DSBSettings", "PersonalTimetableData", "DSBHomework", "dismissedWelcome"];
+    for (const k of keys) {
+      const val = localStorage.getItem(k);
+      if (val !== null) data[k] = val;
+    }
+    const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "dsb_backup.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  }, []);
+
+  const backupFileRef = useRef();
+  const importAllData = useCallback(async () => {
+    if (!!backupFileRef && backupFileRef.current) {
+      const input = backupFileRef.current as HTMLInputElement;
+      if (input.files.length < 1) return;
+      try {
+        const parsed = JSON.parse(await input.files[0].text());
+        for (const key of Object.keys(parsed)) {
+          localStorage.setItem(key, parsed[key]);
+        }
+        alert("Daten erfolgreich importiert. Die Seite wird nun neu geladen.");
+        location.reload();
+      } catch (e) {
+        alert("Fehler beim Importieren der Daten.");
+      }
+    }
+  }, [backupFileRef]);
+
   const logout = useCallback(() => {
     localStorage.removeItem("user");
     localStorage.removeItem("key");
@@ -1946,6 +1985,9 @@ export function Settings(props: { // settings block
 
         <h3 class="code">Verschiedenes</h3>
         <div id="reset-div">
+          <input class="fakebutton" type="button" value="Alle Daten exportieren" onClick={exportAllData} />
+          <input type="file" accept=".json" id="backup-upload" style={{ display: 'none' }} ref={backupFileRef} onChange={importAllData} />
+          <label class="fakebutton" for="backup-upload">Alle Daten importieren</label>
           <input class="fakebutton" type="button" value="Ausloggen" onClick={logout} />
           <input class="fakebutton red" type="button" value="ALLE Daten löschen" onClick={resetBegin} />
           {resetProgress > 0 && (<div>
@@ -2107,8 +2149,20 @@ function PersonalTimetable(props: {
       </div>
 
       <div class="timetable-container" ref={containerRef} onScroll={handleScroll}>
+        <div class="timetable-times-column">
+          <h3 class="timetable-day-header" style={{ color: "transparent" }}>Zeit</h3>
+          {hours.map((h) => (
+            h.type === "pause" ? (
+              <div key={`time-spacer-${h.num}`} class="timetable-spacer"></div>
+            ) : (
+              <div key={`time-${h.num}`} class="timetable-row">
+                <div class="timetable-time">{h.label} <span style={{ fontSize: "0.68rem", color: "var(--text-secondary)", display: "block", whiteSpace: "nowrap" }}>{h.start} - {h.end}</span></div>
+              </div>
+            )
+          ))}
+        </div>
         {days.map((day, dayIdx) => (
-          <div key={day.full} class="timetable-day-wrapper">
+          <div key={day.full} class={`timetable-day-wrapper ${dayIdx === currentDayIdx ? 'active' : ''}`}>
             <h3 class="timetable-day-header">{day.full}</h3>
             {hours.map((h) => {
               const activeHighlight = isCurrentHour(dayIdx, h.start, h.end) ? "active-hour-highlight" : "";

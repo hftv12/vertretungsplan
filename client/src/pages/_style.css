@@ -287,6 +287,7 @@ body {
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    -webkit-tap-highlight-color: transparent;
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
@@ -1845,9 +1846,7 @@ a.fakebutton:active {
         padding: 2px 6px;
     }
 
-    .header-version {
-        /* display: none; */
-    }
+
 
     #toolbar {
         padding: 10px 12px;
@@ -1959,6 +1958,15 @@ a.fakebutton:active {
     scroll-snap-align: start;
     padding-bottom: 8px;
     padding-right: 24px;
+    transition: transform 0.3s ease, filter 0.3s ease, opacity 0.3s ease;
+    transform: scale(0.96);
+    filter: blur(2px);
+    opacity: 0.6;
+}
+.timetable-day-wrapper.active {
+    transform: scale(1);
+    filter: blur(0);
+    opacity: 1;
 }
 
 .timetable-day-header {
@@ -2118,15 +2126,26 @@ a.fakebutton:active {
         font-size: 1.1rem;
     }
 
+    .timetable-times-column {
+        display: block;
+    }
+
     .timetable-container {
         display: grid;
-        grid-template-columns: repeat(5, 1fr);
+        grid-template-columns: auto repeat(5, 1fr);
         gap: 16px;
         overflow-x: visible;
     }
 
     .timetable-day-wrapper {
         min-width: auto;
+        transform: none !important;
+        filter: none !important;
+        opacity: 1 !important;
+    }
+
+    .timetable-day-wrapper .timetable-time {
+        display: none;
     }
 
     .timetable-row {
@@ -2136,11 +2155,18 @@ a.fakebutton:active {
         border-bottom: none;
         margin-bottom: 12px;
         padding: 0;
+        height: 68px;
+    }
+    
+    .timetable-times-column .timetable-row {
+        align-items: flex-end;
+        justify-content: flex-start;
+        padding-top: 4px;
     }
 
     .timetable-time {
         width: auto;
-        text-align: left;
+        text-align: right;
         font-size: 0.8rem;
     }
 
