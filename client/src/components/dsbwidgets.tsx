@@ -2043,6 +2043,8 @@ function PersonalTimetable(props: {
   const [currentDayIdx, setCurrentDayIdx] = useState(0);
   const [timetableData, setTimetableData] = useState<any>({ A: {}, B: {} });
   const containerRef = useRef<HTMLDivElement>(null);
+  const dayWrapperRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [timetableHeight, setTimetableHeight] = useState<number | null>(null);
 
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -2180,6 +2182,20 @@ function PersonalTimetable(props: {
     });
   };
 
+  // Measure active day wrapper height for smooth resizing
+  useEffect(() => {
+    const measure = () => {
+      const activeWrapper = dayWrapperRefs.current[currentDayIdx];
+      if (activeWrapper) {
+        setTimetableHeight(activeWrapper.scrollHeight);
+      }
+    };
+    measure();
+    // Also re-measure after a short delay to catch any layout shifts
+    const timeout = setTimeout(measure, 50);
+    return () => clearTimeout(timeout);
+  }, [currentDayIdx, currentWeek, isEditMode, timetableData]);
+
   return (
     <div class="default-div" id="stundenplan">
       <div class="timetable-header-row">
@@ -2204,8 +2220,9 @@ function PersonalTimetable(props: {
         ))}
       </div>
 
-      <AutoHeight>
-      <div class="timetable-container" ref={containerRef} onScroll={handleScroll}>
+      <div class="timetable-container" ref={containerRef} onScroll={handleScroll}
+        style={timetableHeight ? { height: `${timetableHeight}px`, transition: 'height 0.35s cubic-bezier(0.16, 1, 0.3, 1)', overflowY: 'clip' } : undefined}
+      >
         <div class="timetable-times-column">
           <h3 class="timetable-day-header" style={{ color: "transparent" }}>Zeit</h3>
           {hours.map((h) => (
@@ -2221,7 +2238,7 @@ function PersonalTimetable(props: {
         {days.map((day, dayIdx) => {
           const visibleHours = getVisibleHours(day.full);
           return (
-          <div key={day.full} class={`timetable-day-wrapper ${dayIdx === currentDayIdx ? 'active' : ''}`}>
+          <div key={day.full} ref={(el) => { dayWrapperRefs.current[dayIdx] = el; }} class={`timetable-day-wrapper ${dayIdx === currentDayIdx ? 'active' : ''}`}>
             <h3 class="timetable-day-header">{day.full}</h3>
             {visibleHours.map((h) => {
               const activeHighlight = isCurrentHour(dayIdx, h.start, h.end) ? "active-hour-highlight" : "";
@@ -2258,7 +2275,6 @@ function PersonalTimetable(props: {
           );
         })}
       </div>
-      </AutoHeight>
     </div>
   );
 }

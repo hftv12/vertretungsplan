@@ -2095,6 +2095,8 @@ a.fakebutton:active {
         grid-template-columns: auto repeat(5, 1fr);
         gap: 16px;
         overflow-x: visible;
+        height: auto !important;
+        overflow-y: visible !important;
     }
 
     .timetable-day-wrapper {
