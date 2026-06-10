@@ -11,6 +11,30 @@ import plink from "../assets/placeholder.gif";
 // import dsbIcon from "/favicons/dsb_simplistic192.png";
 
 
+function AutoHeight(props: { children: preact.ComponentChildren }) {
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [height, setHeight] = useState<number | "auto">("auto");
+
+  useEffect(() => {
+    if (!contentRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setHeight(entry.contentRect.height);
+      }
+    });
+    observer.observe(contentRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div style={{ height: height === "auto" ? "auto" : `${height}px`, transition: 'height 0.35s cubic-bezier(0.16, 1, 0.3, 1)', overflow: 'hidden' }}>
+      <div ref={contentRef}>
+        {props.children}
+      </div>
+    </div>
+  );
+}
+
 //#region interfaces and enums
 interface Substitution { // the thing to show in the table
   classes: string;
@@ -643,6 +667,7 @@ function DSBTable(props: { // the main feature of this website
 
   return (
     <div class="default-div" id="vertretungsplan">
+      <AutoHeight>
       <DSBTableToolbar
         getData={getData}
         setFilterStage={setFilterStage}
@@ -823,6 +848,7 @@ function DSBTable(props: { // the main feature of this website
           </div>
         </div>
       )}
+      </AutoHeight>
     </div>
   );
 }
@@ -2425,6 +2451,7 @@ function Events(props: {
 
   return (
     <div class="default-div" id="termine">
+      <AutoHeight>
       <div class="events-header">
         <h2>Termine</h2>
         {!loading && availableMonths.length > 0 && (
@@ -2485,6 +2512,7 @@ function Events(props: {
           })}
         </div>
       )}
+      </AutoHeight>
     </div>
   );
 }
@@ -2661,6 +2689,7 @@ function Homework(props: {
 
   return (
     <div class="default-div" id="hausaufgaben">
+      <AutoHeight>
       <h2>Hausaufgaben</h2>
       <form onSubmit={handleAdd} style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '12px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -2758,6 +2787,7 @@ function Homework(props: {
           </div>
         )}
       </div>
+      </AutoHeight>
     </div>
   );
 }
