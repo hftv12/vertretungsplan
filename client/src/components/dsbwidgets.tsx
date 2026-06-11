@@ -799,52 +799,54 @@ function DSBTable(props: { // the main feature of this website
 
           {getFilteredSubstitutions().length > 0 && props.settings.newDesign === false && (
             <div>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Klasse/Stufe</th>
-                    <th>Stunde(n)</th>
-                    <th>Kurs</th>
-                    <th>Ersatz</th>
-                    <th>Raum</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {getFilteredSubstitutions().map((s, idx) => {
-                    if (s.usual_subject.includes("AG")) {
-                      switch (props.settings.parasites) {
-                        case ParasitesHandler.NONE:
-                          break;
-                        case ParasitesHandler.SHORTEN:
-                          return (
-                            <DSBSubstitution
-                              classes="*"
-                              hours={s.hours}
-                              subject={s.subject}
-                              room={s.room}
-                              usual_subject={s.usual_subject}
-                              replacement={s.replacement}
-                              idx={idx}
-                            />
-                          );
-                        case ParasitesHandler.EXTERMINATE:
-                          return null; // what parasite?
+              <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: '100%' }}>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Klasse/Stufe</th>
+                      <th>Stunde(n)</th>
+                      <th>Kurs</th>
+                      <th>Ersatz</th>
+                      <th>Raum</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {getFilteredSubstitutions().map((s, idx) => {
+                      if (s.usual_subject.includes("AG")) {
+                        switch (props.settings.parasites) {
+                          case ParasitesHandler.NONE:
+                            break;
+                          case ParasitesHandler.SHORTEN:
+                            return (
+                              <DSBSubstitution
+                                classes="*"
+                                hours={s.hours}
+                                subject={s.subject}
+                                room={s.room}
+                                usual_subject={s.usual_subject}
+                                replacement={s.replacement}
+                                idx={idx}
+                              />
+                            );
+                          case ParasitesHandler.EXTERMINATE:
+                            return null; // what parasite?
+                        }
                       }
-                    }
-                    return (
-                      <DSBSubstitution
-                        classes={s.classes}
-                        hours={s.hours}
-                        subject={s.subject}
-                        room={s.room}
-                        usual_subject={s.usual_subject}
-                        replacement={s.replacement}
-                        idx={idx}
-                      />
-                    );
-                  })}
-                </tbody>
-              </table>
+                      return (
+                        <DSBSubstitution
+                          classes={s.classes}
+                          hours={s.hours}
+                          subject={s.subject}
+                          room={s.room}
+                          usual_subject={s.usual_subject}
+                          replacement={s.replacement}
+                          idx={idx}
+                        />
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
               <Placeholder height="50px" />
             </div>
 
