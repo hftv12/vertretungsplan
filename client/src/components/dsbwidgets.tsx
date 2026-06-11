@@ -2834,10 +2834,11 @@ function Homework(props: {
     }).filter(Boolean);
   };
 
+  const [listRef] = useAutoAnimate();
+
   if (props.settings.showHomework === false) return null;
 
   const todaysCourses = getTodaysCourses();
-  const [listRef] = useAutoAnimate();
 
   return (
     <div class="default-div" id="hausaufgaben">
