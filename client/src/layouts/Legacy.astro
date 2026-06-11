@@ -18,6 +18,7 @@ const { title, icon, version, manifest } = Astro.props;
 	<head>
 		<meta charset="UTF-8" />
 		<link rel="icon" type="image/png" href={typeof icon === "string" ? icon : icon.src} />
+		<link rel="apple-touch-icon" href={typeof icon === "string" ? icon : icon.src} />
 		{!!manifest && <link rel="manifest" href={manifest} />}
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>{title}</title>
