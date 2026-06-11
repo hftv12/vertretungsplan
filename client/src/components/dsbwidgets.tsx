@@ -63,7 +63,7 @@ export function CornerHelpButton(props: { title: string, helpText: string | prea
   const [showHelp, setShowHelp] = useState(false);
   return (
     <>
-      <button type="button" class="imgInput" style={{ position: 'absolute', top: '24px', right: '24px', zIndex: 10 }} onClick={() => setShowHelp(true)}>
+      <button type="button" class="imgInput" style={{ position: 'absolute', top: '22px', right: '22px', zIndex: 10 }} onClick={() => setShowHelp(true)}>
         <HelpIcon width="20" height="20" />
       </button>
       {showHelp && (
@@ -2587,27 +2587,24 @@ function Events(props: {
         title="Termine" 
         helpText="Hier findest du alle anstehenden Schultermine und Veranstaltungen. Diese werden automatisch aktualisiert."
       />
-      <div class="events-header">
-        <h2>Termine</h2>
-        {!loading && availableMonths.length > 0 && (
-          <div style={{ paddingRight: '36px' }}>
-            <select 
-              class="events-month-select"
-              value={selectedMonth} 
-              onChange={handleMonthChange}
-            >
-              {availableMonths.map(monthKey => {
-                const [y, m] = monthKey.split('-');
-                return (
-                  <option key={monthKey} value={monthKey}>
-                    {getFullMonthName(parseInt(m) - 1)} {y}
-                  </option>
-                );
-              })}
-            </select>
-          </div>
-        )}
-      </div>
+      <h2>Termine</h2>
+      {!loading && availableMonths.length > 0 && (
+        <select 
+          class="events-month-select"
+          style={{ width: '100%', marginTop: '8px' }}
+          value={selectedMonth} 
+          onChange={handleMonthChange}
+        >
+          {availableMonths.map(monthKey => {
+            const [y, m] = monthKey.split('-');
+            return (
+              <option key={monthKey} value={monthKey}>
+                {getFullMonthName(parseInt(m) - 1)} {y}
+              </option>
+            );
+          })}
+        </select>
+      )}
       <div class="events-today-badge">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
         <span>Heute ist <b>{week[new Date().getDay()]}</b>, der <b>{new Date().getDate() < 10 ? 0 : null}{new Date().getDate()}.{new Date().getMonth() + 1 < 10 ? 0 : null}{new Date().getMonth() + 1}.{new Date().getFullYear()}</b></span>
