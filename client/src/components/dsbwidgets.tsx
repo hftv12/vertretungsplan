@@ -1,5 +1,6 @@
 import { MutableRef, useCallback, useEffect, useId, useRef, useState } from "preact/hooks";
 import { createPortal } from "preact/compat";
+import { useAutoAnimate } from '@formkit/auto-animate/preact';
 
 import Placeholder from "./placeholder";
 import { CheckButton, Select } from "./settingshelper";
@@ -36,9 +37,9 @@ function AutoHeight(props: { children: preact.ComponentChildren }) {
   );
 }
 
-export function HelpModal(props: { title: string, onClose: () => void, children: preact.ComponentChildren }) {
+export function HelpModal(props: { title: string, onClose: () => void, isClosing?: boolean, children: preact.ComponentChildren }) {
   const modalContent = (
-    <div class="modal-overlay" onClick={props.onClose}>
+    <div class={`modal-overlay ${props.isClosing ? 'closing' : ''}`} onClick={props.onClose}>
       <div class="modal-content" onClick={(e) => e.stopPropagation()}>
         <div class="modal-header">
           <h2>{props.title}</h2>
@@ -61,13 +62,23 @@ export function HelpModal(props: { title: string, onClose: () => void, children:
 
 export function CornerHelpButton(props: { title: string, helpText: string | preact.ComponentChildren }) {
   const [showHelp, setShowHelp] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+
+  const closeHelp = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      setShowHelp(false);
+      setIsClosing(false);
+    }, 240);
+  };
+
   return (
     <>
       <button type="button" class="imgInput" style={{ position: 'absolute', top: '16px', right: '16px', zIndex: 10 }} onClick={() => setShowHelp(true)}>
         <HelpIcon width="20" height="20" />
       </button>
       {showHelp && (
-        <HelpModal title={props.title + " - Info"} onClose={() => setShowHelp(false)}>
+        <HelpModal title={props.title + " - Info"} onClose={closeHelp} isClosing={isClosing}>
           {props.helpText}
         </HelpModal>
       )}
@@ -343,6 +354,16 @@ function DSBTableToolbar(props: { // toolbar for switching day & filtering optio
 }) {
   const filterStageRef = useRef(null);
   const [showHelp, setShowHelp] = useState(false);
+  const [isClosingHelp, setIsClosingHelp] = useState(false);
+
+  const closeHelp = () => {
+    setIsClosingHelp(true);
+    setTimeout(() => {
+      setShowHelp(false);
+      setIsClosingHelp(false);
+    }, 240);
+  };
+
   const handleFilterChange = useCallback(() => {
     const filterStage = (filterStageRef.current as HTMLSelectElement).value;
     localStorage.setItem("filterStage", filterStage);
@@ -387,7 +408,7 @@ function DSBTableToolbar(props: { // toolbar for switching day & filtering optio
           <HelpIcon width="20" height="20" />
         </button>
         {showHelp && (
-          <HelpModal title="Vertretungsplan - Info" onClose={() => setShowHelp(false)}>
+          <HelpModal title="Vertretungsplan - Info" onClose={closeHelp} isClosing={isClosingHelp}>
             Hier siehst du den Vertretungsplan. Mit dem Filter-Icon (Trichter) direkt daneben kannst du einstellen, ob du alle Vertretungen der Schule, nur die deiner Stufe oder nur die deiner individuell gewählten Kurse (siehe Kurswahl) sehen möchtest.
           </HelpModal>
         )}
@@ -2681,8 +2702,6 @@ function Homework(props: {
     return localDate.toISOString().split("T")[0];
   };
   const [date, setDate] = useState(getDefaultDate());
-  
-  const [animatingOut, setAnimatingOut] = useState<string[]>([]);
 
   useEffect(() => {
     const data = localStorage.getItem("DSBHomework");
@@ -2771,11 +2790,7 @@ function Homework(props: {
   };
 
   const handleCheck = (id: string) => {
-    setAnimatingOut(prev => [...prev, id]);
-    setTimeout(() => {
-      saveHomework(homeworkList.filter(h => h.id !== id));
-      setAnimatingOut(prev => prev.filter(p => p !== id));
-    }, 700); 
+    saveHomework(homeworkList.filter(h => h.id !== id));
   };
 
   const getDaysUntil = (d: string) => {
@@ -2822,6 +2837,7 @@ function Homework(props: {
   if (props.settings.showHomework === false) return null;
 
   const todaysCourses = getTodaysCourses();
+  const [listRef] = useAutoAnimate();
 
   return (
     <div class="default-div" id="hausaufgaben">
@@ -2874,29 +2890,26 @@ function Homework(props: {
         <input type="submit" class="fakebutton" value="Hinzufügen" style={{ margin: 0, width: '100%', height: '42px', padding: '0 16px', boxSizing: 'border-box' }} />
       </form>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '16px' }}>
+      <div ref={listRef} style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '16px' }}>
         {homeworkList.sort((a,b) => new Date(a.date).valueOf() - new Date(b.date).valueOf()).map(hw => {
           const course = getCourseInfo(hw.course);
           const overdue = isOverdue(hw.date);
-          const animating = animatingOut.includes(hw.id);
           
           return (
             <div key={hw.id} style={{
               display: 'flex', alignItems: 'center', gap: '12px', padding: '12px',
               backgroundColor: overdue ? 'var(--s-free-bg)' : 'var(--input-bg)',
               border: `1px solid ${overdue ? 'var(--s-free-border)' : (course?.color || 'var(--brighter-color)')}`,
-              borderRadius: 'var(--rounding)',
-              animation: animating ? 'slideOutFade 0.4s 0.3s forwards' : 'tileReveal 0.4s ease-out backwards',
-              opacity: animating ? 1 : undefined
+              borderRadius: 'var(--rounding)'
             }}>
               <button
                 onClick={() => handleCheck(hw.id)}
                 style={{
                   width: '28px', height: '28px', flexShrink: 0,
-                  borderRadius: '50%', border: `2px solid ${overdue && !animating ? 'var(--s-free-border)' : (course?.color || 'var(--accent-color)')}`,
-                  background: animating ? (course?.color || 'var(--accent-color)') : 'transparent',
+                  borderRadius: '50%', border: `2px solid ${overdue ? 'var(--s-free-border)' : (course?.color || 'var(--accent-color)')}`,
+                  background: 'transparent',
                   cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  transition: 'var(--transition-fast)', color: animating ? '#fff' : 'transparent',
+                  transition: 'var(--transition-fast)', color: 'transparent',
                   padding: 0
                 }}
                 aria-label="Erledigt"
@@ -3103,7 +3116,7 @@ export default function DSBWidgets(props: {
           </div>
         )}
         {loggedIn && (
-          <div class="center-rows">
+          <div class="center-rows" ref={welcomeWrapper}>
             {showWelcome && <WelcomeBox onDismiss={dismissWelcome} grade={grade} setGrade={setGrade} />}
             <DSBTable grade={grade} courses={courses} settings={settings} />
             {(grade.gradeName === "EF" || grade.gradeName === "Q1" || grade.gradeName === "Q2") && (<ExamList settings={settings} subjectSelectRef={subjectSelectRef} courses={courses} grade={grade} />)}
