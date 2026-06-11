@@ -1,4 +1,5 @@
 import { MutableRef, useCallback, useEffect, useId, useRef, useState } from "preact/hooks";
+import { createPortal } from "preact/compat";
 
 import Placeholder from "./placeholder";
 import { CheckButton, Select } from "./settingshelper";
@@ -36,7 +37,7 @@ function AutoHeight(props: { children: preact.ComponentChildren }) {
 }
 
 export function HelpModal(props: { title: string, onClose: () => void, children: preact.ComponentChildren }) {
-  return (
+  const modalContent = (
     <div class="modal-overlay" onClick={props.onClose}>
       <div class="modal-content" onClick={(e) => e.stopPropagation()}>
         <div class="modal-header">
@@ -51,25 +52,26 @@ export function HelpModal(props: { title: string, onClose: () => void, children:
       </div>
     </div>
   );
+  
+  if (typeof document !== "undefined") {
+    return createPortal(modalContent, document.body);
+  }
+  return modalContent;
 }
 
-export function BoxHeader(props: { title: string, helpText: string | preact.ComponentChildren, children?: preact.ComponentChildren }) {
+export function CornerHelpButton(props: { title: string, helpText: string | preact.ComponentChildren }) {
   const [showHelp, setShowHelp] = useState(false);
   return (
-    <div style={{ display: 'flex', width: '100%', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-      <h2 style={{ margin: 0 }}>{props.title}</h2>
-      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-        {props.children}
-        <button type="button" class="imgInput" style={{ margin: '0 -6px 0 0' }} onClick={() => setShowHelp(true)}>
-          <HelpIcon width="20" height="20" />
-        </button>
-      </div>
+    <>
+      <button type="button" class="imgInput" style={{ position: 'absolute', top: '24px', right: '24px', zIndex: 10 }} onClick={() => setShowHelp(true)}>
+        <HelpIcon width="20" height="20" />
+      </button>
       {showHelp && (
         <HelpModal title={props.title + " - Info"} onClose={() => setShowHelp(false)}>
           {props.helpText}
         </HelpModal>
       )}
-    </div>
+    </>
   );
 }
 
@@ -1188,7 +1190,8 @@ function CourseList(props: { // thing for displaying your courses & the course a
 
   return props.settings.showCourses && (
     <div class="default-div" id="course-selection">
-      <BoxHeader 
+      <h2>Kurswahl</h2>
+      <CornerHelpButton 
         title="Kurswahl" 
         helpText="Wähle hier deine Stufe/Klasse und anschließend die für dich relevanten Kurse oder Fächer aus. Diese Angaben werden verwendet, um den Vertretungs- und Klausurplan für dich zu filtern, sodass du nur das siehst, was dich auch wirklich betrifft."
       />
@@ -1625,7 +1628,8 @@ function ExamList(props: { // sorted list of all of your exams (probably the mos
       )}
       {availableLists !== undefined && (
         <div key={animationKey} style={{ animation: 'tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both' }}>
-          <BoxHeader 
+          <h2>Klausuren</h2>
+          <CornerHelpButton 
             title="Klausuren" 
             helpText="In diesem Bereich siehst du anstehende Klausuren. Wähle unten deinen Jahrgang aus. Optional kannst du unter 'Einstellungen > Klausurplan' auswählen, dass nur für dich relevante Klausuren (anhand deiner Kurswahl) angezeigt werden." 
           />
@@ -2271,11 +2275,13 @@ function PersonalTimetable(props: {
 
   return (
     <div class="default-div" id="stundenplan">
+      <CornerHelpButton 
+        title="Stundenplan" 
+        helpText="Dein persönlicher Stundenplan. Klicke auf 'Bearbeiten', um deine Fächer für die einzelnen Stunden einzutragen. Tipp: Wenn du vorher unter 'Kurswahl' deine Kurse ausgewählt hast, ist das Eintragen einfacher. (Vergiss nicht auf 'Speichern' zu klicken!). Du kannst mit dem Button 'A-/B-Woche kopieren' außerdem deine eingetragenen Kurse ganz einfach in die jeweils andere Wochenart kopieren."
+      />
       <div class="timetable-header-row">
-        <BoxHeader 
-          title="Stundenplan" 
-          helpText="Dein persönlicher Stundenplan. Klicke auf 'Bearbeiten', um deine Fächer für die einzelnen Stunden einzutragen. Tipp: Wenn du vorher unter 'Kurswahl' deine Kurse ausgewählt hast, ist das Eintragen einfacher. (Vergiss nicht auf 'Speichern' zu klicken!). Du kannst mit dem Button 'A-/B-Woche kopieren' außerdem deine eingetragenen Kurse ganz einfach in die jeweils andere Wochenart kopieren."
-        >
+        <h2>Stundenplan</h2>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap', paddingRight: '36px' }}>
           <div class="timetable-week-switch">
             <button class={currentWeek === "A" ? "active" : ""} onClick={() => setCurrentWeek("A")}>A-Woche</button>
             <button class={currentWeek === "B" ? "active" : ""} onClick={() => setCurrentWeek("B")}>B-Woche</button>
@@ -2284,7 +2290,7 @@ function PersonalTimetable(props: {
             <input type="button" class="fakebutton" value={`${currentWeek}-Woche kopieren`} onClick={copyWeek} />
           )}
           <input type="button" class="fakebutton" value={isEditMode ? "Speichern" : "Bearbeiten"} onClick={() => setIsEditMode(!isEditMode)} />
-        </BoxHeader>
+        </div>
       </div>
 
       <div class="timetable-tabs">
@@ -2577,12 +2583,14 @@ function Events(props: {
   return (
     <div class="default-div" id="termine">
       <AutoHeight>
+      <CornerHelpButton 
+        title="Termine" 
+        helpText="Hier findest du alle anstehenden Schultermine und Veranstaltungen. Diese werden automatisch aktualisiert."
+      />
       <div class="events-header">
-        <BoxHeader 
-          title="Termine" 
-          helpText="Hier findest du alle anstehenden Schultermine und Veranstaltungen. Diese werden automatisch aktualisiert."
-        >
-          {!loading && availableMonths.length > 0 && (
+        <h2>Termine</h2>
+        {!loading && availableMonths.length > 0 && (
+          <div style={{ paddingRight: '36px' }}>
             <select 
               class="events-month-select"
               value={selectedMonth} 
@@ -2597,8 +2605,8 @@ function Events(props: {
                 );
               })}
             </select>
-          )}
-        </BoxHeader>
+          </div>
+        )}
       </div>
       <div class="events-today-badge">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
@@ -2819,7 +2827,8 @@ function Homework(props: {
   return (
     <div class="default-div" id="hausaufgaben">
       <AutoHeight>
-      <BoxHeader 
+      <h2>Hausaufgaben</h2>
+      <CornerHelpButton 
         title="Hausaufgaben" 
         helpText="Hier kannst du deine Hausaufgaben notieren. Damit diese nach Fächern sortiert und im Stundenplan angezeigt werden können, solltest du vorher deinen Stundenplan ausfüllen."
       />
