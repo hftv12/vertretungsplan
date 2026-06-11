@@ -63,7 +63,7 @@ export function CornerHelpButton(props: { title: string, helpText: string | prea
   const [showHelp, setShowHelp] = useState(false);
   return (
     <>
-      <button type="button" class="imgInput" style={{ position: 'absolute', top: '18px', right: '18px', zIndex: 10 }} onClick={() => setShowHelp(true)}>
+      <button type="button" class="imgInput" style={{ position: 'absolute', top: '16px', right: '16px', zIndex: 10 }} onClick={() => setShowHelp(true)}>
         <HelpIcon width="20" height="20" />
       </button>
       {showHelp && (
