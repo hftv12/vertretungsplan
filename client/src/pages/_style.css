@@ -25,7 +25,12 @@
     src: url('/fonts/wingding.ttf');
 }
 
-/* Base resets & box sizing */
+body, html {
+    margin: 0;
+    min-height: 100dvh;
+    background-color: var(--background-color);
+}
+
 *,
 *::before,
 *::after {
@@ -418,10 +423,12 @@ header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 24px 32px;
+    padding: calc(24px + env(safe-area-inset-top)) 32px 24px 32px;
     background-color: var(--header-bg);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
+    border-top: none;
+    outline: none;
     border-bottom: 1px solid var(--brighter-color);
     box-shadow: var(--shadow-header);
     position: sticky;
