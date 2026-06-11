@@ -98,7 +98,7 @@ export default function Header(props: {
 					{props.version}
 				</span>
 
-				<div class="desktop-only-menu" style={{ position: 'relative' }}>
+				<div class="desktop-only-menu" style={{ position: 'relative', display: settings.showBottomNav === false ? 'block' : 'none' }}>
 					<button class="imgInput" onClick={() => setMenuOpen(!menuOpen)} aria-label="Menü öffnen" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', borderRadius: 'var(--rounding-sm)', border: '1px solid var(--brighter-color)', background: 'var(--input-bg)', cursor: 'pointer', transition: 'var(--transition-fast)', color: 'var(--text-color)' }}>
 						<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 							<line x1="3" y1="12" x2="21" y2="12"></line>

@@ -2062,6 +2062,11 @@ export function Settings(props: { // settings block
           <h3>Navigation (Menü)</h3>
           <div class="settings-section-content">
             <CheckButton
+              text="Navigationsleiste komplett anzeigen:"
+              updater={(v: boolean) => updateSetting("showBottomNav", v)}
+              checked={props.settings.showBottomNav !== false}
+            />
+            <CheckButton
               text="Vertretungsplan-Button:"
               updater={(v: boolean) => updateSetting("navVertretung", v)}
               checked={props.settings.navVertretung !== false}

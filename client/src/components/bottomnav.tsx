@@ -89,7 +89,7 @@ export default function BottomNav() {
 		setActiveId(id);
 	};
 
-	if (!isLoggedIn) return null;
+	if (!isLoggedIn || settings.showBottomNav === false) return null;
 
 	return (
 		<div class="bottom-nav-container">

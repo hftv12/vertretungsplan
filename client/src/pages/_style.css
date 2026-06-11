@@ -2231,7 +2231,7 @@ a.fakebutton:active {
         border-bottom: none;
         margin-bottom: 8px;
         padding: 0;
-        height: 58px;
+        height: 48px;
     }
     
     .timetable-times-column .timetable-row {
@@ -2324,20 +2324,14 @@ a.fakebutton:active {
     font-weight: 500;
 }
 
-@media (min-width: 1025px) {
-    .bottom-nav-container {
-        display: none !important;
+@media (max-width: 1024px) {
+    .desktop-only-menu {
+        display: none;
     }
 }
 
-@media (max-width: 1024px) {
-    .desktop-only-menu {
-        display: none !important;
-    }
-    
-    #main-content {
-        padding-bottom: 70px;
-    }
+#main-content {
+    padding-bottom: 70px;
 }
 
 .bottom-nav-fade {
