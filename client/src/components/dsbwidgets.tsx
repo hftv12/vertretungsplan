@@ -1867,165 +1867,187 @@ export function Settings(props: { // settings block
     <div class="default-div" id="einstellungen">
       <h2>Einstellungen</h2>
       {loadedData && (<div class="settings-div">
-        <h3 class="code">Webseite</h3>
-        <Select
-          text="Erscheinungsbild (Dark Mode):"
-          options={[{value: "light", text: "Hell"}, {value: "dark", text: "Dunkel"}]}
-          updater={(v: string) => updateSetting("theme", v)}
-          value={props.settings.theme !== undefined && props.settings.theme !== "system" ? props.settings.theme : "light"}
-        />
-        <ThemeSelector 
-          currentTheme={props.settings.colorTheme || 'default'} 
-          onSelect={(v: string) => {
-            updateSetting("colorTheme", v);
-            document.documentElement.setAttribute('data-color-theme', v);
-          }} 
-        />
-        <CheckButton
-          text="Easter eggs:"
-          updater={(v: boolean) => updateSetting("easterEggs", v)}
-          checked={props.settings.easterEggs !== undefined ? props.settings.easterEggs : true}
-          information="Falls du nur für deine Vertretungen hier bist und nicht um Spaß zu haben, kannst du die verschiedenen Ereignisse ausschalten."
-        />
-        <CheckButton
-          text="Tipps anzeigen:"
-          updater={(v: boolean) => updateSetting("yellowPaint", v)}
-          checked={props.settings.yellowPaint !== undefined ? props.settings.yellowPaint : true}
-          information="Verschiedene Tipps, wie du den DSBScraper effektiver nutzen kannst. Falls du aber schon ein Experte bist, kannst du diese ausschalten."
-        />
-        <CheckButton
-          text="Hausaufgaben anzeigen:"
-          updater={(v: boolean) => updateSetting("showHomework", v)}
-          checked={props.settings.showHomework !== false}
-        />
-        <CheckButton
-          text="Termine anzeigen:"
-          updater={(v: boolean) => updateSetting("showTermine", v)}
-          checked={props.settings.showTermine !== false}
-        />
-        <CheckButton
-          text="Informationskasten anzeigen:"
-          updater={(v: boolean) => updateSetting("showCredits", v)}
-          checked={props.settings.showCredits !== undefined ? props.settings.showCredits : true}
-        />
-
-        <h3 class="code">Vertretungsplan</h3>
-        <CheckButton
-          text="Neues Design:"
-          updater={(v: boolean) => updateSetting("newDesign", v)}
-          checked={props.settings.newDesign !== undefined ? props.settings.newDesign : false}
-          information="Das neue Design für den DSBScraper (nach Luis Koch)."
-        />
-        <Select
-          text="Parasiten bekämpfen:"
-          options={[{value: ParasitesHandler.NONE, text: "Anzeigen"}, {value: ParasitesHandler.SHORTEN, text: "Kürzen"}, {value: ParasitesHandler.EXTERMINATE, text: "Exterminieren"}]}
-          information="AGs können von vielen verschiedenen Klassen belegt werden, sodass der Rest der Vertretungen vom Bildschirm geschoben wird. (lol)"
-          updater={(v: string) => updateSetting("parasites", v)}
-          value={props.settings.parasites !== undefined ? props.settings.parasites : ParasitesHandler.SHORTEN}
-        />
-
-        <h3 class="code">Kurswahl</h3>
-        <CheckButton
-          text="Kurswahl anzeigen:"
-          updater={(v: boolean) => updateSetting("showCourses", v)}
-          checked={props.settings.showCourses !== undefined ? props.settings.showCourses : true}
-        />
-
-        <CheckButton
-          text="Fortgeschrittene Kurse:"
-          updater={(v: boolean) => updateSetting("advancedCourses", v)}
-          checked={props.settings.advancedCourses !== undefined ? props.settings.advancedCourses : false}
-          // information="Einstellungen für Kurse, die die meisten nicht brauchen würden."
-          information="Einstellungen für Kurse, die man weniger oft benötigt.">
-
-            <a class="fakebutton" download="courses.json" href={"data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(props.courses))} >Kurse als JSON exportieren (herunterladen)</a>
-            <input type="file" accept="text/json, .json" id="course-upload" name="course-upload" ref={fileRef} onChange={uploadCourse} />
-            <label class="fakebutton red" for="course-upload">Kurse aus JSON importieren (VORSICHTIG! Überschreibt deine aktuellen Kurse!)</label>
-            {!!uploadStatus && (<label>Kurse importiert.</label>)}
-            {uploadStatus === false && (<label>Fehler beim importieren von Kursen.</label>)}
-
-        </CheckButton>
-
-        <h3 class="code">Klausurplan</h3>
-        <Select
-          text="Klausurplan:"
-          options={[{value: ExamVisibility.ALL, text: "Alle anzeigen"}, {value: ExamVisibility.SORTED, text: "Nur relevante"}, {value: ExamVisibility.NONE, text: "Verstecken"}]}
-
-          value={props.settings.exams !== undefined ? props.settings.exams : ExamVisibility.SORTED}
-          updater={(v: string) => updateSetting("exams", v)}
-          disabled={props.grade.gradeName !== "EF" && props.grade.gradeName !== "Q1" && props.grade.gradeName !== "Q2"}
-        />
-        <CheckButton
-          text="Alte Klausuren anzeigen:"
-          updater={(v: boolean) => updateSetting("oldExams", v)}
-          checked={props.settings.oldExams !== undefined ? props.settings.oldExams : false}
-          disabled={props.settings === undefined || props.settings.exams !== ExamVisibility.SORTED}
-        />
-
-        <h3 class="code">Navigation (Menü)</h3>
-        <CheckButton
-          text="Vertretungsplan-Button:"
-          updater={(v: boolean) => updateSetting("navVertretung", v)}
-          checked={props.settings.navVertretung !== false}
-        />
-        <CheckButton
-          text="Klausuren-Button:"
-          updater={(v: boolean) => updateSetting("navKlausuren", v)}
-          checked={props.settings.navKlausuren !== false}
-        />
-        <CheckButton
-          text="Hausaufgaben-Button:"
-          updater={(v: boolean) => updateSetting("navHausaufgaben", v)}
-          checked={props.settings.navHausaufgaben !== false}
-        />
-        <CheckButton
-          text="Termine-Button:"
-          updater={(v: boolean) => updateSetting("navTermine", v)}
-          checked={props.settings.navTermine !== false}
-        />
-        <CheckButton
-          text="Kurswahl-Button:"
-          updater={(v: boolean) => updateSetting("navKurswahl", v)}
-          checked={props.settings.navKurswahl !== false}
-        />
-        <CheckButton
-          text="Stundenplan-Button:"
-          updater={(v: boolean) => updateSetting("navStundenplan", v)}
-          checked={props.settings.navStundenplan !== false}
-        />
-        <CheckButton
-          text="Info-Button:"
-          updater={(v: boolean) => updateSetting("navInfo", v)}
-          checked={props.settings.navInfo === true}
-        />
-        <CheckButton
-          text="Einstellungen-Button:"
-          updater={(v: boolean) => updateSetting("navEinstellungen", v)}
-          checked={props.settings.navEinstellungen === true}
-        />
-        <div style={{ marginTop: '16px' }}>
-          <input type="button" class="fakebutton" value="Willkommens-Box wieder anzeigen" onClick={() => {
-            localStorage.removeItem("dismissedWelcome");
-            window.location.reload();
-          }} />
+        <div class="settings-section">
+          <h3>Webseite</h3>
+          <div class="settings-section-content">
+            <Select
+              text="Erscheinungsbild (Dark Mode):"
+              options={[{value: "light", text: "Hell"}, {value: "dark", text: "Dunkel"}]}
+              updater={(v: string) => updateSetting("theme", v)}
+              value={props.settings.theme !== undefined && props.settings.theme !== "system" ? props.settings.theme : "light"}
+            />
+            <ThemeSelector 
+              currentTheme={props.settings.colorTheme || 'default'} 
+              onSelect={(v: string) => {
+                updateSetting("colorTheme", v);
+                document.documentElement.setAttribute('data-color-theme', v);
+              }} 
+            />
+            <CheckButton
+              text="Easter eggs:"
+              updater={(v: boolean) => updateSetting("easterEggs", v)}
+              checked={props.settings.easterEggs !== undefined ? props.settings.easterEggs : true}
+              information="Falls du nur für deine Vertretungen hier bist und nicht um Spaß zu haben, kannst du die verschiedenen Ereignisse ausschalten."
+            />
+            <CheckButton
+              text="Tipps anzeigen:"
+              updater={(v: boolean) => updateSetting("yellowPaint", v)}
+              checked={props.settings.yellowPaint !== undefined ? props.settings.yellowPaint : true}
+              information="Verschiedene Tipps, wie du den DSBScraper effektiver nutzen kannst. Falls du aber schon ein Experte bist, kannst du diese ausschalten."
+            />
+            <CheckButton
+              text="Hausaufgaben anzeigen:"
+              updater={(v: boolean) => updateSetting("showHomework", v)}
+              checked={props.settings.showHomework !== false}
+            />
+            <CheckButton
+              text="Termine anzeigen:"
+              updater={(v: boolean) => updateSetting("showTermine", v)}
+              checked={props.settings.showTermine !== false}
+            />
+            <CheckButton
+              text="Informationskasten anzeigen:"
+              updater={(v: boolean) => updateSetting("showCredits", v)}
+              checked={props.settings.showCredits !== undefined ? props.settings.showCredits : true}
+            />
+          </div>
         </div>
 
-        <h3 class="code">Verschiedenes</h3>
-        <div id="reset-div">
-          <input class="fakebutton" type="button" value="Alle Daten exportieren" onClick={exportAllData} />
-          <input type="file" accept=".json" id="backup-upload" style={{ display: 'none' }} ref={backupFileRef} onChange={importAllData} />
-          <label class="fakebutton" for="backup-upload">Alle Daten importieren</label>
-          <input class="fakebutton" type="button" value="Ausloggen" onClick={logout} />
-          <input class="fakebutton red" type="button" value="ALLE Daten löschen" onClick={resetBegin} />
-          {resetProgress > 0 && (<div>
-            <p>Willst du wirklich alle Daten löschen? Du wirst <b>alle Kurse und Einstellungen</b> verlieren.</p>
-            <p><b>Das kann nicht rückgängig gemacht werden!</b></p>
-            <Placeholder height="18px" />
-            <div>
-              <input class="fakebutton red" type="button" value=" Ja! " onClick={reset} />
-              <input class="fakebutton" type="button" value=" Nein! " onClick={resetCancel} />
+        <div class="settings-section">
+          <h3>Vertretungsplan</h3>
+          <div class="settings-section-content">
+            <CheckButton
+              text="Neues Design:"
+              updater={(v: boolean) => updateSetting("newDesign", v)}
+              checked={props.settings.newDesign !== undefined ? props.settings.newDesign : false}
+              information="Das neue Design für den DSBScraper (nach Luis Koch)."
+            />
+            <Select
+              text="Parasiten bekämpfen:"
+              options={[{value: ParasitesHandler.NONE, text: "Anzeigen"}, {value: ParasitesHandler.SHORTEN, text: "Kürzen"}, {value: ParasitesHandler.EXTERMINATE, text: "Exterminieren"}]}
+              information="AGs können von vielen verschiedenen Klassen belegt werden, sodass der Rest der Vertretungen vom Bildschirm geschoben wird. (lol)"
+              updater={(v: string) => updateSetting("parasites", v)}
+              value={props.settings.parasites !== undefined ? props.settings.parasites : ParasitesHandler.SHORTEN}
+            />
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>Kurswahl</h3>
+          <div class="settings-section-content">
+            <CheckButton
+              text="Kurswahl anzeigen:"
+              updater={(v: boolean) => updateSetting("showCourses", v)}
+              checked={props.settings.showCourses !== undefined ? props.settings.showCourses : true}
+            />
+
+            <CheckButton
+              text="Fortgeschrittene Kurse:"
+              updater={(v: boolean) => updateSetting("advancedCourses", v)}
+              checked={props.settings.advancedCourses !== undefined ? props.settings.advancedCourses : false}
+              // information="Einstellungen für Kurse, die die meisten nicht brauchen würden."
+              information="Einstellungen für Kurse, die man weniger oft benötigt.">
+
+                <a class="fakebutton" download="courses.json" href={"data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(props.courses))} >Kurse als JSON exportieren (herunterladen)</a>
+                <input type="file" accept="text/json, .json" id="course-upload" name="course-upload" ref={fileRef} onChange={uploadCourse} />
+                <label class="fakebutton red" for="course-upload">Kurse aus JSON importieren (VORSICHTIG! Überschreibt deine aktuellen Kurse!)</label>
+                {!!uploadStatus && (<label>Kurse importiert.</label>)}
+                {uploadStatus === false && (<label>Fehler beim importieren von Kursen.</label>)}
+
+            </CheckButton>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>Klausurplan</h3>
+          <div class="settings-section-content">
+            <Select
+              text="Klausurplan:"
+              options={[{value: ExamVisibility.ALL, text: "Alle anzeigen"}, {value: ExamVisibility.SORTED, text: "Nur relevante"}, {value: ExamVisibility.NONE, text: "Verstecken"}]}
+
+              value={props.settings.exams !== undefined ? props.settings.exams : ExamVisibility.SORTED}
+              updater={(v: string) => updateSetting("exams", v)}
+              disabled={props.grade.gradeName !== "EF" && props.grade.gradeName !== "Q1" && props.grade.gradeName !== "Q2"}
+            />
+            <CheckButton
+              text="Alte Klausuren anzeigen:"
+              updater={(v: boolean) => updateSetting("oldExams", v)}
+              checked={props.settings.oldExams !== undefined ? props.settings.oldExams : false}
+              disabled={props.settings === undefined || props.settings.exams !== ExamVisibility.SORTED}
+            />
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>Navigation (Menü)</h3>
+          <div class="settings-section-content">
+            <CheckButton
+              text="Vertretungsplan-Button:"
+              updater={(v: boolean) => updateSetting("navVertretung", v)}
+              checked={props.settings.navVertretung !== false}
+            />
+            <CheckButton
+              text="Klausuren-Button:"
+              updater={(v: boolean) => updateSetting("navKlausuren", v)}
+              checked={props.settings.navKlausuren !== false}
+            />
+            <CheckButton
+              text="Hausaufgaben-Button:"
+              updater={(v: boolean) => updateSetting("navHausaufgaben", v)}
+              checked={props.settings.navHausaufgaben !== false}
+            />
+            <CheckButton
+              text="Termine-Button:"
+              updater={(v: boolean) => updateSetting("navTermine", v)}
+              checked={props.settings.navTermine !== false}
+            />
+            <CheckButton
+              text="Kurswahl-Button:"
+              updater={(v: boolean) => updateSetting("navKurswahl", v)}
+              checked={props.settings.navKurswahl !== false}
+            />
+            <CheckButton
+              text="Stundenplan-Button:"
+              updater={(v: boolean) => updateSetting("navStundenplan", v)}
+              checked={props.settings.navStundenplan !== false}
+            />
+            <CheckButton
+              text="Info-Button:"
+              updater={(v: boolean) => updateSetting("navInfo", v)}
+              checked={props.settings.navInfo === true}
+            />
+            <CheckButton
+              text="Einstellungen-Button:"
+              updater={(v: boolean) => updateSetting("navEinstellungen", v)}
+              checked={props.settings.navEinstellungen === true}
+            />
+            <div style={{ marginTop: '16px' }}>
+              <input type="button" class="fakebutton" value="Willkommens-Box wieder anzeigen" onClick={() => {
+                localStorage.removeItem("dismissedWelcome");
+                window.location.reload();
+              }} />
             </div>
-          </div>)}
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3>Verschiedenes</h3>
+          <div class="settings-section-content" id="reset-div">
+            <input class="fakebutton" type="button" value="Alle Daten exportieren" onClick={exportAllData} />
+            <input type="file" accept=".json" id="backup-upload" style={{ display: 'none' }} ref={backupFileRef} onChange={importAllData} />
+            <label class="fakebutton" for="backup-upload">Alle Daten importieren</label>
+            <input class="fakebutton" type="button" value="Ausloggen" onClick={logout} />
+            <input class="fakebutton red" type="button" value="ALLE Daten löschen" onClick={resetBegin} />
+            {resetProgress > 0 && (<div>
+              <p>Willst du wirklich alle Daten löschen? Du wirst <b>alle Kurse und Einstellungen</b> verlieren.</p>
+              <p><b>Das kann nicht rückgängig gemacht werden!</b></p>
+              <Placeholder height="18px" />
+              <div>
+                <input class="fakebutton red" type="button" value=" Ja! " onClick={reset} />
+                <input class="fakebutton" type="button" value=" Nein! " onClick={resetCancel} />
+              </div>
+            </div>)}
+          </div>
         </div>
       </div>)}
     </div>

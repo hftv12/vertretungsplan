@@ -1645,9 +1645,40 @@ a.fakebutton:active {
 .settings-div {
     display: flex;
     flex-direction: column;
-    row-gap: 12px;
+    row-gap: 24px;
     background-color: transparent;
     padding: 0;
+}
+
+.settings-section {
+    background-color: var(--input-bg);
+    border: 1px solid var(--brighter-color);
+    border-radius: var(--rounding);
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    transition: var(--transition-smooth);
+}
+
+.settings-section:hover {
+    border-color: var(--accent-light);
+    box-shadow: 0 4px 16px var(--accent-glow);
+}
+
+.settings-section h3 {
+    margin: 0 0 4px 0;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--brighter-color);
+    font-size: 1.15rem;
+    color: var(--text-color);
+    font-family: var(--font-heading);
+}
+
+.settings-section-content {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
 }
 
 /* Settings block elements */
