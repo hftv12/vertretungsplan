@@ -5,7 +5,7 @@ import { CheckButton, Select } from "./settingshelper";
 
 //import serializeEvent from "../util/event_helper";
 
-import { EyeIcon, EyeOffIcon, RefreshIcon, ImportantIcon, FilterIcon, PencilIcon } from "./icons";
+import { EyeIcon, EyeOffIcon, RefreshIcon, ImportantIcon, FilterIcon, PencilIcon, HelpIcon } from "./icons";
 // @ts-ignore
 import plink from "../assets/placeholder.gif";
 // import dsbIcon from "/favicons/dsb_simplistic192.png";
@@ -31,6 +31,41 @@ function AutoHeight(props: { children: preact.ComponentChildren }) {
       <div ref={contentRef}>
         {props.children}
       </div>
+    </div>
+  );
+}
+
+export function HelpModal(props: { title: string, onClose: () => void, children: preact.ComponentChildren }) {
+  return (
+    <div class="modal-overlay" onClick={props.onClose}>
+      <div class="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div class="modal-header">
+          <h2>{props.title}</h2>
+          <button class="modal-close" onClick={props.onClose}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          {props.children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function BoxHeader(props: { title: string, helpText: string | preact.ComponentChildren }) {
+  const [showHelp, setShowHelp] = useState(false);
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+      <h2 style={{ margin: 0 }}>{props.title}</h2>
+      <button type="button" class="imgInput" onClick={() => setShowHelp(true)}>
+        <HelpIcon width="20" height="20" />
+      </button>
+      {showHelp && (
+        <HelpModal title={props.title + " - Info"} onClose={() => setShowHelp(false)}>
+          {props.helpText}
+        </HelpModal>
+      )}
     </div>
   );
 }
@@ -1577,7 +1612,10 @@ function ExamList(props: { // sorted list of all of your exams (probably the mos
       )}
       {availableLists !== undefined && (
         <div key={animationKey} style={{ animation: 'tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both' }}>
-          <h2>Klausuren</h2>
+          <BoxHeader 
+            title="Klausuren" 
+            helpText="In diesem Bereich siehst du anstehende Klausuren. Wähle unten deinen Jahrgang aus. Optional kannst du unter 'Einstellungen > Klausurplan' auswählen, dass nur für dich relevante Klausuren (anhand deiner Kurswahl) angezeigt werden." 
+          />
           {(availableLists === null || examList === null) && ( 
             <div class="h-div">
               <DSBRefreshButton success={reloadSuccess} setSuccess={setReloadSuccess} getData={reloadExamList} /> {/* I bet you didn't know I put a refresh button here did you? */}
@@ -2221,7 +2259,10 @@ function PersonalTimetable(props: {
   return (
     <div class="default-div" id="stundenplan">
       <div class="timetable-header-row">
-        <h2>Stundenplan</h2>
+        <BoxHeader 
+          title="Stundenplan" 
+          helpText="Dein persönlicher Stundenplan. Klicke auf 'Bearbeiten', um deine Fächer für die einzelnen Stunden einzutragen. Tipp: Wenn du vorher unter 'Kurswahl' deine Kurse ausgewählt hast, ist das Eintragen einfacher. (Vergiss nicht auf 'Speichern' zu klicken!)"
+        />
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
           <div class="timetable-week-switch">
             <button class={currentWeek === "A" ? "active" : ""} onClick={() => setCurrentWeek("A")}>A-Woche</button>
@@ -2525,7 +2566,10 @@ function Events(props: {
     <div class="default-div" id="termine">
       <AutoHeight>
       <div class="events-header">
-        <h2>Termine</h2>
+        <BoxHeader 
+          title="Termine" 
+          helpText="Hier findest du alle anstehenden Schultermine und Veranstaltungen. Diese werden automatisch aktualisiert."
+        />
         {!loading && availableMonths.length > 0 && (
           <select 
             class="events-month-select"
@@ -2762,7 +2806,10 @@ function Homework(props: {
   return (
     <div class="default-div" id="hausaufgaben">
       <AutoHeight>
-      <h2>Hausaufgaben</h2>
+      <BoxHeader 
+        title="Hausaufgaben" 
+        helpText="Hier kannst du deine Hausaufgaben notieren. Damit diese nach Fächern sortiert und im Stundenplan angezeigt werden können, solltest du vorher deinen Stundenplan ausfüllen."
+      />
       <form onSubmit={handleAdd} style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '12px' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {todaysCourses.length > 0 && (
