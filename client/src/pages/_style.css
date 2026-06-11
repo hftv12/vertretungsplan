@@ -2331,7 +2331,7 @@ a.fakebutton:active {
 }
 
 #main-content {
-    padding-bottom: 70px;
+    padding-bottom: calc(70px + env(safe-area-inset-bottom));
 }
 
 .bottom-nav-fade {
