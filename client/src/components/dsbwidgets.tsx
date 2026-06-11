@@ -3068,6 +3068,7 @@ export default function DSBWidgets(props: {
 
   const subjectSelectRef = useRef(null);
   const [showLoading, setShowLoading] = useState(false);
+  const [welcomeWrapper] = useAutoAnimate();
 
   useEffect(() => {
     validateCredentials().then((valid) => {
