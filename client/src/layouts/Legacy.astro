@@ -47,9 +47,6 @@ const { title, icon, version, manifest } = Astro.props;
 					tempDiv.style.backgroundColor = 'var(--background-color, #ffffff)';
 					const bgRgba = getComputedStyle(tempDiv).backgroundColor;
 					
-					tempDiv.style.backgroundColor = 'var(--header-bg, #ffffff)';
-					const fgRgba = getComputedStyle(tempDiv).backgroundColor;
-					
 					document.body.removeChild(tempDiv);
 					
 					const parseColor = (str) => {
@@ -59,14 +56,10 @@ const { title, icon, version, manifest } = Astro.props;
 					};
 					
 					const bg = parseColor(bgRgba);
-					const fg = parseColor(fgRgba);
 					
-					const a = fg[3];
-					const r = Math.round(fg[0] * a + bg[0] * (1 - a));
-					const g = Math.round(fg[1] * a + bg[1] * (1 - a));
-					const b = Math.round(fg[2] * a + bg[2] * (1 - a));
-					
-					meta.content = `rgb(${r}, ${g}, ${b})`;
+					const solidColor = `rgb(${bg[0]}, ${bg[1]}, ${bg[2]})`;
+					meta.content = solidColor;
+					document.documentElement.style.setProperty('--solid-theme-color', solidColor);
 				}, 50);
 			}
 
