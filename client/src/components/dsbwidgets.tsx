@@ -63,7 +63,7 @@ export function CornerHelpButton(props: { title: string, helpText: string | prea
   const [showHelp, setShowHelp] = useState(false);
   return (
     <>
-      <button type="button" class="imgInput" style={{ position: 'absolute', top: '22px', right: '22px', zIndex: 10 }} onClick={() => setShowHelp(true)}>
+      <button type="button" class="imgInput" style={{ position: 'absolute', top: '18px', right: '18px', zIndex: 10 }} onClick={() => setShowHelp(true)}>
         <HelpIcon width="20" height="20" />
       </button>
       {showHelp && (
@@ -1627,13 +1627,14 @@ function ExamList(props: { // sorted list of all of your exams (probably the mos
         <h2>Lade, bitte warten...</h2>
       )}
       {availableLists !== undefined && (
-        <div key={animationKey} style={{ animation: 'tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both' }}>
-          <h2>Klausuren</h2>
+        <>
           <CornerHelpButton 
             title="Klausuren" 
             helpText="In diesem Bereich siehst du anstehende Klausuren. Wähle unten deinen Jahrgang aus. Optional kannst du unter 'Einstellungen > Klausurplan' auswählen, dass nur für dich relevante Klausuren (anhand deiner Kurswahl) angezeigt werden." 
           />
-          {(availableLists === null || examList === null) && ( 
+          <div key={animationKey} style={{ animation: 'tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both' }}>
+            <h2>Klausuren</h2>
+            {(availableLists === null || examList === null) && ( 
             <div class="h-div">
               <DSBRefreshButton success={reloadSuccess} setSuccess={setReloadSuccess} getData={reloadExamList} /> {/* I bet you didn't know I put a refresh button here did you? */}
               <p><i>aktuell nicht verfügbar.</i></p>
@@ -1723,9 +1724,10 @@ function ExamList(props: { // sorted list of all of your exams (probably the mos
                   </div>)}
                 </div>
               </div>
-            </div>
-          )}
-        </div>
+              </div>
+            )}
+          </div>
+        </>
       )}
     </div>
   );
