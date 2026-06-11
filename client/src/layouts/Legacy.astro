@@ -31,6 +31,59 @@ const { title, icon, version, manifest } = Astro.props;
 					if (parsed.colorTheme) document.documentElement.setAttribute('data-color-theme', parsed.colorTheme);
 				}
 			} catch (e) {}
+
+			function updateThemeColorMeta() {
+				setTimeout(() => {
+					let meta = document.querySelector('meta[name="theme-color"]');
+					if (!meta) {
+						meta = document.createElement('meta');
+						meta.name = 'theme-color';
+						document.head.appendChild(meta);
+					}
+					
+					const tempDiv = document.createElement('div');
+					document.body.appendChild(tempDiv);
+					
+					tempDiv.style.backgroundColor = 'var(--background-color, #ffffff)';
+					const bgRgba = getComputedStyle(tempDiv).backgroundColor;
+					
+					tempDiv.style.backgroundColor = 'var(--header-bg, #ffffff)';
+					const fgRgba = getComputedStyle(tempDiv).backgroundColor;
+					
+					document.body.removeChild(tempDiv);
+					
+					const parseColor = (str) => {
+						const match = str.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+						if (!match) return [255,255,255,1];
+						return [parseInt(match[1]), parseInt(match[2]), parseInt(match[3]), match[4] ? parseFloat(match[4]) : 1];
+					};
+					
+					const bg = parseColor(bgRgba);
+					const fg = parseColor(fgRgba);
+					
+					const a = fg[3];
+					const r = Math.round(fg[0] * a + bg[0] * (1 - a));
+					const g = Math.round(fg[1] * a + bg[1] * (1 - a));
+					const b = Math.round(fg[2] * a + bg[2] * (1 - a));
+					
+					meta.content = `rgb(${r}, ${g}, ${b})`;
+				}, 50);
+			}
+
+			if (document.readyState === 'loading') {
+				document.addEventListener('DOMContentLoaded', updateThemeColorMeta);
+			} else {
+				updateThemeColorMeta();
+			}
+
+			const observer = new MutationObserver((mutations) => {
+				mutations.forEach((mutation) => {
+					if (mutation.attributeName === 'data-theme' || mutation.attributeName === 'data-color-theme') {
+						updateThemeColorMeta();
+					}
+				});
+			});
+			observer.observe(document.documentElement, { attributes: true });
 		</script>
 	</head>
 	<body>
