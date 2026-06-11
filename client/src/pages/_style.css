@@ -1650,7 +1650,8 @@ a.fakebutton:active {
     backdrop-filter: blur(4px);
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
+    padding-top: 10vh;
     z-index: 1000;
     animation: fadeIn 0.2s ease-out forwards;
 }

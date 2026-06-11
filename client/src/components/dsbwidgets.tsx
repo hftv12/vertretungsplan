@@ -53,14 +53,17 @@ export function HelpModal(props: { title: string, onClose: () => void, children:
   );
 }
 
-export function BoxHeader(props: { title: string, helpText: string | preact.ComponentChildren }) {
+export function BoxHeader(props: { title: string, helpText: string | preact.ComponentChildren, children?: preact.ComponentChildren }) {
   const [showHelp, setShowHelp] = useState(false);
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+    <div style={{ display: 'flex', width: '100%', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
       <h2 style={{ margin: 0 }}>{props.title}</h2>
-      <button type="button" class="imgInput" onClick={() => setShowHelp(true)}>
-        <HelpIcon width="20" height="20" />
-      </button>
+      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+        {props.children}
+        <button type="button" class="imgInput" style={{ margin: '0 -6px 0 0' }} onClick={() => setShowHelp(true)}>
+          <HelpIcon width="20" height="20" />
+        </button>
+      </div>
       {showHelp && (
         <HelpModal title={props.title + " - Info"} onClose={() => setShowHelp(false)}>
           {props.helpText}
@@ -337,6 +340,7 @@ function DSBTableToolbar(props: { // toolbar for switching day & filtering optio
   setSuccess: Function,
 }) {
   const filterStageRef = useRef(null);
+  const [showHelp, setShowHelp] = useState(false);
   const handleFilterChange = useCallback(() => {
     const filterStage = (filterStageRef.current as HTMLSelectElement).value;
     localStorage.setItem("filterStage", filterStage);
@@ -377,6 +381,14 @@ function DSBTableToolbar(props: { // toolbar for switching day & filtering optio
             <option value={FilterStage.COURSES}>Nur deine Kurse/Fächer</option>
           </select>
         </div>
+        <button type="button" class="imgInput" onClick={() => setShowHelp(true)}>
+          <HelpIcon width="20" height="20" />
+        </button>
+        {showHelp && (
+          <HelpModal title="Vertretungsplan - Info" onClose={() => setShowHelp(false)}>
+            Hier siehst du den Vertretungsplan. Mit dem Filter-Icon (Trichter) direkt daneben kannst du einstellen, ob du alle Vertretungen der Schule, nur die deiner Stufe oder nur die deiner individuell gewählten Kurse (siehe Kurswahl) sehen möchtest.
+          </HelpModal>
+        )}
       </div>
       <div>
         {props.timetable !== null && (
@@ -1176,9 +1188,10 @@ function CourseList(props: { // thing for displaying your courses & the course a
 
   return props.settings.showCourses && (
     <div class="default-div" id="course-selection">
-      <h2>
-        Kurswahl
-      </h2>
+      <BoxHeader 
+        title="Kurswahl" 
+        helpText="Wähle hier deine Stufe/Klasse und anschließend die für dich relevanten Kurse oder Fächer aus. Diese Angaben werden verwendet, um den Vertretungs- und Klausurplan für dich zu filtern, sodass du nur das siehst, was dich auch wirklich betrifft."
+      />
       {!!props.settings.yellowPaint && (
         <div>
           <p>
@@ -2261,9 +2274,8 @@ function PersonalTimetable(props: {
       <div class="timetable-header-row">
         <BoxHeader 
           title="Stundenplan" 
-          helpText="Dein persönlicher Stundenplan. Klicke auf 'Bearbeiten', um deine Fächer für die einzelnen Stunden einzutragen. Tipp: Wenn du vorher unter 'Kurswahl' deine Kurse ausgewählt hast, ist das Eintragen einfacher. (Vergiss nicht auf 'Speichern' zu klicken!)"
-        />
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+          helpText="Dein persönlicher Stundenplan. Klicke auf 'Bearbeiten', um deine Fächer für die einzelnen Stunden einzutragen. Tipp: Wenn du vorher unter 'Kurswahl' deine Kurse ausgewählt hast, ist das Eintragen einfacher. (Vergiss nicht auf 'Speichern' zu klicken!). Du kannst mit dem Button 'A-/B-Woche kopieren' außerdem deine eingetragenen Kurse ganz einfach in die jeweils andere Wochenart kopieren."
+        >
           <div class="timetable-week-switch">
             <button class={currentWeek === "A" ? "active" : ""} onClick={() => setCurrentWeek("A")}>A-Woche</button>
             <button class={currentWeek === "B" ? "active" : ""} onClick={() => setCurrentWeek("B")}>B-Woche</button>
@@ -2272,7 +2284,7 @@ function PersonalTimetable(props: {
             <input type="button" class="fakebutton" value={`${currentWeek}-Woche kopieren`} onClick={copyWeek} />
           )}
           <input type="button" class="fakebutton" value={isEditMode ? "Speichern" : "Bearbeiten"} onClick={() => setIsEditMode(!isEditMode)} />
-        </div>
+        </BoxHeader>
       </div>
 
       <div class="timetable-tabs">
@@ -2569,23 +2581,24 @@ function Events(props: {
         <BoxHeader 
           title="Termine" 
           helpText="Hier findest du alle anstehenden Schultermine und Veranstaltungen. Diese werden automatisch aktualisiert."
-        />
-        {!loading && availableMonths.length > 0 && (
-          <select 
-            class="events-month-select"
-            value={selectedMonth} 
-            onChange={handleMonthChange}
-          >
-            {availableMonths.map(monthKey => {
-              const [y, m] = monthKey.split('-');
-              return (
-                <option key={monthKey} value={monthKey}>
-                  {getFullMonthName(parseInt(m) - 1)} {y}
-                </option>
-              );
-            })}
-          </select>
-        )}
+        >
+          {!loading && availableMonths.length > 0 && (
+            <select 
+              class="events-month-select"
+              value={selectedMonth} 
+              onChange={handleMonthChange}
+            >
+              {availableMonths.map(monthKey => {
+                const [y, m] = monthKey.split('-');
+                return (
+                  <option key={monthKey} value={monthKey}>
+                    {getFullMonthName(parseInt(m) - 1)} {y}
+                  </option>
+                );
+              })}
+            </select>
+          )}
+        </BoxHeader>
       </div>
       <div class="events-today-badge">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
