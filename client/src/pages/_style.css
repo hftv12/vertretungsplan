@@ -2207,7 +2207,7 @@ a.fakebutton:active {
     .timetable-container {
         display: grid;
         grid-template-columns: auto repeat(5, 1fr);
-        gap: 16px;
+        gap: 6px;
         overflow-x: visible;
         height: auto !important;
         overflow-y: visible !important;
@@ -2227,11 +2227,11 @@ a.fakebutton:active {
     .timetable-row {
         flex-direction: column;
         align-items: stretch;
-        gap: 6px;
+        gap: 4px;
         border-bottom: none;
-        margin-bottom: 12px;
+        margin-bottom: 8px;
         padding: 0;
-        height: 68px;
+        height: 58px;
     }
     
     .timetable-times-column .timetable-row {
@@ -2243,12 +2243,21 @@ a.fakebutton:active {
     .timetable-time {
         width: auto;
         text-align: right;
-        font-size: 0.8rem;
+        font-size: 0.75rem;
     }
 
     .timetable-spacer {
-        height: 24px;
+        height: 20px;
         border-bottom: 1px solid var(--brighter-color);
+    }
+    
+    .timetable-course {
+        padding: 6px 8px;
+        font-size: 0.85rem;
+    }
+
+    .timetable-course span:last-child {
+        font-size: 0.75rem !important;
     }
 }
 /*#endregion*/
