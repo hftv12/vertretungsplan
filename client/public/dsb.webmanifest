@@ -1,17 +1,17 @@
 {
-    "short_name": "DSB 2.0",
-    "name": "DSB Mobile 2.0",
-    "icons": [
-      {
-        "src": "logo.png",
-        "sizes": "192x192 512x512",
-        "type": "image/png",
-        "purpose": "any maskable"
-      }
-    ],
-    "start_url": ".",
-    "display": "standalone",
-    "theme_color": "#ffffff",
-    "background_color": "#ffffff",
-    "orientation": "natural"
+  "short_name": "DSB 2.0",
+  "name": "DSB Mobile 2.0",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": ".",
+  "display": "fullscreen",
+  "theme_color": "#ffffff",
+  "background_color": "#ffffff",
+  "orientation": "portrait"
 }
