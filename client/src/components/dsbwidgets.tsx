@@ -2711,7 +2711,7 @@ const parseICal = (icsData: string): AppEvent[] => {
     }
     
     if (line.startsWith('BEGIN:VEVENT')) {
-      currentEvent = { id: Math.random().toString(36).substr(2, 9), allDay: true, location: '' };
+      currentEvent = { id: Math.random().toString(36).substring(2, 11), allDay: true, location: '' };
     } else if (line.startsWith('END:VEVENT')) {
       if (currentEvent && currentEvent.title && currentEvent.date) {
         events.push(currentEvent as AppEvent);

@@ -1,4 +1,4 @@
-export default function Line(props) {
+export default function Line(props: any) {
     return (
         <div style={
             {

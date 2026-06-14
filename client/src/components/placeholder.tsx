@@ -1,4 +1,4 @@
-export default function Placeholder(props) {
+export default function Placeholder(props: any) {
     return (
         <div style={
             {

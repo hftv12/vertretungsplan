@@ -34,6 +34,7 @@ const { title, icon, version, manifest } = Astro.props;
 
 			function updateThemeColorMeta() {
 				setTimeout(() => {
+					/** @type {HTMLMetaElement | null} */
 					let meta = document.querySelector('meta[name="theme-color"]');
 					if (!meta) {
 						meta = document.createElement('meta');
@@ -52,6 +53,7 @@ const { title, icon, version, manifest } = Astro.props;
 					
 					document.body.removeChild(tempDiv);
 					
+					/** @param {string} str */
 					const parseColor = (str) => {
 						const match = str.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
 						if (!match) return [255,255,255,1];
