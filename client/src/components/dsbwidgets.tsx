@@ -1875,59 +1875,80 @@ function WidgetReorderList(props: { settings: DSBSettings, updateSetting: Functi
     return id;
   };
 
+  const LockIcon = () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style={{ opacity: 0.6 }}>
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+    </svg>
+  );
+
+  const StaticBox = ({ name }: { name: string }) => (
+    <div style={{ padding: '12px', background: 'var(--input-bg)', borderRadius: 'var(--rounding-sm)', display: 'flex', alignItems: 'center', gap: '12px', opacity: 0.8, border: '1px solid var(--brighter-color)' }}>
+      <LockIcon />
+      <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>{name}</span>
+    </div>
+  );
+
+  const [parent] = useAutoAnimate();
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
-      <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '8px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
+      <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '4px' }}>
         Du kannst die Reihenfolge der Boxen auf der Startseite per Drag and Drop ändern und diese hier zentral ein- und ausblenden.
       </p>
-      <div style={{ padding: '12px', background: 'var(--input-bg)', borderRadius: 'var(--rounding-sm)', display: 'flex', justifyContent: 'space-between', opacity: 0.7 }}>
-        <span style={{ fontWeight: 600 }}>🔒 Vertretungen</span>
-      </div>
       
-      {items.map((item: string, idx: number) => {
-        const isVisible = getVisibility(item);
-        return (
-          <div 
-            key={item}
-            draggable
-            onDragStart={(e) => handleDragStart(e, idx)}
-            onDragOver={(e) => { e.preventDefault(); handleDragOver(idx); }}
-            onDragEnd={handleDragEnd}
-            style={{ 
-              padding: '12px', 
-              background: 'var(--foreground-color)', 
-              border: '1px solid var(--brighter-color)', 
-              borderRadius: 'var(--rounding-sm)', 
-              display: 'flex', 
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              cursor: 'grab',
-              opacity: draggedIdx === idx ? 0.5 : 1,
-              transition: 'transform 0.2s, box-shadow 0.2s',
-              boxShadow: draggedIdx === idx ? 'var(--shadow-hover)' : 'var(--shadow-card)'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <span style={{ cursor: 'grab', color: 'var(--text-secondary)' }}>☰</span>
-              <span style={{ fontWeight: 600, opacity: isVisible ? 1 : 0.5 }}>{getName(item)}</span>
-            </div>
-            <button 
-              type="button"
-              class="imgInput" 
-              onClick={() => toggleVisibility(item)} 
-              title={isVisible ? "Ausblenden" : "Einblenden"}
-            >
-              {isVisible ? <EyeIcon width="20" height="20" /> : <EyeOffIcon width="20" height="20" />}
-            </button>
-          </div>
-        );
-      })}
-
-      <div style={{ padding: '12px', background: 'var(--input-bg)', borderRadius: 'var(--rounding-sm)', display: 'flex', justifyContent: 'space-between', opacity: 0.7 }}>
-        <span style={{ fontWeight: 600 }}>🔒 Einstellungen</span>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <StaticBox name="Vertretungen" />
       </div>
-      <div style={{ padding: '12px', background: 'var(--input-bg)', borderRadius: 'var(--rounding-sm)', display: 'flex', justifyContent: 'space-between', opacity: 0.7 }}>
-        <span style={{ fontWeight: 600 }}>🔒 Informationen</span>
+
+      <div style={{ height: '1px', background: 'var(--brighter-color)', margin: '4px 0' }} />
+      
+      <div ref={parent} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {items.map((item: string, idx: number) => {
+          const isVisible = getVisibility(item);
+          return (
+            <div 
+              key={item}
+              draggable
+              onDragStart={(e) => handleDragStart(e, idx)}
+              onDragOver={(e) => { e.preventDefault(); handleDragOver(idx); }}
+              onDragEnd={handleDragEnd}
+              style={{ 
+                padding: '12px', 
+                background: 'var(--foreground-color)', 
+                border: '1px solid var(--brighter-color)', 
+                borderRadius: 'var(--rounding-sm)', 
+                display: 'flex', 
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                cursor: 'grab',
+                opacity: draggedIdx === idx ? 0 : 1,
+                transition: 'box-shadow 0.2s',
+                boxShadow: draggedIdx === idx ? 'var(--shadow-hover)' : 'var(--shadow-card)'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ cursor: 'grab', color: 'var(--text-secondary)' }}>☰</span>
+                <span style={{ fontWeight: 600, opacity: isVisible ? 1 : 0.5 }}>{getName(item)}</span>
+              </div>
+              <button 
+                type="button"
+                class="imgInput" 
+                onClick={() => toggleVisibility(item)} 
+                title={isVisible ? "Ausblenden" : "Einblenden"}
+              >
+                {isVisible ? <EyeIcon width="20" height="20" /> : <EyeOffIcon width="20" height="20" />}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={{ height: '1px', background: 'var(--brighter-color)', margin: '4px 0' }} />
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <StaticBox name="Einstellungen" />
+        <StaticBox name="Informationen" />
       </div>
     </div>
   );
@@ -2101,11 +2122,6 @@ export function Settings(props: { // settings block
               information="Verschiedene Tipps, wie du den DSBScraper effektiver nutzen kannst. Falls du aber schon ein Experte bist, kannst du diese ausschalten."
             />
             <WidgetReorderList settings={props.settings} updateSetting={updateSetting} />
-            <CheckButton
-              text="Informationskasten anzeigen:"
-              updater={(v: boolean) => updateSetting("showCredits", v)}
-              checked={props.settings.showCredits !== undefined ? props.settings.showCredits : true}
-            />
           </div>
         </div>
 
@@ -2173,7 +2189,7 @@ export function Settings(props: { // settings block
                 props.settings.showTermine !== false && props.settings.navTermine !== false,
                 props.settings.showHomework !== false && props.settings.navHausaufgaben !== false,
                 props.settings.navEinstellungen === true,
-                props.settings.showCredits !== false && props.settings.navInfo === true
+                props.settings.navInfo === true
               ].filter(Boolean).length;
               const isFull = selectedItemsCount >= maxItems;
               const textCol = isFull ? 'var(--s-free-border)' : 'var(--text-secondary)';
@@ -3281,24 +3297,22 @@ export default function DSBWidgets(props: {
             })}
 
             <Settings settings={settings} setSettings={setSettings} grade={grade} courses={courses} setCourses={setCourses} />
-            {settings.showCredits && (
-              <div class="default-div" id="informationen">
-                <h2>Informationen</h2>
-    
+            <div class="default-div" id="informationen">
+              <h2>Informationen</h2>
+  
 
-                {/* <p>Der "zum Kalender hinzufügen"-Knopf macht nichts. Er ist nur sehr ästhetisch.</p>
-                <p>Aktuell ist das Vertretungsplan-anzeige-ding sehr bloated und unschön. Ich schaue mal, ob ich evtl. <span class="red">farbige Markierungen</span> hinzufüge oder es komplett redesigne.</p>
-                <p>Wahrscheinlich wird das aber das letzte sein, um was ich diese Webseite erweitere. <sup><i>(außer wenn jemand Lust hat, CSS-Themes dieser Seite beizutragen)</i></sup></p> */}
-    
-                <p>Diese Webseite basiert auf dem DSB-Scraper von Kirill (kirillathome)</p>
-                <p><b>Hinweis:</b> Alle deine eingetragenen Daten (wie Kurse, Stundenplan und Einstellungen) werden ausschließlich lokal auf deinem Gerät gespeichert.</p>
-                <p><b>Wichtig:</b> Die hier bereitgestellten Daten (wie der Vertretungsplan) können Fehler aufweisen. Bitte vergewissere dich bei Unklarheiten zusätzlich am schwarzen Brett der Schule.</p>
+              {/* <p>Der "zum Kalender hinzufügen"-Knopf macht nichts. Er ist nur sehr ästhetisch.</p>
+              <p>Aktuell ist das Vertretungsplan-anzeige-ding sehr bloated und unschön. Ich schaue mal, ob ich evtl. <span class="red">farbige Markierungen</span> hinzufüge oder es komplett redesigne.</p>
+              <p>Wahrscheinlich wird das aber das letzte sein, um was ich diese Webseite erweitere. <sup><i>(außer wenn jemand Lust hat, CSS-Themes dieser Seite beizutragen)</i></sup></p> */}
+  
+              <p>Diese Webseite basiert auf dem DSB-Scraper von Kirill (kirillathome)</p>
+              <p><b>Hinweis:</b> Alle deine eingetragenen Daten (wie Kurse, Stundenplan und Einstellungen) werden ausschließlich lokal auf deinem Gerät gespeichert.</p>
+              <p><b>Wichtig:</b> Die hier bereitgestellten Daten (wie der Vertretungsplan) können Fehler aufweisen. Bitte vergewissere dich bei Unklarheiten zusätzlich am schwarzen Brett der Schule.</p>
 
-                <Placeholder height='20px' />
-    
-                <p>Version der Website: <b><span class='code'>{props.version}</span></b></p>
+              <Placeholder height='20px' />
+  
+              <p>Version der Website: <b><span class='code'>{props.version}</span></b></p>
             </div>
-            )}
           </div>
         )}
       </div>

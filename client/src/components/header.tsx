@@ -80,7 +80,7 @@ export default function Header(props: {
 		{ id: 'termine', label: 'Termine', show: settings.showTermine !== false && settings.navTermine !== false },
 		{ id: 'hausaufgaben', label: 'Hausaufgaben', show: settings.showHomework !== false && settings.navHausaufgaben !== false },
 		{ id: 'einstellungen', label: 'Einstellungen', show: settings.navEinstellungen === true },
-		{ id: 'informationen', label: 'Informationen', show: settings.showCredits !== false && settings.navInfo === true },
+		{ id: 'informationen', label: 'Informationen', show: settings.navInfo === true },
 	].filter(item => item.show);
 
 	return (

@@ -47,16 +47,35 @@ export default function BottomNav() {
 
 	const maxItems = windowWidth < 380 ? 4 : windowWidth < 600 ? 5 : Infinity;
 
-	const menuItems = [
-		{ id: 'vertretungsplan', label: 'Vertretung', icon: CalendarIcon, show: settings.navVertretung !== false },
-		{ id: 'klausuren', label: 'Klausuren', icon: DocumentTextIcon, show: settings.exams !== "none" && settings.navKlausuren !== false },
-		{ id: 'course-selection', label: 'Kurswahl', icon: CheckBadgeIcon, show: settings.showCourses !== false && settings.navKurswahl !== false },
-		{ id: 'stundenplan', label: 'Stundenplan', icon: ClockIcon, show: settings.navStundenplan !== false },
-		{ id: 'termine', label: 'Termine', icon: EventsIcon, show: settings.showTermine !== false && settings.navTermine !== false },
-		{ id: 'hausaufgaben', label: 'Aufgaben', icon: PencilIcon, show: settings.showHomework !== false && settings.navHausaufgaben !== false },
-		{ id: 'einstellungen', label: 'Optionen', icon: CogIcon, show: settings.navEinstellungen === true },
-		{ id: 'informationen', label: 'Info', icon: InfoIcon, show: settings.showCredits !== false && settings.navInfo === true },
-	].filter(item => item.show).slice(0, maxItems);
+	const widgetOrder = settings.widgetOrder || ['klausuren', 'kurswahl', 'stundenplan', 'termine', 'hausaufgaben'];
+	
+	const widgetIdToNavId: Record<string, string> = {
+		'klausuren': 'klausuren',
+		'kurswahl': 'course-selection',
+		'stundenplan': 'stundenplan',
+		'termine': 'termine',
+		'hausaufgaben': 'hausaufgaben'
+	};
+
+	const navOrder = [
+		'vertretungsplan',
+		...widgetOrder.map((w: string) => widgetIdToNavId[w]).filter(Boolean),
+		'einstellungen',
+		'informationen'
+	];
+
+	const allMenuItems: Record<string, any> = {
+		'vertretungsplan': { id: 'vertretungsplan', label: 'Vertretung', icon: CalendarIcon, show: settings.navVertretung !== false },
+		'klausuren': { id: 'klausuren', label: 'Klausuren', icon: DocumentTextIcon, show: settings.exams !== "none" && settings.navKlausuren !== false },
+		'course-selection': { id: 'course-selection', label: 'Kurswahl', icon: CheckBadgeIcon, show: settings.showCourses !== false && settings.navKurswahl !== false },
+		'stundenplan': { id: 'stundenplan', label: 'Stundenplan', icon: ClockIcon, show: settings.navStundenplan !== false },
+		'termine': { id: 'termine', label: 'Termine', icon: EventsIcon, show: settings.showTermine !== false && settings.navTermine !== false },
+		'hausaufgaben': { id: 'hausaufgaben', label: 'Aufgaben', icon: PencilIcon, show: settings.showHomework !== false && settings.navHausaufgaben !== false },
+		'einstellungen': { id: 'einstellungen', label: 'Optionen', icon: CogIcon, show: settings.navEinstellungen === true },
+		'informationen': { id: 'informationen', label: 'Info', icon: InfoIcon, show: settings.navInfo === true },
+	};
+
+	const menuItems = navOrder.map(id => allMenuItems[id]).filter(item => item.show).slice(0, maxItems);
 
 	useEffect(() => {
 		const handleScroll = () => {
