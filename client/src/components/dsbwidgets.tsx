@@ -1827,15 +1827,13 @@ const ThemeSelector = (props: { currentTheme: string, onSelect: (t: string) => v
         })}
       </div>
 
-      <div style={{ height: '1px', background: 'var(--brighter-color)', margin: '20px 0 16px 0' }} />
-
       <div style={{ textAlign: 'center', marginBottom: '8px' }}>
         <h3 style={{ fontSize: '1.05rem', color: 'var(--text-color)', marginBottom: '4px', fontWeight: 600 }}>Erstelle dein eigenes Theme</h3>
         <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '20px' }}>Passe die Farbe der einzelnen Felder durch ein Klicken an</p>
         
         <div 
           style={{ 
-            position: 'relative', width: '110px', height: '110px', margin: '0 auto', 
+            position: 'relative', width: '150px', height: '150px', margin: '0 auto', 
             borderRadius: '50%', overflow: 'hidden', boxShadow: 'var(--shadow-card)', 
             border: (props.currentTheme === 'custom') ? '3px solid var(--text-color)' : '1px solid var(--brighter-color)',
             transition: 'border 0.2s, transform 0.2s',
@@ -1843,19 +1841,19 @@ const ThemeSelector = (props: { currentTheme: string, onSelect: (t: string) => v
           }}
           onClick={() => { if (props.currentTheme !== 'custom') props.onSelect('custom'); }}
         >
-          {/* Half circle for Background */}
-          <label style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: '50%', background: (props.settings?.customTheme?.bg || '#f8fafc'), cursor: 'pointer' }} title="Hintergrundfarbe">
-            <input type="color" value={(props.settings?.customTheme?.bg || '#f8fafc')} onChange={(e) => handleCustomColorChange('bg', (e.target as HTMLInputElement).value)} style={{ opacity: 0, position: 'absolute', width: 0, height: 0 }} />
+          {/* Half circle for Background (Right Half) */}
+          <label style={{ position: 'absolute', top: 0, bottom: 0, right: 0, left: '50%', background: (props.settings?.customTheme?.bg || '#f8fafc'), cursor: 'pointer' }} title="Hintergrundfarbe">
+            <input type="color" value={(props.settings?.customTheme?.bg || '#f8fafc')} onChange={(e) => handleCustomColorChange('bg', (e.target as HTMLInputElement).value)} style={{ opacity: 0, position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', cursor: 'pointer' }} />
           </label>
           
-          {/* Quarter circle for Highlight */}
-          <label style={{ position: 'absolute', top: '50%', left: 0, right: '50%', bottom: 0, background: (props.settings?.customTheme?.hl || '#e2e8f0'), cursor: 'pointer' }} title="Rahmen/Trennlinien">
-            <input type="color" value={(props.settings?.customTheme?.hl || '#e2e8f0')} onChange={(e) => handleCustomColorChange('hl', (e.target as HTMLInputElement).value)} style={{ opacity: 0, position: 'absolute', width: 0, height: 0 }} />
+          {/* Quarter circle for Highlight (Bottom Left) */}
+          <label style={{ position: 'absolute', top: '50%', bottom: 0, left: 0, right: '50%', background: (props.settings?.customTheme?.hl || '#e2e8f0'), cursor: 'pointer' }} title="Rahmen/Trennlinien">
+            <input type="color" value={(props.settings?.customTheme?.hl || '#e2e8f0')} onChange={(e) => handleCustomColorChange('hl', (e.target as HTMLInputElement).value)} style={{ opacity: 0, position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', cursor: 'pointer' }} />
           </label>
 
-          {/* Quarter circle for Accent */}
-          <label style={{ position: 'absolute', top: '50%', left: '50%', right: 0, bottom: 0, background: (props.settings?.customTheme?.accent || '#2563eb'), cursor: 'pointer' }} title="Akzentfarbe">
-            <input type="color" value={(props.settings?.customTheme?.accent || '#2563eb')} onChange={(e) => handleCustomColorChange('accent', (e.target as HTMLInputElement).value)} style={{ opacity: 0, position: 'absolute', width: 0, height: 0 }} />
+          {/* Quarter circle for Accent (Top Left) */}
+          <label style={{ position: 'absolute', top: 0, bottom: '50%', left: 0, right: '50%', background: (props.settings?.customTheme?.accent || '#2563eb'), cursor: 'pointer' }} title="Akzentfarbe">
+            <input type="color" value={(props.settings?.customTheme?.accent || '#2563eb')} onChange={(e) => handleCustomColorChange('accent', (e.target as HTMLInputElement).value)} style={{ opacity: 0, position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', cursor: 'pointer' }} />
           </label>
         </div>
       </div>
