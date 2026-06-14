@@ -1,7 +1,6 @@
 import { MutableRef, useCallback, useEffect, useId, useRef, useState } from "preact/hooks";
 import { createPortal } from "preact/compat";
 import { useAutoAnimate } from '@formkit/auto-animate/preact';
-import { ChromePicker } from 'react-color';
 
 import Placeholder from "./placeholder";
 import { CheckButton, Select } from "./settingshelper";
@@ -1870,18 +1869,151 @@ const ThemeSelector = (props: { currentTheme: string, onSelect: (t: string) => v
           />
         </div>
 
-        {activePicker && (
-          <div style={{ position: 'relative', marginTop: '24px', display: 'flex', justifyContent: 'center' }}>
-            <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, left: 0, zIndex: 99 }} onClick={() => setActivePicker(null)} />
-            <div style={{ position: 'relative', zIndex: 100 }}>
-              <ChromePicker 
-                color={customColors[activePicker]} 
-                onChange={(color: any) => handleCustomColorChange(activePicker, color.hex)} 
-                disableAlpha={true}
-              />
+        {activePicker && (() => {
+          const currentColor = customColors[activePicker] || '#2563eb';
+          
+          // Convert hex to HSV
+          const hexToRgb = (hex: string) => {
+            const r = parseInt(hex.slice(1,3), 16), g = parseInt(hex.slice(3,5), 16), b = parseInt(hex.slice(5,7), 16);
+            return { r, g, b };
+          };
+          const rgbToHsv = (r: number, g: number, b: number) => {
+            r /= 255; g /= 255; b /= 255;
+            const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
+            let h = 0;
+            if (d !== 0) {
+              if (max === r) h = ((g - b) / d + 6) % 6;
+              else if (max === g) h = (b - r) / d + 2;
+              else h = (r - g) / d + 4;
+              h *= 60;
+            }
+            return { h, s: max === 0 ? 0 : d / max, v: max };
+          };
+          const hsvToHex = (h: number, s: number, v: number) => {
+            const c = v * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = v - c;
+            let r = 0, g = 0, b = 0;
+            if (h < 60) { r = c; g = x; }
+            else if (h < 120) { r = x; g = c; }
+            else if (h < 180) { g = c; b = x; }
+            else if (h < 240) { g = x; b = c; }
+            else if (h < 300) { r = x; b = c; }
+            else { r = c; b = x; }
+            const toHex = (n: number) => Math.round((n + m) * 255).toString(16).padStart(2, '0');
+            return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+          };
+          
+          const rgb = hexToRgb(currentColor);
+          const hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
+
+          return (
+            <div style={{ position: 'relative', marginTop: '24px', display: 'flex', justifyContent: 'center' }}>
+              <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, left: 0, zIndex: 99 }} onClick={() => setActivePicker(null)} />
+              <div style={{
+                position: 'relative', zIndex: 100, background: 'var(--foreground-color, #fff)',
+                borderRadius: '8px', padding: '12px', boxShadow: '0 4px 24px rgba(0,0,0,0.2)',
+                border: '1px solid var(--brighter-color)', width: '220px'
+              }}>
+                {/* Saturation/Brightness canvas */}
+                <div
+                  style={{ position: 'relative', width: '100%', height: '150px', borderRadius: '4px', cursor: 'crosshair', marginBottom: '10px',
+                    background: `linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, hsl(${hsv.h}, 100%, 50%))` }}
+                  onMouseDown={(e: MouseEvent) => {
+                    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                    const update = (ev: MouseEvent) => {
+                      const s = Math.max(0, Math.min(1, (ev.clientX - rect.left) / rect.width));
+                      const v = Math.max(0, Math.min(1, 1 - (ev.clientY - rect.top) / rect.height));
+                      handleCustomColorChange(activePicker, hsvToHex(hsv.h, s, v));
+                    };
+                    update(e);
+                    const onMove = (ev: MouseEvent) => update(ev);
+                    const onUp = () => { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
+                    document.addEventListener('mousemove', onMove);
+                    document.addEventListener('mouseup', onUp);
+                  }}
+                  onTouchStart={(e: TouchEvent) => {
+                    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                    const update = (touch: Touch) => {
+                      const s = Math.max(0, Math.min(1, (touch.clientX - rect.left) / rect.width));
+                      const v = Math.max(0, Math.min(1, 1 - (touch.clientY - rect.top) / rect.height));
+                      handleCustomColorChange(activePicker, hsvToHex(hsv.h, s, v));
+                    };
+                    update(e.touches[0]);
+                    const onMove = (ev: TouchEvent) => { ev.preventDefault(); update(ev.touches[0]); };
+                    const onEnd = () => { document.removeEventListener('touchmove', onMove); document.removeEventListener('touchend', onEnd); };
+                    document.addEventListener('touchmove', onMove, { passive: false });
+                    document.addEventListener('touchend', onEnd);
+                  }}
+                >
+                  {/* Picker indicator */}
+                  <div style={{
+                    position: 'absolute',
+                    left: `${hsv.s * 100}%`, top: `${(1 - hsv.v) * 100}%`,
+                    width: '12px', height: '12px', borderRadius: '50%',
+                    border: '2px solid white', boxShadow: '0 0 3px rgba(0,0,0,0.5)',
+                    transform: 'translate(-50%, -50%)', pointerEvents: 'none'
+                  }} />
+                </div>
+
+                {/* Hue slider */}
+                <div
+                  style={{ position: 'relative', width: '100%', height: '14px', borderRadius: '7px', cursor: 'pointer', marginBottom: '10px',
+                    background: 'linear-gradient(to right, #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%)' }}
+                  onMouseDown={(e: MouseEvent) => {
+                    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                    const update = (ev: MouseEvent) => {
+                      const h = Math.max(0, Math.min(360, ((ev.clientX - rect.left) / rect.width) * 360));
+                      handleCustomColorChange(activePicker, hsvToHex(h, hsv.s, hsv.v));
+                    };
+                    update(e);
+                    const onMove = (ev: MouseEvent) => update(ev);
+                    const onUp = () => { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
+                    document.addEventListener('mousemove', onMove);
+                    document.addEventListener('mouseup', onUp);
+                  }}
+                  onTouchStart={(e: TouchEvent) => {
+                    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                    const update = (touch: Touch) => {
+                      const h = Math.max(0, Math.min(360, ((touch.clientX - rect.left) / rect.width) * 360));
+                      handleCustomColorChange(activePicker, hsvToHex(h, hsv.s, hsv.v));
+                    };
+                    update(e.touches[0]);
+                    const onMove = (ev: TouchEvent) => { ev.preventDefault(); update(ev.touches[0]); };
+                    const onEnd = () => { document.removeEventListener('touchmove', onMove); document.removeEventListener('touchend', onEnd); };
+                    document.addEventListener('touchmove', onMove, { passive: false });
+                    document.addEventListener('touchend', onEnd);
+                  }}
+                >
+                  <div style={{
+                    position: 'absolute', left: `${(hsv.h / 360) * 100}%`, top: '50%',
+                    width: '14px', height: '14px', borderRadius: '50%',
+                    border: '2px solid white', boxShadow: '0 0 3px rgba(0,0,0,0.4)',
+                    transform: 'translate(-50%, -50%)', pointerEvents: 'none',
+                    background: `hsl(${hsv.h}, 100%, 50%)`
+                  }} />
+                </div>
+
+                {/* Hex input */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ width: '24px', height: '24px', borderRadius: '4px', background: currentColor, border: '1px solid var(--brighter-color)', flexShrink: 0 }} />
+                  <input
+                    type="text"
+                    value={currentColor}
+                    onChange={(e) => {
+                      const val = (e.target as HTMLInputElement).value;
+                      if (/^#[0-9a-fA-F]{6}$/.test(val)) {
+                        handleCustomColorChange(activePicker, val);
+                      }
+                    }}
+                    style={{ flex: 1, padding: '4px 8px', fontSize: '0.85rem', borderRadius: '4px',
+                      border: '1px solid var(--brighter-color)', background: 'var(--input-bg)', color: 'var(--text-color)',
+                      fontFamily: 'monospace' }}
+                    maxLength={7}
+                  />
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
       </div>
       
       {/* Inline styles for custom theme */}
