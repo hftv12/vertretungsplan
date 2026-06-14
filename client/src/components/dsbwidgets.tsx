@@ -1,6 +1,7 @@
 import { MutableRef, useCallback, useEffect, useId, useRef, useState } from "preact/hooks";
 import { createPortal } from "preact/compat";
 import { useAutoAnimate } from '@formkit/auto-animate/preact';
+import { ChromePicker } from 'react-color';
 
 import Placeholder from "./placeholder";
 import { CheckButton, Select } from "./settingshelper";
@@ -1757,7 +1758,9 @@ function ExamList(props: { // sorted list of all of your exams (probably the mos
 }
 
 const ThemeSelector = (props: { currentTheme: string, onSelect: (t: string) => void, settings?: any, updateSetting?: Function }) => {
-  const customColors = props.settings?.customTheme || { bg: '#2563eb', hl: '#1d4ed8', accent: '#f8fafc' }; // Default is blue theme but inverted? Wait, default blue theme colors:
+  const [activePicker, setActivePicker] = useState<string | null>(null);
+
+  const customColors = props.settings?.customTheme || { bg: '#f8fafc', hl: '#e2e8f0', accent: '#2563eb' }; // Default is blue theme but inverted? Wait, default blue theme colors:
   // background is #f8fafc (light grey), hl is #e2e8f0, accent is #2563eb (blue).
   
   const handleCustomColorChange = (field: string, val: string) => {
@@ -1765,6 +1768,11 @@ const ThemeSelector = (props: { currentTheme: string, onSelect: (t: string) => v
     const newColors = { ...customColors, [field]: val };
     props.updateSetting('customTheme', newColors);
     props.onSelect('custom');
+  };
+
+  const handleSliceClick = (field: string) => {
+    if (props.currentTheme !== 'custom') props.onSelect('custom');
+    setActivePicker(field);
   };
 
   const themes = [
@@ -1839,23 +1847,41 @@ const ThemeSelector = (props: { currentTheme: string, onSelect: (t: string) => v
             transition: 'border 0.2s, transform 0.2s',
             transform: (props.currentTheme === 'custom') ? 'scale(1.05)' : 'scale(1)'
           }}
-          onClick={() => { if (props.currentTheme !== 'custom') props.onSelect('custom'); }}
         >
           {/* Half circle for Background (Right Half) */}
-          <label style={{ position: 'absolute', top: 0, bottom: 0, right: 0, left: '50%', background: (props.settings?.customTheme?.bg || '#f8fafc'), cursor: 'pointer' }} title="Hintergrundfarbe">
-            <input type="color" value={(props.settings?.customTheme?.bg || '#f8fafc')} onChange={(e) => handleCustomColorChange('bg', (e.target as HTMLInputElement).value)} style={{ opacity: 0, position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', cursor: 'pointer' }} />
-          </label>
+          <div 
+            style={{ position: 'absolute', top: 0, bottom: 0, right: 0, left: '50%', background: customColors.bg, cursor: 'pointer' }} 
+            title="Hintergrundfarbe"
+            onClick={() => handleSliceClick('bg')}
+          />
           
           {/* Quarter circle for Highlight (Bottom Left) */}
-          <label style={{ position: 'absolute', top: '50%', bottom: 0, left: 0, right: '50%', background: (props.settings?.customTheme?.hl || '#e2e8f0'), cursor: 'pointer' }} title="Rahmen/Trennlinien">
-            <input type="color" value={(props.settings?.customTheme?.hl || '#e2e8f0')} onChange={(e) => handleCustomColorChange('hl', (e.target as HTMLInputElement).value)} style={{ opacity: 0, position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', cursor: 'pointer' }} />
-          </label>
+          <div 
+            style={{ position: 'absolute', top: '50%', bottom: 0, left: 0, right: '50%', background: customColors.hl, cursor: 'pointer' }} 
+            title="Rahmen/Trennlinien"
+            onClick={() => handleSliceClick('hl')}
+          />
 
           {/* Quarter circle for Accent (Top Left) */}
-          <label style={{ position: 'absolute', top: 0, bottom: '50%', left: 0, right: '50%', background: (props.settings?.customTheme?.accent || '#2563eb'), cursor: 'pointer' }} title="Akzentfarbe">
-            <input type="color" value={(props.settings?.customTheme?.accent || '#2563eb')} onChange={(e) => handleCustomColorChange('accent', (e.target as HTMLInputElement).value)} style={{ opacity: 0, position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', cursor: 'pointer' }} />
-          </label>
+          <div 
+            style={{ position: 'absolute', top: 0, bottom: '50%', left: 0, right: '50%', background: customColors.accent, cursor: 'pointer' }} 
+            title="Akzentfarbe"
+            onClick={() => handleSliceClick('accent')}
+          />
         </div>
+
+        {activePicker && (
+          <div style={{ position: 'relative', marginTop: '24px', display: 'flex', justifyContent: 'center' }}>
+            <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, left: 0, zIndex: 99 }} onClick={() => setActivePicker(null)} />
+            <div style={{ position: 'relative', zIndex: 100 }}>
+              <ChromePicker 
+                color={customColors[activePicker]} 
+                onChange={(color: any) => handleCustomColorChange(activePicker, color.hex)} 
+                disableAlpha={true}
+              />
+            </div>
+          </div>
+        )}
       </div>
       
       {/* Inline styles for custom theme */}
