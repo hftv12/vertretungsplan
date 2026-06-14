@@ -1825,33 +1825,66 @@ function WidgetReorderList(props: { settings: DSBSettings, updateSetting: Functi
   const order = props.settings.widgetOrder || defaultOrder;
   
   const [items, setItems] = useState(order);
+  const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
+  const [overIdx, setOverIdx] = useState<number | null>(null);
   
+  // Keep a ref to the latest items so dragOver doesn't cause re-render loops
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
+
   useEffect(() => {
     if (props.settings.widgetOrder) {
       setItems(props.settings.widgetOrder);
     }
   }, [props.settings.widgetOrder]);
 
-  const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
-
   const handleDragStart = (e: any, idx: number) => {
     setDraggedIdx(idx);
+    setOverIdx(idx);
     e.dataTransfer.effectAllowed = 'move';
+    // Minimal timeout so the browser captures the element before we style it
+    requestAnimationFrame(() => {
+      // Force a re-render with the dragged state
+      setDraggedIdx(idx);
+    });
   };
 
-  const handleDragOver = (idx: number) => {
-    if (draggedIdx === null || draggedIdx === idx) return;
-    const newItems = [...items];
+  const handleDragOver = (e: any, idx: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (draggedIdx === null || idx === overIdx) return;
+    setOverIdx(idx);
+  };
+
+  const handleDrop = (e: any, dropIdx: number) => {
+    e.preventDefault();
+    if (draggedIdx === null || draggedIdx === dropIdx) {
+      setDraggedIdx(null);
+      setOverIdx(null);
+      return;
+    }
+    const newItems = [...itemsRef.current];
     const draggedItem = newItems[draggedIdx];
     newItems.splice(draggedIdx, 1);
-    newItems.splice(idx, 0, draggedItem);
+    newItems.splice(dropIdx, 0, draggedItem);
     setItems(newItems);
-    setDraggedIdx(idx);
+    props.updateSetting('widgetOrder', newItems);
+    setDraggedIdx(null);
+    setOverIdx(null);
   };
 
   const handleDragEnd = () => {
+    // If drop didn't fire (e.g. dropped outside), still commit the reorder
+    if (draggedIdx !== null && overIdx !== null && draggedIdx !== overIdx) {
+      const newItems = [...itemsRef.current];
+      const draggedItem = newItems[draggedIdx];
+      newItems.splice(draggedIdx, 1);
+      newItems.splice(overIdx, 0, draggedItem);
+      setItems(newItems);
+      props.updateSetting('widgetOrder', newItems);
+    }
     setDraggedIdx(null);
-    props.updateSetting('widgetOrder', items);
+    setOverIdx(null);
   };
 
   const toggleVisibility = (id: string) => {
@@ -1894,7 +1927,16 @@ function WidgetReorderList(props: { settings: DSBSettings, updateSetting: Functi
     </div>
   );
 
-  const [parent] = useAutoAnimate();
+  // Compute where the visual indicator should go
+  const getDropIndicatorStyle = (idx: number): any => {
+    if (draggedIdx === null || overIdx === null) return {};
+    if (idx === draggedIdx) return {};
+    // Show a top-border highlight on the element we're hovering over
+    if (idx === overIdx) {
+      return { borderTop: '2px solid var(--accent-color)' };
+    }
+    return {};
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
@@ -1908,15 +1950,17 @@ function WidgetReorderList(props: { settings: DSBSettings, updateSetting: Functi
 
       <div style={{ height: '1px', background: 'var(--brighter-color)', margin: '4px 0' }} />
       
-      <div ref={parent} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {items.map((item: string, idx: number) => {
           const isVisible = getVisibility(item);
+          const isDragged = draggedIdx === idx;
           return (
             <div 
               key={item}
               draggable
               onDragStart={(e) => handleDragStart(e, idx)}
-              onDragOver={(e) => { e.preventDefault(); handleDragOver(idx); }}
+              onDragOver={(e) => handleDragOver(e, idx)}
+              onDrop={(e) => handleDrop(e, idx)}
               onDragEnd={handleDragEnd}
               style={{ 
                 padding: '12px', 
@@ -1927,9 +1971,11 @@ function WidgetReorderList(props: { settings: DSBSettings, updateSetting: Functi
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 cursor: 'grab',
-                opacity: draggedIdx === idx ? 0 : 1,
-                transition: 'box-shadow 0.2s',
-                boxShadow: draggedIdx === idx ? 'var(--shadow-hover)' : 'var(--shadow-card)'
+                opacity: isDragged ? 0.4 : 1,
+                transform: isDragged ? 'scale(0.97)' : 'scale(1)',
+                transition: 'opacity 0.15s ease, transform 0.15s ease',
+                boxShadow: 'var(--shadow-card)',
+                ...getDropIndicatorStyle(idx)
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
