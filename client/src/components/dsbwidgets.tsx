@@ -1906,12 +1906,19 @@ const ThemeSelector = (props: { currentTheme: string, onSelect: (t: string) => v
           const hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
 
           return (
-            <div style={{ position: 'relative', marginTop: '24px', display: 'flex', justifyContent: 'center' }}>
-              <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, left: 0, zIndex: 99 }} onClick={() => setActivePicker(null)} />
+            <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, left: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {/* Blurred background overlay */}
+              <div 
+                style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: 'rgba(0, 0, 0, 0.4)', backdropFilter: 'blur(6px)' }} 
+                onClick={() => setActivePicker(null)} 
+              />
+              
+              {/* Color picker modal */}
               <div style={{
-                position: 'relative', zIndex: 100, background: 'var(--foreground-color, #fff)',
-                borderRadius: '8px', padding: '12px', boxShadow: '0 4px 24px rgba(0,0,0,0.2)',
-                border: '1px solid var(--brighter-color)', width: '220px'
+                position: 'relative', zIndex: 10000, background: 'var(--foreground-color, #fff)',
+                borderRadius: '12px', padding: '16px', boxShadow: '0 12px 48px rgba(0,0,0,0.4)',
+                border: '1px solid var(--brighter-color)', width: '240px',
+                animation: 'fadeInScale 0.2s ease-out'
               }}>
                 {/* Saturation/Brightness canvas */}
                 <div
@@ -2032,6 +2039,11 @@ const ThemeSelector = (props: { currentTheme: string, onSelect: (t: string) => v
             --accent-hover: ${customColors.accent};
             --accent-light: ${customColors.accent}1a;
             --accent-glow: ${customColors.accent}26;
+          }
+          
+          @keyframes fadeInScale {
+            0% { opacity: 0; transform: scale(0.9); }
+            100% { opacity: 1; transform: scale(1); }
           }
         `}
       </style>
