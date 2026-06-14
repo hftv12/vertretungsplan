@@ -1766,11 +1766,9 @@ const ThemeSelector = (props: { currentTheme: string, onSelect: (t: string) => v
     if (!props.updateSetting) return;
     const newColors = { ...customColors, [field]: val };
     props.updateSetting('customTheme', newColors);
-    props.onSelect('custom');
   };
 
   const handleSliceClick = (field: string) => {
-    if (props.currentTheme !== 'custom') props.onSelect('custom');
     setActivePicker(field);
   };
 
@@ -1837,7 +1835,7 @@ const ThemeSelector = (props: { currentTheme: string, onSelect: (t: string) => v
       <div style={{ width: '100%', height: '1px', backgroundColor: 'var(--brighter-color)', margin: '20px 0 16px 0' }} />
 
       <div style={{ textAlign: 'center', marginBottom: '8px' }}>
-        <h3 style={{ fontSize: '1.05rem', color: 'var(--text-color)', marginBottom: '4px', fontWeight: 600 }}>Erstelle dein eigenes Theme</h3>
+        <h3 style={{ fontSize: '1.05rem', color: 'var(--text-color)', marginBottom: '4px', fontWeight: 600, borderBottom: 'none', paddingBottom: 0 }}>Erstelle dein eigenes Theme</h3>
         <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '20px' }}>Passe die Farbe der einzelnen Felder durch ein Klicken an</p>
         
         <div 
@@ -1868,6 +1866,17 @@ const ThemeSelector = (props: { currentTheme: string, onSelect: (t: string) => v
             style={{ position: 'absolute', top: 0, bottom: '50%', left: 0, right: '50%', background: customColors.accent, cursor: 'pointer' }} 
             title="Akzentfarbe"
             onClick={() => handleSliceClick('accent')}
+          />
+        </div>
+
+        <div style={{ marginTop: '20px', textAlign: 'left' }}>
+          <CheckButton
+            key={props.currentTheme}
+            text="Theme anwenden"
+            checked={props.currentTheme === 'custom'}
+            updater={(checked: boolean) => {
+              props.onSelect(checked ? 'custom' : 'default');
+            }}
           />
         </div>
 
