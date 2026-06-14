@@ -1839,14 +1839,13 @@ function WidgetReorderList(props: { settings: DSBSettings, updateSetting: Functi
   }, [props.settings.widgetOrder]);
 
   const handleDragStart = (e: any, idx: number) => {
-    setDraggedIdx(idx);
-    setOverIdx(idx);
     e.dataTransfer.effectAllowed = 'move';
-    // Minimal timeout so the browser captures the element before we style it
-    requestAnimationFrame(() => {
-      // Force a re-render with the dragged state
+    // Use setTimeout so the browser can screenshot the original element
+    // before we hide it to create the 'hole'
+    setTimeout(() => {
       setDraggedIdx(idx);
-    });
+      setOverIdx(idx);
+    }, 0);
   };
 
   const handleDragOver = (e: any, idx: number) => {
@@ -1927,15 +1926,21 @@ function WidgetReorderList(props: { settings: DSBSettings, updateSetting: Functi
     </div>
   );
 
-  // Compute where the visual indicator should go
-  const getDropIndicatorStyle = (idx: number): any => {
-    if (draggedIdx === null || overIdx === null) return {};
-    if (idx === draggedIdx) return {};
-    // Show a top-border highlight on the element we're hovering over
-    if (idx === overIdx) {
-      return { borderTop: '2px solid var(--accent-color)' };
+  // Compute smooth slide translations
+  const getDropStyle = (idx: number): any => {
+    if (draggedIdx === null || overIdx === null) return { transform: 'translateY(0px)', opacity: 1 };
+    
+    if (idx === draggedIdx) return { transform: 'scale(0.95)', opacity: 0.01 };
+    
+    const shift = 54; // Item height (46px) + gap (8px)
+
+    if (draggedIdx < overIdx) {
+      if (idx > draggedIdx && idx <= overIdx) return { transform: `translateY(-${shift}px)`, opacity: 1 };
+    } else if (draggedIdx > overIdx) {
+      if (idx >= overIdx && idx < draggedIdx) return { transform: `translateY(${shift}px)`, opacity: 1 };
     }
-    return {};
+    
+    return { transform: 'translateY(0px)', opacity: 1 };
   };
 
   return (
@@ -1953,7 +1958,6 @@ function WidgetReorderList(props: { settings: DSBSettings, updateSetting: Functi
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {items.map((item: string, idx: number) => {
           const isVisible = getVisibility(item);
-          const isDragged = draggedIdx === idx;
           return (
             <div 
               key={item}
@@ -1971,11 +1975,9 @@ function WidgetReorderList(props: { settings: DSBSettings, updateSetting: Functi
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 cursor: 'grab',
-                opacity: isDragged ? 0.4 : 1,
-                transform: isDragged ? 'scale(0.97)' : 'scale(1)',
-                transition: 'opacity 0.15s ease, transform 0.15s ease',
+                transition: 'transform 0.25s cubic-bezier(0.2, 1, 0.2, 1), opacity 0.15s ease',
                 boxShadow: 'var(--shadow-card)',
-                ...getDropIndicatorStyle(idx)
+                ...getDropStyle(idx)
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
