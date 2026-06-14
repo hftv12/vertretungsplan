@@ -1759,17 +1759,66 @@ function ExamList(props: { // sorted list of all of your exams (probably the mos
 const ThemeSelector = (props: { currentTheme: string, onSelect: (t: string) => void, settings?: any, updateSetting?: Function }) => {
   const [activePicker, setActivePicker] = useState<string | null>(null);
 
-  const customColors = props.settings?.customTheme || { bg: '#f8fafc', hl: '#e2e8f0', accent: '#2563eb' }; // Default is blue theme but inverted? Wait, default blue theme colors:
-  // background is #f8fafc (light grey), hl is #e2e8f0, accent is #2563eb (blue).
-  
+  // State for the large circle's draft colors
+  const [editingColors, setEditingColors] = useState(() => {
+    return props.settings?.customTheme || { bg: '#f8fafc', hl: '#e2e8f0', accent: '#2563eb' };
+  });
+
+  // Track if colors have been changed and not saved yet
+  const [isModified, setIsModified] = useState(false);
+
+  // Sync editingColors with props.settings?.customTheme when it changes
+  useEffect(() => {
+    if (props.settings?.customTheme) {
+      setEditingColors(props.settings.customTheme);
+    }
+  }, [props.settings?.customTheme]);
+
   const handleCustomColorChange = (field: string, val: string) => {
-    if (!props.updateSetting) return;
-    const newColors = { ...customColors, [field]: val };
-    props.updateSetting('customTheme', newColors);
+    setEditingColors(prev => {
+      const next = { ...prev, [field]: val };
+      setIsModified(true);
+      return next;
+    });
   };
 
   const handleSliceClick = (field: string) => {
     setActivePicker(field);
+  };
+
+  const handleSaveTheme = () => {
+    if (!props.updateSetting) return;
+    const newThemeId = `custom-${Date.now()}`;
+    const newTheme = {
+      id: newThemeId,
+      bg: editingColors.bg,
+      hl: editingColors.hl,
+      accent: editingColors.accent
+    };
+    const currentList = props.settings?.customThemesList || [];
+    const newList = [...currentList, newTheme];
+    
+    props.updateSetting('customThemesList', newList);
+    props.updateSetting('customTheme', editingColors);
+    
+    props.onSelect(newThemeId);
+    setIsModified(false);
+  };
+
+  const handleSelectSavedTheme = (t: any) => {
+    props.onSelect(t.id);
+    setEditingColors({ bg: t.bg, hl: t.hl, accent: t.accent });
+    setIsModified(false);
+  };
+
+  const handleDeleteTheme = (id: string) => {
+    if (!props.updateSetting) return;
+    const currentList = props.settings?.customThemesList || [];
+    const newList = currentList.filter((t: any) => t.id !== id);
+    props.updateSetting('customThemesList', newList);
+    if (props.currentTheme === id) {
+      props.onSelect('default');
+    }
   };
 
   const themes = [
@@ -1804,6 +1853,21 @@ const ThemeSelector = (props: { currentTheme: string, onSelect: (t: string) => v
     { id: 'vintage', color: '#b05c52', bg: '#f3e5d8', hl: '#d4c4b7' },
     { id: 'synthwave', color: '#06b6d4', bg: '#2b0c36', hl: '#551c6b' }
   ];
+
+  const savedThemes = props.settings?.customThemesList || [];
+
+  // Determine custom colors for active theme to render in style tag
+  let activeCustomColors = null;
+  if (props.currentTheme === 'custom') {
+    activeCustomColors = props.settings?.customTheme || { bg: '#f8fafc', hl: '#e2e8f0', accent: '#2563eb' };
+  } else if (props.currentTheme?.startsWith('custom-')) {
+    const found = savedThemes.find((t: any) => t.id === props.currentTheme);
+    if (found) {
+      activeCustomColors = { bg: found.bg, hl: found.hl, accent: found.accent };
+    }
+  }
+
+  const isCustomActive = props.currentTheme === 'custom' || props.currentTheme?.startsWith('custom-');
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px', padding: '16px', backgroundColor: 'var(--input-bg)', border: '1px solid var(--brighter-color)', borderRadius: 'var(--rounding-sm)' }}>
@@ -1842,46 +1906,104 @@ const ThemeSelector = (props: { currentTheme: string, onSelect: (t: string) => v
           style={{ 
             position: 'relative', width: '150px', height: '150px', margin: '0 auto', 
             borderRadius: '50%', overflow: 'hidden', boxShadow: 'var(--shadow-card)', 
-            border: (props.currentTheme === 'custom') ? '3px solid var(--text-color)' : '1px solid var(--brighter-color)',
+            border: isCustomActive ? '3px solid var(--text-color)' : '1px solid var(--brighter-color)',
             transition: 'border 0.2s, transform 0.2s',
-            transform: (props.currentTheme === 'custom') ? 'scale(1.05)' : 'scale(1)'
+            transform: isCustomActive ? 'scale(1.05)' : 'scale(1)'
           }}
         >
           {/* Half circle for Background (Right Half) */}
           <div 
-            style={{ position: 'absolute', top: 0, bottom: 0, right: 0, left: '50%', background: customColors.bg, cursor: 'pointer' }} 
+            style={{ position: 'absolute', top: 0, bottom: 0, right: 0, left: '50%', background: editingColors.bg, cursor: 'pointer' }} 
             title="Hintergrundfarbe"
             onClick={() => handleSliceClick('bg')}
           />
           
           {/* Quarter circle for Highlight (Bottom Left) */}
           <div 
-            style={{ position: 'absolute', top: '50%', bottom: 0, left: 0, right: '50%', background: customColors.hl, cursor: 'pointer' }} 
+            style={{ position: 'absolute', top: '50%', bottom: 0, left: 0, right: '50%', background: editingColors.hl, cursor: 'pointer' }} 
             title="Rahmen/Trennlinien"
             onClick={() => handleSliceClick('hl')}
           />
 
           {/* Quarter circle for Accent (Top Left) */}
           <div 
-            style={{ position: 'absolute', top: 0, bottom: '50%', left: 0, right: '50%', background: customColors.accent, cursor: 'pointer' }} 
+            style={{ position: 'absolute', top: 0, bottom: '50%', left: 0, right: '50%', background: editingColors.accent, cursor: 'pointer' }} 
             title="Akzentfarbe"
             onClick={() => handleSliceClick('accent')}
           />
         </div>
 
-        <div style={{ marginTop: '20px', textAlign: 'left' }}>
-          <CheckButton
-            key={props.currentTheme}
-            text="Theme anwenden"
-            checked={props.currentTheme === 'custom'}
-            updater={(checked: boolean) => {
-              props.onSelect(checked ? 'custom' : 'default');
-            }}
-          />
-        </div>
+        <button
+          onClick={isModified ? handleSaveTheme : undefined}
+          disabled={!isModified}
+          style={{
+            marginTop: '20px',
+            width: '100%',
+            padding: '10px 16px',
+            borderRadius: 'var(--rounding-sm, 8px)',
+            border: 'none',
+            fontSize: '0.9rem',
+            fontWeight: 600,
+            transition: 'all 0.2s ease',
+            backgroundColor: isModified ? 'var(--accent-color)' : 'var(--brighter-color)',
+            color: isModified ? '#ffffff' : 'var(--text-secondary)',
+            cursor: isModified ? 'pointer' : 'not-allowed',
+            boxShadow: isModified ? '0 4px 12px var(--accent-glow)' : 'none',
+          }}
+        >
+          Theme speichern
+        </button>
+
+        {savedThemes.length > 0 && (
+          <>
+            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '20px', marginBottom: '8px', fontWeight: 600, textAlign: 'center' }}>
+              Eigene Themes:
+            </div>
+            <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', justifyContent: 'center' }}>
+              {savedThemes.map((t: any) => {
+                const isActive = props.currentTheme === t.id;
+                return (
+                  <div key={t.id} style={{ position: 'relative' }}>
+                    <button
+                      onClick={() => handleSelectSavedTheme(t)}
+                      style={{
+                        width: '36px', height: '36px', borderRadius: '50%',
+                        border: isActive ? '2px solid var(--text-color)' : '1px solid var(--brighter-color)',
+                        padding: 0, cursor: 'pointer', transition: 'var(--transition-fast)',
+                        background: `conic-gradient(${t.bg} 0deg 180deg, ${t.hl} 180deg 270deg, ${t.accent} 270deg 360deg)`,
+                        transform: isActive ? 'scale(1.1)' : 'scale(1)',
+                        boxShadow: isActive ? '0 0 12px rgba(0,0,0,0.1)' : 'none'
+                      }}
+                      title="Eigenes Theme anwenden"
+                      aria-label="Eigenes Theme anwenden"
+                    />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteTheme(t.id);
+                      }}
+                      style={{
+                        position: 'absolute', top: '-6px', right: '-6px',
+                        width: '16px', height: '16px', borderRadius: '50%',
+                        background: 'var(--accent-hover, #ef4444)', color: '#fff',
+                        border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '10px', cursor: 'pointer', padding: 0, fontWeight: 'bold',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.2)', zIndex: 2
+                      }}
+                      title="Theme löschen"
+                      aria-label="Theme löschen"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
 
         {activePicker && (() => {
-          const currentColor = customColors[activePicker] || '#2563eb';
+          const currentColor = editingColors[activePicker] || '#2563eb';
           
           // Convert hex to HSV
           const hexToRgb = (hex: string) => {
@@ -2040,29 +2162,31 @@ const ThemeSelector = (props: { currentTheme: string, onSelect: (t: string) => v
       </div>
       
       {/* Inline styles for custom theme */}
-      <style>
-        {`
-          html:root[data-color-theme="custom"] {
-            --background-color: ${customColors.bg};
-            --foreground-color: ${customColors.bg};
-            --darker-color: ${customColors.bg};
-            --header-bg: ${customColors.bg}dd;
-            --input-bg: ${customColors.bg};
+      {activeCustomColors && (
+        <style>
+          {`
+            html:root[data-color-theme="${props.currentTheme}"] {
+              --background-color: ${activeCustomColors.bg};
+              --foreground-color: ${activeCustomColors.bg};
+              --darker-color: ${activeCustomColors.bg};
+              --header-bg: ${activeCustomColors.bg}dd;
+              --input-bg: ${activeCustomColors.bg};
+              
+              --brighter-color: ${activeCustomColors.hl};
+              
+              --accent-color: ${activeCustomColors.accent};
+              --accent-hover: ${activeCustomColors.accent};
+              --accent-light: ${activeCustomColors.accent}1a;
+              --accent-glow: ${activeCustomColors.accent}26;
+            }
             
-            --brighter-color: ${customColors.hl};
-            
-            --accent-color: ${customColors.accent};
-            --accent-hover: ${customColors.accent};
-            --accent-light: ${customColors.accent}1a;
-            --accent-glow: ${customColors.accent}26;
-          }
-          
-          @keyframes fadeInScale {
-            0% { opacity: 0; transform: scale(0.9); }
-            100% { opacity: 1; transform: scale(1); }
-          }
-        `}
-      </style>
+            @keyframes fadeInScale {
+              0% { opacity: 0; transform: scale(0.9); }
+              100% { opacity: 1; transform: scale(1); }
+            }
+          `}
+        </style>
+      )}
     </div>
   );
 };
