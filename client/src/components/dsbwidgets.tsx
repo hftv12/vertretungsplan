@@ -1834,6 +1834,8 @@ const ThemeSelector = (props: { currentTheme: string, onSelect: (t: string) => v
         })}
       </div>
 
+      <div style={{ width: '100%', height: '1px', backgroundColor: 'var(--brighter-color)', margin: '20px 0 16px 0' }} />
+
       <div style={{ textAlign: 'center', marginBottom: '8px' }}>
         <h3 style={{ fontSize: '1.05rem', color: 'var(--text-color)', marginBottom: '4px', fontWeight: 600 }}>Erstelle dein eigenes Theme</h3>
         <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '20px' }}>Passe die Farbe der einzelnen Felder durch ein Klicken an</p>
@@ -1905,8 +1907,8 @@ const ThemeSelector = (props: { currentTheme: string, onSelect: (t: string) => v
           const rgb = hexToRgb(currentColor);
           const hsv = rgbToHsv(rgb.r, rgb.g, rgb.b);
 
-          return (
-            <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, left: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          const pickerJsx = (
+            <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, left: 0, zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {/* Blurred background overlay */}
               <div 
                 style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, backgroundColor: 'rgba(0, 0, 0, 0.4)', backdropFilter: 'blur(6px)' }} 
@@ -1915,7 +1917,7 @@ const ThemeSelector = (props: { currentTheme: string, onSelect: (t: string) => v
               
               {/* Color picker modal */}
               <div style={{
-                position: 'relative', zIndex: 10000, background: 'var(--foreground-color, #fff)',
+                position: 'relative', zIndex: 100000, background: 'var(--foreground-color, #fff)',
                 borderRadius: '12px', padding: '16px', boxShadow: '0 12px 48px rgba(0,0,0,0.4)',
                 border: '1px solid var(--brighter-color)', width: '240px',
                 animation: 'fadeInScale 0.2s ease-out'
@@ -2020,6 +2022,11 @@ const ThemeSelector = (props: { currentTheme: string, onSelect: (t: string) => v
               </div>
             </div>
           );
+
+          if (typeof document !== 'undefined') {
+            return createPortal(pickerJsx, document.body);
+          }
+          return pickerJsx;
         })()}
       </div>
       
