@@ -1815,6 +1815,124 @@ const ThemeSelector = (props: { currentTheme: string, onSelect: (t: string) => v
   );
 };
 
+function WidgetReorderList(props: { settings: DSBSettings, updateSetting: Function }) {
+  const defaultOrder = ['klausuren', 'kurswahl', 'stundenplan', 'termine', 'hausaufgaben'];
+  const order = props.settings.widgetOrder || defaultOrder;
+  
+  const [items, setItems] = useState(order);
+  
+  useEffect(() => {
+    if (props.settings.widgetOrder) {
+      setItems(props.settings.widgetOrder);
+    }
+  }, [props.settings.widgetOrder]);
+
+  const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
+
+  const handleDragStart = (e: any, idx: number) => {
+    setDraggedIdx(idx);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (idx: number) => {
+    if (draggedIdx === null || draggedIdx === idx) return;
+    const newItems = [...items];
+    const draggedItem = newItems[draggedIdx];
+    newItems.splice(draggedIdx, 1);
+    newItems.splice(idx, 0, draggedItem);
+    setItems(newItems);
+    setDraggedIdx(idx);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIdx(null);
+    props.updateSetting('widgetOrder', items);
+  };
+
+  const toggleVisibility = (id: string) => {
+    if (id === 'klausuren') props.updateSetting('exams', props.settings.exams === 'none' ? 'sorted' : 'none');
+    if (id === 'kurswahl') props.updateSetting('showCourses', props.settings.showCourses === false ? true : false);
+    if (id === 'stundenplan') props.updateSetting('showStundenplan', props.settings.showStundenplan === false ? true : false);
+    if (id === 'termine') props.updateSetting('showTermine', props.settings.showTermine === false ? true : false);
+    if (id === 'hausaufgaben') props.updateSetting('showHomework', props.settings.showHomework === false ? true : false);
+  };
+
+  const getVisibility = (id: string) => {
+    if (id === 'klausuren') return props.settings.exams !== 'none';
+    if (id === 'kurswahl') return props.settings.showCourses !== false;
+    if (id === 'stundenplan') return props.settings.showStundenplan !== false;
+    if (id === 'termine') return props.settings.showTermine !== false;
+    if (id === 'hausaufgaben') return props.settings.showHomework !== false;
+    return true;
+  };
+
+  const getName = (id: string) => {
+    if (id === 'klausuren') return 'Klausuren';
+    if (id === 'kurswahl') return 'Kurswahl';
+    if (id === 'stundenplan') return 'Stundenplan';
+    if (id === 'termine') return 'Termine';
+    if (id === 'hausaufgaben') return 'Hausaufgaben';
+    return id;
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+      <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '8px' }}>
+        Du kannst die Reihenfolge der Boxen auf der Startseite per Drag and Drop ändern und diese hier zentral ein- und ausblenden.
+      </p>
+      <div style={{ padding: '12px', background: 'var(--input-bg)', borderRadius: 'var(--rounding-sm)', display: 'flex', justifyContent: 'space-between', opacity: 0.7 }}>
+        <span style={{ fontWeight: 600 }}>🔒 Vertretungen</span>
+      </div>
+      
+      {items.map((item: string, idx: number) => {
+        const isVisible = getVisibility(item);
+        return (
+          <div 
+            key={item}
+            draggable
+            onDragStart={(e) => handleDragStart(e, idx)}
+            onDragOver={(e) => { e.preventDefault(); handleDragOver(idx); }}
+            onDragEnd={handleDragEnd}
+            style={{ 
+              padding: '12px', 
+              background: 'var(--foreground-color)', 
+              border: '1px solid var(--brighter-color)', 
+              borderRadius: 'var(--rounding-sm)', 
+              display: 'flex', 
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              cursor: 'grab',
+              opacity: draggedIdx === idx ? 0.5 : 1,
+              transition: 'transform 0.2s, box-shadow 0.2s',
+              boxShadow: draggedIdx === idx ? 'var(--shadow-hover)' : 'var(--shadow-card)'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ cursor: 'grab', color: 'var(--text-secondary)' }}>☰</span>
+              <span style={{ fontWeight: 600, opacity: isVisible ? 1 : 0.5 }}>{getName(item)}</span>
+            </div>
+            <button 
+              type="button"
+              class="imgInput" 
+              onClick={() => toggleVisibility(item)} 
+              title={isVisible ? "Ausblenden" : "Einblenden"}
+            >
+              {isVisible ? <EyeIcon width="20" height="20" /> : <EyeOffIcon width="20" height="20" />}
+            </button>
+          </div>
+        );
+      })}
+
+      <div style={{ padding: '12px', background: 'var(--input-bg)', borderRadius: 'var(--rounding-sm)', display: 'flex', justifyContent: 'space-between', opacity: 0.7 }}>
+        <span style={{ fontWeight: 600 }}>🔒 Einstellungen</span>
+      </div>
+      <div style={{ padding: '12px', background: 'var(--input-bg)', borderRadius: 'var(--rounding-sm)', display: 'flex', justifyContent: 'space-between', opacity: 0.7 }}>
+        <span style={{ fontWeight: 600 }}>🔒 Informationen</span>
+      </div>
+    </div>
+  );
+}
+
 export function Settings(props: { // settings block
   settings: DSBSettings,
   setSettings: Function,
@@ -1825,6 +1943,13 @@ export function Settings(props: { // settings block
   const [loadedData, setLoadedData] = useState(false);
   const [uploadStatus, setUploadStatus] = useState(null);
   const [resetProgress, setResetProgress] = useState(0);
+  const [windowWidth, setWindowWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1000);
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const fileRef = useRef();
 
@@ -1975,16 +2100,7 @@ export function Settings(props: { // settings block
               checked={props.settings.yellowPaint !== undefined ? props.settings.yellowPaint : true}
               information="Verschiedene Tipps, wie du den DSBScraper effektiver nutzen kannst. Falls du aber schon ein Experte bist, kannst du diese ausschalten."
             />
-            <CheckButton
-              text="Hausaufgaben anzeigen:"
-              updater={(v: boolean) => updateSetting("showHomework", v)}
-              checked={props.settings.showHomework !== false}
-            />
-            <CheckButton
-              text="Termine anzeigen:"
-              updater={(v: boolean) => updateSetting("showTermine", v)}
-              checked={props.settings.showTermine !== false}
-            />
+            <WidgetReorderList settings={props.settings} updateSetting={updateSetting} />
             <CheckButton
               text="Informationskasten anzeigen:"
               updater={(v: boolean) => updateSetting("showCredits", v)}
@@ -2016,12 +2132,6 @@ export function Settings(props: { // settings block
           <h3>Kurswahl</h3>
           <div class="settings-section-content">
             <CheckButton
-              text="Kurswahl anzeigen:"
-              updater={(v: boolean) => updateSetting("showCourses", v)}
-              checked={props.settings.showCourses !== undefined ? props.settings.showCourses : true}
-            />
-
-            <CheckButton
               text="Fortgeschrittene Kurse:"
               updater={(v: boolean) => updateSetting("advancedCourses", v)}
               checked={props.settings.advancedCourses !== undefined ? props.settings.advancedCourses : false}
@@ -2041,14 +2151,6 @@ export function Settings(props: { // settings block
         <div class="settings-section">
           <h3>Klausurplan</h3>
           <div class="settings-section-content">
-            <Select
-              text="Klausurplan:"
-              options={[{value: ExamVisibility.ALL, text: "Alle anzeigen"}, {value: ExamVisibility.SORTED, text: "Nur relevante"}, {value: ExamVisibility.NONE, text: "Verstecken"}]}
-
-              value={props.settings.exams !== undefined ? props.settings.exams : ExamVisibility.SORTED}
-              updater={(v: string) => updateSetting("exams", v)}
-              disabled={props.grade.gradeName !== "EF" && props.grade.gradeName !== "Q1" && props.grade.gradeName !== "Q2"}
-            />
             <CheckButton
               text="Alte Klausuren anzeigen:"
               updater={(v: boolean) => updateSetting("oldExams", v)}
@@ -2061,6 +2163,36 @@ export function Settings(props: { // settings block
         <div class="settings-section">
           <h3>Navigation (Menü)</h3>
           <div class="settings-section-content">
+            {(() => {
+              const maxItems = windowWidth < 380 ? 4 : windowWidth < 600 ? 5 : Infinity;
+              const selectedItemsCount = [
+                props.settings.navVertretung !== false,
+                props.settings.exams !== "none" && props.settings.navKlausuren !== false,
+                props.settings.showCourses !== false && props.settings.navKurswahl !== false,
+                props.settings.navStundenplan !== false,
+                props.settings.showTermine !== false && props.settings.navTermine !== false,
+                props.settings.showHomework !== false && props.settings.navHausaufgaben !== false,
+                props.settings.navEinstellungen === true,
+                props.settings.showCredits !== false && props.settings.navInfo === true
+              ].filter(Boolean).length;
+              const isFull = selectedItemsCount >= maxItems;
+              const textCol = isFull ? 'var(--s-free-border)' : 'var(--text-secondary)';
+
+              return maxItems !== Infinity && (
+                <div style={{ padding: '12px', background: 'var(--input-bg)', borderRadius: 'var(--rounding-sm)', marginBottom: '16px' }}>
+                  <p style={{ margin: '0 0 8px 0', fontSize: '0.9rem', color: 'var(--text-color)', fontWeight: 500 }}>
+                    Navigationsleisten-Kapazität
+                  </p>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                    <div style={{ flex: 1, height: '8px', background: 'var(--brighter-color)', borderRadius: '4px', overflow: 'hidden' }}>
+                      <div style={{ width: `${Math.min(100, (selectedItemsCount / maxItems) * 100)}%`, height: '100%', background: isFull ? 'var(--s-free-border)' : 'var(--accent-color)', transition: 'width 0.3s' }} />
+                    </div>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: textCol }}>{selectedItemsCount} / {maxItems}</span>
+                  </div>
+                  {isFull && <p style={{ margin: '8px 0 0 0', fontSize: '0.8rem', color: 'var(--s-free-border)' }}>Leiste ist voll. Zusätzliche Buttons werden unten abgeschnitten.</p>}
+                </div>
+              );
+            })()}
             <CheckButton
               text="Navigationsleiste komplett anzeigen:"
               updater={(v: boolean) => updateSetting("showBottomNav", v)}
@@ -3128,11 +3260,26 @@ export default function DSBWidgets(props: {
           <div class="center-rows" ref={welcomeWrapper}>
             {showWelcome && <WelcomeBox onDismiss={dismissWelcome} grade={grade} setGrade={setGrade} />}
             <DSBTable grade={grade} courses={courses} settings={settings} />
-            {(grade.gradeName === "EF" || grade.gradeName === "Q1" || grade.gradeName === "Q2") && (<ExamList settings={settings} subjectSelectRef={subjectSelectRef} courses={courses} grade={grade} />)}
-            <CourseList grade={grade} setGrade={setGrade} courses={courses} setCourses={setCourses} subjectSelectRef={subjectSelectRef} settings={settings} />
-            <PersonalTimetable settings={settings} courses={courses} />
-            <Events settings={settings} />
-            <Homework settings={settings} courses={courses} />
+            
+            {(settings.widgetOrder || ['klausuren', 'kurswahl', 'stundenplan', 'termine', 'hausaufgaben']).map((widgetId: string) => {
+              if (widgetId === 'klausuren' && settings.exams !== 'none' && (grade.gradeName === "EF" || grade.gradeName === "Q1" || grade.gradeName === "Q2")) {
+                return <ExamList key="klausuren" settings={settings} subjectSelectRef={subjectSelectRef} courses={courses} grade={grade} />;
+              }
+              if (widgetId === 'kurswahl' && settings.showCourses !== false) {
+                return <CourseList key="kurswahl" grade={grade} setGrade={setGrade} courses={courses} setCourses={setCourses} subjectSelectRef={subjectSelectRef} settings={settings} />;
+              }
+              if (widgetId === 'stundenplan' && settings.showStundenplan !== false) {
+                return <PersonalTimetable key="stundenplan" settings={settings} courses={courses} />;
+              }
+              if (widgetId === 'termine' && settings.showTermine !== false) {
+                return <Events key="termine" settings={settings} />;
+              }
+              if (widgetId === 'hausaufgaben' && settings.showHomework !== false) {
+                return <Homework key="hausaufgaben" settings={settings} courses={courses} />;
+              }
+              return null;
+            })}
+
             <Settings settings={settings} setSettings={setSettings} grade={grade} courses={courses} setCourses={setCourses} />
             {settings.showCredits && (
               <div class="default-div" id="informationen">

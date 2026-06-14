@@ -10,6 +10,13 @@ export default function BottomNav() {
 	});
 
 	const [activeId, setActiveId] = useState<string>('vertretungsplan');
+	const [windowWidth, setWindowWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1000);
+
+	useEffect(() => {
+		const handleResize = () => setWindowWidth(window.innerWidth);
+		window.addEventListener('resize', handleResize);
+		return () => window.removeEventListener('resize', handleResize);
+	}, []);
 
 	useEffect(() => {
 		const handleLogin = () => setIsLoggedIn(true);
@@ -38,6 +45,8 @@ export default function BottomNav() {
 		};
 	}, []);
 
+	const maxItems = windowWidth < 380 ? 4 : windowWidth < 600 ? 5 : Infinity;
+
 	const menuItems = [
 		{ id: 'vertretungsplan', label: 'Vertretung', icon: CalendarIcon, show: settings.navVertretung !== false },
 		{ id: 'klausuren', label: 'Klausuren', icon: DocumentTextIcon, show: settings.exams !== "none" && settings.navKlausuren !== false },
@@ -47,7 +56,7 @@ export default function BottomNav() {
 		{ id: 'hausaufgaben', label: 'Aufgaben', icon: PencilIcon, show: settings.showHomework !== false && settings.navHausaufgaben !== false },
 		{ id: 'einstellungen', label: 'Optionen', icon: CogIcon, show: settings.navEinstellungen === true },
 		{ id: 'informationen', label: 'Info', icon: InfoIcon, show: settings.showCredits !== false && settings.navInfo === true },
-	].filter(item => item.show);
+	].filter(item => item.show).slice(0, maxItems);
 
 	useEffect(() => {
 		const handleScroll = () => {
