@@ -68,7 +68,7 @@ export default function BottomNav() {
 		'vertretungsplan': { id: 'vertretungsplan', label: 'Vertretung', icon: CalendarIcon, show: settings.navVertretung !== false },
 		'klausuren': { id: 'klausuren', label: 'Klausuren', icon: DocumentTextIcon, show: settings.exams !== "none" && settings.navKlausuren !== false },
 		'course-selection': { id: 'course-selection', label: 'Kurswahl', icon: CheckBadgeIcon, show: settings.showCourses !== false && settings.navKurswahl !== false },
-		'stundenplan': { id: 'stundenplan', label: 'Stundenplan', icon: ClockIcon, show: settings.navStundenplan !== false },
+		'stundenplan': { id: 'stundenplan', label: 'Stundenplan', icon: ClockIcon, show: settings.showStundenplan !== false && settings.navStundenplan !== false },
 		'termine': { id: 'termine', label: 'Termine', icon: EventsIcon, show: settings.showTermine !== false && settings.navTermine !== false },
 		'hausaufgaben': { id: 'hausaufgaben', label: 'Aufgaben', icon: PencilIcon, show: settings.showHomework !== false && settings.navHausaufgaben !== false },
 		'einstellungen': { id: 'einstellungen', label: 'Optionen', icon: CogIcon, show: settings.navEinstellungen === true },

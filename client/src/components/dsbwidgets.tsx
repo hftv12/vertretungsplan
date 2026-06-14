@@ -1783,7 +1783,12 @@ const ThemeSelector = (props: { currentTheme: string, onSelect: (t: string) => v
     { id: 'abyss', color: '#0ea5e9', bg: '#020617', hl: '#1e293b' },
     { id: 'neon', color: '#f0abfc', bg: '#120024', hl: '#3c096c' },
     { id: 'monokai', color: '#a6e22e', bg: '#272822', hl: '#49483e' },
-    { id: 'hacker', color: '#4ade80', bg: '#000000', hl: '#1a1a1a' }
+    { id: 'hacker', color: '#4ade80', bg: '#000000', hl: '#1a1a1a' },
+    { id: 'galaxy', color: '#d946ef', bg: '#0b051a', hl: '#2d145e' },
+    { id: 'cyberpunk', color: '#ec4899', bg: '#facc15', hl: '#ca8a04' },
+    { id: 'vintage', color: '#b05c52', bg: '#f3e5d8', hl: '#d4c4b7' },
+    { id: 'synthwave', color: '#06b6d4', bg: '#2b0c36', hl: '#551c6b' },
+    { id: 'minimal', color: '#000000', bg: '#ffffff', hl: '#e4e4e7' }
   ];
 
   return (
@@ -2205,15 +2210,17 @@ export function Settings(props: { // settings block
                     </div>
                     <span style={{ fontSize: '0.85rem', fontWeight: 600, color: textCol }}>{selectedItemsCount} / {maxItems}</span>
                   </div>
-                  {isFull && <p style={{ margin: '8px 0 0 0', fontSize: '0.8rem', color: 'var(--s-free-border)' }}>Leiste ist voll. Zusätzliche Buttons werden unten abgeschnitten.</p>}
+                  {isFull && <p style={{ margin: '8px 0 0 0', fontSize: '0.8rem', color: 'var(--s-free-border)' }}>Leiste ist voll. Zusätzliche Buttons werden nicht angezeigt.</p>}
                 </div>
               );
             })()}
-            <CheckButton
-              text="Navigationsleiste komplett anzeigen:"
-              updater={(v: boolean) => updateSetting("showBottomNav", v)}
-              checked={props.settings.showBottomNav !== false}
-            />
+            <div style={{ marginBottom: '16px', paddingBottom: '16px', borderBottom: '1px solid var(--brighter-color)' }}>
+              <CheckButton
+                text="Navigationsleiste anzeigen:"
+                updater={(v: boolean) => updateSetting("showBottomNav", v)}
+                checked={props.settings.showBottomNav !== false}
+              />
+            </div>
             <CheckButton
               text="Vertretungsplan-Button:"
               updater={(v: boolean) => updateSetting("navVertretung", v)}
@@ -2223,26 +2230,31 @@ export function Settings(props: { // settings block
               text="Klausuren-Button:"
               updater={(v: boolean) => updateSetting("navKlausuren", v)}
               checked={props.settings.navKlausuren !== false}
+              disabled={props.settings.exams === 'none'}
             />
             <CheckButton
               text="Hausaufgaben-Button:"
               updater={(v: boolean) => updateSetting("navHausaufgaben", v)}
               checked={props.settings.navHausaufgaben !== false}
+              disabled={props.settings.showHomework === false}
             />
             <CheckButton
               text="Termine-Button:"
               updater={(v: boolean) => updateSetting("navTermine", v)}
               checked={props.settings.navTermine !== false}
+              disabled={props.settings.showTermine === false}
             />
             <CheckButton
               text="Kurswahl-Button:"
               updater={(v: boolean) => updateSetting("navKurswahl", v)}
               checked={props.settings.navKurswahl !== false}
+              disabled={props.settings.showCourses === false}
             />
             <CheckButton
               text="Stundenplan-Button:"
               updater={(v: boolean) => updateSetting("navStundenplan", v)}
               checked={props.settings.navStundenplan !== false}
+              disabled={props.settings.showStundenplan === false}
             />
             <CheckButton
               text="Info-Button:"

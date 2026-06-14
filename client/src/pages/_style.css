@@ -2679,3 +2679,78 @@ html:root[data-color-theme="hacker"] {
     --accent-light: rgba(74, 222, 128, 0.1);
     --accent-glow: rgba(74, 222, 128, 0.15);
 }
+
+html:root[data-color-theme="galaxy"] {
+    --background-color: #0b051a;
+    --foreground-color: #170a30;
+    --darker-color: #05020d;
+    --header-bg: rgba(11, 5, 26, 0.82);
+    --brighter-color: #2d145e;
+    --input-bg: #170a30;
+    --text-color: #f3e8ff;
+    --text-secondary: #c084fc;
+    --accent-color: #d946ef;
+    --accent-hover: #e879f9;
+    --accent-light: rgba(217, 70, 239, 0.1);
+    --accent-glow: rgba(217, 70, 239, 0.15);
+}
+
+html:root[data-color-theme="cyberpunk"] {
+    --background-color: #facc15;
+    --foreground-color: #fef08a;
+    --darker-color: #eab308;
+    --header-bg: rgba(250, 204, 21, 0.82);
+    --brighter-color: #ca8a04;
+    --input-bg: #fef08a;
+    --text-color: #09090b;
+    --text-secondary: #3f3f46;
+    --accent-color: #ec4899;
+    --accent-hover: #db2777;
+    --accent-light: rgba(236, 72, 153, 0.1);
+    --accent-glow: rgba(236, 72, 153, 0.15);
+}
+
+html:root[data-color-theme="vintage"] {
+    --background-color: #f3e5d8;
+    --foreground-color: #fff1e6;
+    --darker-color: #e6d5c3;
+    --header-bg: rgba(243, 229, 216, 0.82);
+    --brighter-color: #d4c4b7;
+    --input-bg: #fff1e6;
+    --text-color: #4a3b32;
+    --text-secondary: #7a6352;
+    --accent-color: #b05c52;
+    --accent-hover: #8f473e;
+    --accent-light: rgba(176, 92, 82, 0.1);
+    --accent-glow: rgba(176, 92, 82, 0.15);
+}
+
+html:root[data-color-theme="synthwave"] {
+    --background-color: #2b0c36;
+    --foreground-color: #3b144b;
+    --darker-color: #1c0624;
+    --header-bg: rgba(43, 12, 54, 0.82);
+    --brighter-color: #551c6b;
+    --input-bg: #3b144b;
+    --text-color: #f8e1ff;
+    --text-secondary: #d39cee;
+    --accent-color: #06b6d4;
+    --accent-hover: #22d3ee;
+    --accent-light: rgba(6, 182, 212, 0.1);
+    --accent-glow: rgba(6, 182, 212, 0.15);
+}
+
+html:root[data-color-theme="minimal"] {
+    --background-color: #ffffff;
+    --foreground-color: #f4f4f5;
+    --darker-color: #fafafa;
+    --header-bg: rgba(255, 255, 255, 0.82);
+    --brighter-color: #e4e4e7;
+    --input-bg: #f4f4f5;
+    --text-color: #000000;
+    --text-secondary: #52525b;
+    --accent-color: #000000;
+    --accent-hover: #27272a;
+    --accent-light: rgba(0, 0, 0, 0.05);
+    --accent-glow: rgba(0, 0, 0, 0.08);
+}
