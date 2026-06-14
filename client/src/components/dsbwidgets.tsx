@@ -1756,7 +1756,17 @@ function ExamList(props: { // sorted list of all of your exams (probably the mos
   );
 }
 
-const ThemeSelector = (props: { currentTheme: string, onSelect: (t: string) => void }) => {
+const ThemeSelector = (props: { currentTheme: string, onSelect: (t: string) => void, settings?: any, updateSetting?: Function }) => {
+  const customColors = props.settings?.customTheme || { bg: '#2563eb', hl: '#1d4ed8', accent: '#f8fafc' }; // Default is blue theme but inverted? Wait, default blue theme colors:
+  // background is #f8fafc (light grey), hl is #e2e8f0, accent is #2563eb (blue).
+  
+  const handleCustomColorChange = (field: string, val: string) => {
+    if (!props.updateSetting) return;
+    const newColors = { ...customColors, [field]: val };
+    props.updateSetting('customTheme', newColors);
+    props.onSelect('custom');
+  };
+
   const themes = [
     { id: 'default', color: '#2563eb' },
     { id: 'emerald', color: '#10b981' },
@@ -1787,8 +1797,7 @@ const ThemeSelector = (props: { currentTheme: string, onSelect: (t: string) => v
     { id: 'galaxy', color: '#d946ef', bg: '#0b051a', hl: '#2d145e' },
     { id: 'cyberpunk', color: '#ec4899', bg: '#facc15', hl: '#ca8a04' },
     { id: 'vintage', color: '#b05c52', bg: '#f3e5d8', hl: '#d4c4b7' },
-    { id: 'synthwave', color: '#06b6d4', bg: '#2b0c36', hl: '#551c6b' },
-    { id: 'minimal', color: '#000000', bg: '#ffffff', hl: '#e4e4e7' }
+    { id: 'synthwave', color: '#06b6d4', bg: '#2b0c36', hl: '#551c6b' }
   ];
 
   return (
@@ -1811,11 +1820,65 @@ const ThemeSelector = (props: { currentTheme: string, onSelect: (t: string) => v
                 transform: isActive ? 'scale(1.1)' : 'scale(1)',
                 boxShadow: isActive ? '0 0 12px rgba(0,0,0,0.1)' : 'none'
               }}
+              title={`Theme ${t.id}`}
               aria-label={`Theme ${t.id}`}
             />
           )
         })}
       </div>
+
+      <div style={{ height: '1px', background: 'var(--brighter-color)', margin: '20px 0 16px 0' }} />
+
+      <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+        <h3 style={{ fontSize: '1.05rem', color: 'var(--text-color)', marginBottom: '4px', fontWeight: 600 }}>Erstelle dein eigenes Theme</h3>
+        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '20px' }}>Passe die Farbe der einzelnen Felder durch ein Klicken an</p>
+        
+        <div 
+          style={{ 
+            position: 'relative', width: '110px', height: '110px', margin: '0 auto', 
+            borderRadius: '50%', overflow: 'hidden', boxShadow: 'var(--shadow-card)', 
+            border: (props.currentTheme === 'custom') ? '3px solid var(--text-color)' : '1px solid var(--brighter-color)',
+            transition: 'border 0.2s, transform 0.2s',
+            transform: (props.currentTheme === 'custom') ? 'scale(1.05)' : 'scale(1)'
+          }}
+          onClick={() => { if (props.currentTheme !== 'custom') props.onSelect('custom'); }}
+        >
+          {/* Half circle for Background */}
+          <label style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: '50%', background: (props.settings?.customTheme?.bg || '#f8fafc'), cursor: 'pointer' }} title="Hintergrundfarbe">
+            <input type="color" value={(props.settings?.customTheme?.bg || '#f8fafc')} onChange={(e) => handleCustomColorChange('bg', (e.target as HTMLInputElement).value)} style={{ opacity: 0, position: 'absolute', width: 0, height: 0 }} />
+          </label>
+          
+          {/* Quarter circle for Highlight */}
+          <label style={{ position: 'absolute', top: '50%', left: 0, right: '50%', bottom: 0, background: (props.settings?.customTheme?.hl || '#e2e8f0'), cursor: 'pointer' }} title="Rahmen/Trennlinien">
+            <input type="color" value={(props.settings?.customTheme?.hl || '#e2e8f0')} onChange={(e) => handleCustomColorChange('hl', (e.target as HTMLInputElement).value)} style={{ opacity: 0, position: 'absolute', width: 0, height: 0 }} />
+          </label>
+
+          {/* Quarter circle for Accent */}
+          <label style={{ position: 'absolute', top: '50%', left: '50%', right: 0, bottom: 0, background: (props.settings?.customTheme?.accent || '#2563eb'), cursor: 'pointer' }} title="Akzentfarbe">
+            <input type="color" value={(props.settings?.customTheme?.accent || '#2563eb')} onChange={(e) => handleCustomColorChange('accent', (e.target as HTMLInputElement).value)} style={{ opacity: 0, position: 'absolute', width: 0, height: 0 }} />
+          </label>
+        </div>
+      </div>
+      
+      {/* Inline styles for custom theme */}
+      <style>
+        {`
+          html:root[data-color-theme="custom"] {
+            --background-color: ${customColors.bg};
+            --foreground-color: ${customColors.bg};
+            --darker-color: ${customColors.bg};
+            --header-bg: ${customColors.bg}dd;
+            --input-bg: ${customColors.bg};
+            
+            --brighter-color: ${customColors.hl};
+            
+            --accent-color: ${customColors.accent};
+            --accent-hover: ${customColors.accent};
+            --accent-light: ${customColors.accent}1a;
+            --accent-glow: ${customColors.accent}26;
+          }
+        `}
+      </style>
     </div>
   );
 };
@@ -2157,6 +2220,8 @@ export function Settings(props: { // settings block
             />
             <ThemeSelector 
               currentTheme={props.settings.colorTheme || 'default'} 
+              settings={props.settings}
+              updateSetting={updateSetting}
               onSelect={(v: string) => {
                 updateSetting("colorTheme", v);
                 document.documentElement.setAttribute('data-color-theme', v);

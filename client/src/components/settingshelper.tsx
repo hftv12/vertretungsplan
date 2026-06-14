@@ -43,7 +43,7 @@ export function CheckButton(props: {
     }, [])
 
     return (
-        <div class="option">
+        <div class="option" style={props.disabled ? { opacity: 0.5, pointerEvents: 'none' } : {}}>
             <div>
                 <div>
                     {props.information && (
