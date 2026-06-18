@@ -4097,7 +4097,10 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
 
   return (
     <div class="default-div" style={{ animation: 'blurZoomUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both', border: '1px solid var(--accent-color)', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)', position: 'relative' }}>
-      <h2 style={{ marginBottom: '12px' }}>Tagesübersicht</h2>
+      <h2 style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        Tagesübersicht
+        <span style={{ fontSize: '0.6em', padding: '2px 8px', borderRadius: '12px', backgroundColor: 'var(--accent-light)', color: 'var(--accent-color)', fontWeight: 600, border: '1px solid var(--accent-color)', textTransform: 'uppercase', lineHeight: 1 }}>Beta</span>
+      </h2>
       <button
         type="button"
         class={`overview-toggle-btn ${expanded ? 'expanded' : ''}`}

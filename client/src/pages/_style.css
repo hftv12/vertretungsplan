@@ -2499,13 +2499,13 @@ a.fakebutton:active {
 .overview-text-wrapper {
     position: relative;
     overflow: hidden;
-    transition: max-height 0.8s ease-in-out;
+    transition: max-height 0.4s cubic-bezier(0.25, 1, 0.5, 1);
 }
 .overview-text-wrapper.collapsed {
-    max-height: 4.8em;
+    max-height: 6.4em;
 }
 .overview-text-wrapper.expanded {
-    max-height: 40em;
+    max-height: 25em;
 }
 .overview-text-wrapper.collapsed::after {
     content: '';
