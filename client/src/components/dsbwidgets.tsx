@@ -3752,19 +3752,6 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
         const now = new Date();
         const hour = now.getHours();
         
-        // 1. Greeting & Time
-        let greeting = "Guten Tag";
-        if (hour < 10) greeting = "Guten Morgen";
-        else if (hour > 17) greeting = "Guten Abend";
-
-        const days = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
-        const dayName = days[now.getDay()];
-        const timeStr = now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-        
-        parts.push(<>{greeting}! Heute ist <b>{dayName}</b>, der {now.toLocaleDateString('de-DE')}. Es ist aktuell <b class="overview-highlight">{timeStr} Uhr</b>. </>);
-
-        const isSchoolDayOver = hour > 16 || (hour === 16 && now.getMinutes() >= 15);
-        
         // Helper formatting list
         const formatList = (arr: string[]) => {
           if (arr.length === 0) return "";
@@ -3780,6 +3767,27 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
           return info ? info.subject_name : courseStr;
         };
 
+        const formatDateToDayMonth = (dateObj: Date) => {
+           return dateObj.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }) + ".";
+        };
+
+        const addPart = (content: preact.ComponentChildren) => {
+           parts.push(<span style={{ display: 'block', marginBottom: '8px' }}>{content}</span>);
+        };
+
+        // 1. Greeting & Time
+        let greeting = "Guten Tag";
+        if (hour < 10) greeting = "Guten Morgen";
+        else if (hour > 17) greeting = "Guten Abend";
+
+        const days = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
+        const dayName = days[now.getDay()];
+        const timeStr = now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+        
+        addPart(<>{greeting}! Heute ist <b>{dayName}</b>, der {now.toLocaleDateString('de-DE')}. Es ist aktuell <b class="overview-highlight">{timeStr} Uhr</b>.</>);
+
+        const isSchoolDayOver = hour > 16 || (hour === 16 && now.getMinutes() >= 15);
+        
         // --- 2. Fetch DSB Data ---
         let nextSchoolDayName = "";
         const user = localStorage.getItem("user");
@@ -3874,13 +3882,13 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
           const subjectStr = formatList(ttSubjects);
           if (isTomorrow) {
             const dayStr = nextSchoolDayName || "Morgen";
-            parts.push(<>Am {dayStr} stehen <b class="overview-highlight">{subjectStr}</b> auf deinem Plan. </>);
+            addPart(<>Am {dayStr} stehen <b class="overview-highlight">{subjectStr}</b> auf deinem Plan.</>);
           } else {
-            parts.push(<>Du hast heute noch Unterricht in <b class="overview-highlight">{subjectStr}</b>. </>);
+            addPart(<>Du hast heute noch Unterricht in <b class="overview-highlight">{subjectStr}</b>.</>);
           }
         }
 
-        // --- Substitutions ---
+        // --- 4. Substitutions ---
         if (dsbDataRaw && targetDay) {
             const subs = targetDay.substitutions || [];
             const filterStage = localStorage.getItem("filterStage") || FilterStage.GRADE;
@@ -3919,12 +3927,12 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
                     });
                     return courseInfo ? courseInfo.subject_name : s.usual_subject;
                  }))];
-                 parts.push(<>{timeText} liegen <b class="overview-highlight">relevante Vertretungen in {formatList(substSubjects)}</b> für dich vor. </>);
+                 addPart(<>{timeText} liegen <b class="overview-highlight">relevante Vertretungen in {formatList(substSubjects)}</b> für dich vor.</>);
               } else {
-                 parts.push(<>{timeText} liegen <b class="overview-highlight">{relevantSubstitutions} relevante Vertretungen</b> für deine Stufe vor. </>);
+                 addPart(<>{timeText} liegen <b class="overview-highlight">{relevantSubstitutions} relevante Vertretungen</b> für deine Stufe vor.</>);
               }
             } else {
-              parts.push(<>{timeText} hast du nach aktuellem Stand <b class="overview-highlight">keine Vertretungen</b>. </>);
+              addPart(<>{timeText} hast du nach aktuellem Stand <b class="overview-highlight">keine Vertretungen</b>.</>);
             }
         }
 
@@ -3935,13 +3943,13 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
             const hw = JSON.parse(hwRaw);
             if (hw.length > 0) {
               const hwSubjects: string[] = Array.from(new Set(hw.map((h: any) => getSubjectName(h.course) as string)));
-              parts.push(<>Du hast noch Hausaufgaben in <b class="overview-highlight">{formatList(hwSubjects)}</b> zu erledigen. </>);
+              addPart(<>Du hast noch Hausaufgaben in <b class="overview-highlight">{formatList(hwSubjects)}</b> zu erledigen.</>);
             } else {
-              parts.push(<>Du hast momentan keine offenen Hausaufgaben. </>);
+              addPart(<>Du hast momentan keine offenen Hausaufgaben.</>);
             }
           } catch(e) {}
         } else {
-           parts.push(<>Du hast momentan keine offenen Hausaufgaben. </>);
+           addPart(<>Du hast momentan keine offenen Hausaufgaben.</>);
         }
         
         // --- 6. Exams ---
@@ -3955,23 +3963,38 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
             const examRes = await fetch("https://kirillathome.uucode.com/api/v1/exams/" + listName, { headers: { user, key } });
             if (examRes.ok) {
                const rawExamDays = await examRes.json() as ExamDay[];
-               let upcomingExams: string[] = [];
+               let examStrings: preact.ComponentChildren[] = [];
+               
                for (const ed of rawExamDays) {
                  const examDate = stringToDate(ed.date);
                  const diffTime = examDate.getTime() - now.getTime();
                  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                 if (diffDays >= 0 && diffDays <= 14) { // Check next 14 days for exams
+                 
+                 // Show exams happening today or in the next 14 days
+                 if (diffDays >= -1 && diffDays <= 14) { 
+                   let dayExams: string[] = [];
                    for (const ex of ed.exams) {
                      const isRelevant = props.courses.filter(c => !!c.written && (c.course === "" ? c.subject === ex.course.split("-")[0] : c.subject === ex.course.split("-")[0] && c.course === ex.course.split("-")[1])).length > 0;
                      if (isRelevant) {
-                       upcomingExams.push(getSubjectName(ex.course));
+                       dayExams.push(getSubjectName(ex.course));
                      }
+                   }
+                   dayExams = [...new Set(dayExams)];
+                   if (dayExams.length > 0) {
+                     const isToday = examDate.getDate() === now.getDate() && examDate.getMonth() === now.getMonth();
+                     const isTomorrowExam = examDate.getDate() === new Date(now.getTime() + 86400000).getDate() && examDate.getMonth() === new Date(now.getTime() + 86400000).getMonth();
+                     
+                     let dateText = `Am ${formatDateToDayMonth(examDate)}`;
+                     if (isToday) dateText = "Heute";
+                     else if (isTomorrowExam) dateText = "Morgen";
+                     
+                     examStrings.push(<>{dateText} schreibst du eine Klausur in <b class="overview-highlight">{formatList(dayExams)}</b>.</>);
                    }
                  }
                }
-               upcomingExams = [...new Set(upcomingExams)];
-               if (upcomingExams.length > 0) {
-                 parts.push(<>In den nächsten zwei Wochen schreibst du Klausuren in <b class="overview-highlight">{formatList(upcomingExams)}</b>. </>);
+               
+               if (examStrings.length > 0) {
+                 examStrings.forEach(s => addPart(s));
                }
             }
           }
@@ -3982,42 +4005,80 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
           const year = now.getFullYear();
           const month = now.getMonth() + 1;
           const monthStr = month < 10 ? '0' + month : month.toString();
+          // We might also want to fetch last month to be completely safe for overlapping events, but for simplicity we rely on the same endpoint (sometimes it includes overlaps).
           const eventsData = await fetchWithCorsProxy(`https://www.stiftisches.de/termine/monat/${year}-${monthStr}/?ical=1`);
           if (eventsData) {
-            let upcomingEvents: string[] = [];
             const lines = eventsData.split('\n');
             let inEvent = false;
             let eventStart = "";
+            let eventEnd = "";
             let summary = "";
+            let eventComponents: preact.ComponentChildren[] = [];
+            
             for (let i = 0; i < lines.length; i++) {
               const line = lines[i].trim();
-              if (line === "BEGIN:VEVENT") inEvent = true;
+              if (line === "BEGIN:VEVENT") {
+                 inEvent = true;
+                 eventStart = "";
+                 eventEnd = "";
+                 summary = "";
+              }
               else if (line === "END:VEVENT") {
                 if (eventStart && summary && !summary.toLowerCase().includes("ferien")) {
-                  const y = parseInt(eventStart.substring(0, 4));
-                  const m = parseInt(eventStart.substring(4, 6)) - 1;
-                  const d = parseInt(eventStart.substring(6, 8));
-                  const eventDate = new Date(y, m, d);
-                  const diffTime = eventDate.getTime() - now.getTime();
-                  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                  if (diffDays >= 0 && diffDays <= 7) {
-                    upcomingEvents.push(summary);
+                  const parseDate = (dStr: string) => new Date(parseInt(dStr.substring(0, 4)), parseInt(dStr.substring(4, 6)) - 1, parseInt(dStr.substring(6, 8)));
+                  
+                  const dStart = parseDate(eventStart);
+                  let dEnd = eventEnd ? parseDate(eventEnd) : dStart;
+                  
+                  // ICAL DTEND for all-day events is usually the day AFTER the event ends (exclusive).
+                  // Subtract 1 day from DTEND if it differs from start
+                  if (eventEnd && dEnd.getTime() > dStart.getTime()) {
+                     dEnd = new Date(dEnd.getTime() - 86400000); 
+                  }
+                  
+                  const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                  
+                  // Check if event is currently ongoing
+                  const isOngoing = todayMidnight.getTime() >= dStart.getTime() && todayMidnight.getTime() <= dEnd.getTime();
+                  // Check if event starts in the future within 7 days
+                  const diffStart = Math.ceil((dStart.getTime() - todayMidnight.getTime()) / (1000 * 60 * 60 * 24));
+                  const isUpcoming = diffStart > 0 && diffStart <= 7;
+                  
+                  if (isOngoing || isUpcoming) {
+                    if (isOngoing) {
+                       if (dStart.getTime() === dEnd.getTime()) {
+                         eventComponents.push(<>Heute ist <b class="overview-highlight">{summary}</b>.</>);
+                       } else {
+                         eventComponents.push(<>Aktuell findet <b class="overview-highlight">{summary}</b> statt (bis ${formatDateToDayMonth(dEnd)}).</>);
+                       }
+                    } else if (isUpcoming) {
+                       const isTomorrowEvent = diffStart === 1;
+                       let dateText = `Am ${formatDateToDayMonth(dStart)}`;
+                       if (isTomorrowEvent) dateText = "Morgen";
+                       
+                       if (dStart.getTime() === dEnd.getTime()) {
+                         eventComponents.push(<>{dateText} ist <b class="overview-highlight">{summary}</b>.</>);
+                       } else {
+                         eventComponents.push(<>{dateText} beginnt <b class="overview-highlight">{summary}</b> (bis ${formatDateToDayMonth(dEnd)}).</>);
+                       }
+                    }
                   }
                 }
                 inEvent = false;
-                eventStart = "";
-                summary = "";
               } else if (inEvent) {
                 if (line.startsWith("DTSTART")) {
-                  const parts = line.split(":");
-                  if (parts.length > 1) eventStart = parts[1].trim();
+                  const p = line.split(":");
+                  if (p.length > 1) eventStart = p[1].trim();
+                } else if (line.startsWith("DTEND")) {
+                  const p = line.split(":");
+                  if (p.length > 1) eventEnd = p[1].trim();
                 } else if (line.startsWith("SUMMARY:")) {
                   summary = line.substring(8).trim();
                 }
               }
             }
-            if (upcomingEvents.length > 0) {
-              parts.push(<>Schulische Termine in den nächsten 7 Tagen: <b class="overview-highlight">{formatList(upcomingEvents)}</b>. </>);
+            if (eventComponents.length > 0) {
+               eventComponents.forEach(s => addPart(s));
             }
           }
         } catch(e) {}
@@ -4035,7 +4096,7 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
   if (!textParts) return null;
 
   return (
-    <div class="default-div" style={{ animation: 'blurZoomUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both', border: '1px solid var(--accent-color)', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)', marginBottom: '16px', position: 'relative' }}>
+    <div class="default-div" style={{ animation: 'blurZoomUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both', border: '1px solid var(--accent-color)', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)', position: 'relative' }}>
       <h2 style={{ marginBottom: '12px' }}>Tagesübersicht</h2>
       <button
         type="button"
@@ -4048,7 +4109,7 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
         </svg>
       </button>
       <div class={`overview-text-wrapper ${expanded ? 'expanded' : 'collapsed'}`}>
-        <p class="overview-text">
+        <p class="overview-text" style={{ margin: 0 }}>
           {textParts.map((part, i) => <span key={i}>{part}</span>)}
         </p>
       </div>
