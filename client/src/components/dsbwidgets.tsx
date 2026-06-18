@@ -3795,7 +3795,7 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
           } catch(e) {}
         }
         
-        let isTomorrow = false;
+        let isTomorrow = isSchoolDayOver;
         let targetDay: DayTimetable | null = null;
 
         if (dsbDataRaw) {
@@ -3820,7 +3820,13 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
           
           // Determine next school day name from API
           if (isTomorrow && targetDay) {
-            nextSchoolDayName = targetDay.day;
+            const dParts = targetDay.date.split('.');
+            if (dParts.length >= 3) {
+               const dObj = new Date(parseInt(dParts[2]), parseInt(dParts[1]) - 1, parseInt(dParts[0]));
+               nextSchoolDayName = days[dObj.getDay()];
+            } else {
+               nextSchoolDayName = targetDay.day;
+            }
           }
         }
 
@@ -3834,8 +3840,14 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
             const weekData = ttData[currentWeek];
             if (weekData) {
               if (isTomorrow) {
-                // Next school day
-                const checkDay = nextSchoolDayName || days[now.getDay() + 1 > 6 ? 1 : now.getDay() + 1];
+                // Next school day fallback logic
+                let checkDay = nextSchoolDayName;
+                if (!checkDay) {
+                  let offset = 1;
+                  if (now.getDay() === 5) offset = 3; // Friday -> Monday
+                  else if (now.getDay() === 6) offset = 2; // Saturday -> Monday
+                  checkDay = days[(now.getDay() + offset) % 7];
+                }
                 const dayData = weekData[checkDay];
                 if (dayData) {
                   ttSubjects = Object.values(dayData).filter(v => v).map(v => getSubjectName(v as string));

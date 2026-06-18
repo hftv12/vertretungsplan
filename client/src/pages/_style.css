@@ -2499,10 +2499,10 @@ a.fakebutton:active {
 .overview-text-wrapper {
     position: relative;
     overflow: hidden;
-    transition: max-height 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: max-height 0.8s ease-in-out;
 }
 .overview-text-wrapper.collapsed {
-    max-height: 4.2em;
+    max-height: 4.8em;
 }
 .overview-text-wrapper.expanded {
     max-height: 40em;
