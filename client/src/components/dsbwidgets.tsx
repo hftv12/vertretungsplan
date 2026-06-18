@@ -169,6 +169,7 @@ interface DSBSettings {
   yellowPaint?: boolean,
   newDesign?: boolean,
   theme?: string,
+  showOverview?: boolean,
 }
 
 enum FilterStage {
@@ -3736,7 +3737,178 @@ function WelcomeBox(props: {
 }
 //#endregion
 
+
+//#region OverviewBox
+function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings: DSBSettings }) {
+  const [textParts, setTextParts] = useState<preact.ComponentChildren[] | null>(null);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const parts: preact.ComponentChildren[] = [];
+
+        // 1. Greeting & Time
+        const now = new Date();
+        const hour = now.getHours();
+        let greeting = "Guten Tag";
+        if (hour < 10) greeting = "Guten Morgen";
+        else if (hour > 17) greeting = "Guten Abend";
+
+        const days = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
+        const dayName = days[now.getDay()];
+        
+        parts.push(<>{greeting}! Heute ist <b>{dayName}</b>, der {now.toLocaleDateString('de-DE')}. </>);
+
+        // 2. Fetch DSB Data
+        const user = localStorage.getItem("user");
+        const key = localStorage.getItem("key");
+        
+        if (user && key) {
+          const dsbRes = await fetch("https://kirillathome.uucode.com/api/v1/dsb", { headers: { user, key } });
+          let relevantSubstitutions = 0;
+          
+          if (dsbRes.ok) {
+            const json = await dsbRes.json();
+            const isSchoolDayOver = hour > 16 || (hour === 16 && now.getMinutes() >= 15);
+            
+            const isToday = (dString: string) => {
+              const dateParts = dString.split('.');
+              if (dateParts.length >= 3) {
+                return parseInt(dateParts[0]) === now.getDate() && parseInt(dateParts[1]) === now.getMonth() + 1 && parseInt(dateParts[2]) === now.getFullYear();
+              }
+              return false;
+            };
+
+            let targetDay: DayTimetable = json.day_one;
+            let isTomorrow = false;
+            
+            if (isToday(json.day_two.date)) {
+              targetDay = json.day_two;
+            } else if (isToday(json.day_one.date) && isSchoolDayOver) {
+              targetDay = json.day_two;
+              isTomorrow = true;
+            } else if (!isToday(json.day_one.date) && !isToday(json.day_two.date)) {
+              isTomorrow = true;
+            }
+            
+            // Filter substitutions
+            const subs = targetDay.substitutions || [];
+            const filterStage = localStorage.getItem("filterStage") || FilterStage.GRADE;
+            
+            const filtered = subs.filter((s: Substitution) => {
+              if (filterStage === FilterStage.ALL) return true;
+              if (!s.classes.includes(props.grade.gradeName)) return false;
+              if (props.grade.gradeLetter !== "" && !s.classes.includes(props.grade.gradeLetter)) return false;
+              
+              if (filterStage === FilterStage.COURSES) {
+                for (const c of props.courses) {
+                  const name = c.course !== "" ? c.subject + " " + c.course[0] + c.course[2] : c.subject;
+                  let usual = s.usual_subject;
+                  if (usual[1] === " ") usual = usual[0] + usual.substring(2);
+                  let subj = s.subject;
+                  if (subj[1] === " ") subj = subj[0] + subj.substring(2);
+                  if (usual === name || subj === name) return true;
+                }
+                return false;
+              }
+              return true;
+            });
+            
+            relevantSubstitutions = filtered.length;
+            
+            const timeText = isTomorrow ? "Für den nächsten Schultag" : "Für heute";
+            if (relevantSubstitutions > 0) {
+              parts.push(<>{timeText} liegen <b class="overview-highlight">{relevantSubstitutions} relevante Vertretungen</b> für dich vor. </>);
+            } else {
+              parts.push(<>{timeText} hast du nach aktuellem Stand <b class="overview-highlight">keine Vertretungen</b>. </>);
+            }
+          }
+        }
+
+        // 3. Homework
+        const hwRaw = localStorage.getItem("homework");
+        if (hwRaw) {
+          try {
+            const hw = JSON.parse(hwRaw);
+            const openHw = hw.filter((h: any) => !h.done).length;
+            if (openHw > 0) {
+              parts.push(<>Du hast noch <b class="overview-highlight">{openHw} offene Hausaufgaben</b> zu erledigen. </>);
+            }
+          } catch(e) {}
+        }
+
+        // 4. Events
+        try {
+          const year = now.getFullYear();
+          const month = now.getMonth() + 1;
+          const monthStr = month < 10 ? '0' + month : month.toString();
+          const eventsRes = await fetch(`https://www.stiftisches.de/termine/monat/${year}-${monthStr}/?ical=1`);
+          if (eventsRes.ok) {
+            const text = await eventsRes.text();
+            let eventCount = 0;
+            const lines = text.split('\n');
+            let inEvent = false;
+            let eventStart = "";
+            let summary = "";
+            for (let i = 0; i < lines.length; i++) {
+              const line = lines[i].trim();
+              if (line === "BEGIN:VEVENT") inEvent = true;
+              else if (line === "END:VEVENT") {
+                if (eventStart && summary && !summary.toLowerCase().includes("ferien")) {
+                  const y = parseInt(eventStart.substring(0, 4));
+                  const m = parseInt(eventStart.substring(4, 6)) - 1;
+                  const d = parseInt(eventStart.substring(6, 8));
+                  const eventDate = new Date(y, m, d);
+                  const diffTime = eventDate.getTime() - now.getTime();
+                  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                  if (diffDays >= 0 && diffDays <= 3) {
+                    eventCount++;
+                  }
+                }
+                inEvent = false;
+                eventStart = "";
+                summary = "";
+              } else if (inEvent) {
+                if (line.startsWith("DTSTART")) {
+                  const parts = line.split(":");
+                  if (parts.length > 1) eventStart = parts[1].trim();
+                } else if (line.startsWith("SUMMARY:")) {
+                  summary = line.substring(8).trim();
+                }
+              }
+            }
+            if (eventCount > 0) {
+              parts.push(<>In den nächsten Tagen stehen <b class="overview-highlight">{eventCount} schulische Termine</b> an. </>);
+            }
+          }
+        } catch(e) {}
+
+        setTextParts(parts);
+      } catch (e) {
+        console.error("OverviewBox error:", e);
+        setTextParts([<>Willkommen beim Vertretungsplan!</>]);
+      }
+    }
+    
+    fetchData();
+  }, [props.grade, props.courses]);
+
+  if (!textParts) return null;
+
+  return (
+    <div class="default-div" style={{ animation: 'tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both', borderColor: 'rgba(var(--accent-color-rgb), 0.2)', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)', marginBottom: '24px' }}>
+      <h2 style={{ marginBottom: '12px' }}>Tagesübersicht</h2>
+      <p class="overview-text">
+        {textParts.map((part, i) => <span key={i}>{part}</span>)}
+      </p>
+    </div>
+  );
+}
+//#endregion
+
+
 //#region the big one
+
 export default function DSBWidgets(props: {
   version: string;
 }) { // main component that nests everything
@@ -3812,6 +3984,7 @@ export default function DSBWidgets(props: {
         {loggedIn && (
           <div class="center-rows" ref={welcomeWrapper}>
             {showWelcome && <WelcomeBox onDismiss={dismissWelcome} grade={grade} setGrade={setGrade} />}
+            {settings.showOverview !== false && <OverviewBox grade={grade} courses={courses} settings={settings} />}
             <DSBTable grade={grade} courses={courses} settings={settings} />
             
             {(settings.widgetOrder || ['klausuren', 'kurswahl', 'stundenplan', 'termine', 'hausaufgaben']).map((widgetId: string) => {

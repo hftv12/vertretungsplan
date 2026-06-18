@@ -2487,6 +2487,17 @@ a.fakebutton:active {
 }
 /*#endregion*/
 
+/*#region Tagesuebersicht*/
+.overview-highlight {
+    color: var(--accent-color);
+    font-weight: 600;
+}
+.overview-text {
+    line-height: 1.6;
+    font-size: 1.05rem;
+}
+/*#endregion*/
+
 /* --- Full Themes (Overrides everything including dark mode) --- */
 html:root[data-color-theme="midnight"] {
     --background-color: #0f172a;
