@@ -4142,6 +4142,9 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
             };
             return textParts.map((part, i) => <span key={i}>{processNode(part)}</span>);
           })()}
+          <span style={{ display: 'block', marginTop: '12px', fontSize: '0.8em', fontStyle: 'italic', opacity: 0.7 }}>
+            Dieses Feature befindet sich in der Testphase, Informationen können Fehler enthalten.
+          </span>
 
         </p>
       </div>
