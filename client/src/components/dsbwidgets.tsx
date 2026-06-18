@@ -2199,9 +2199,20 @@ function WidgetReorderList(props: { settings: DSBSettings, updateSetting: Functi
   const [draggedIdx, setDraggedIdx] = useState<number | null>(null);
   const [overIdx, setOverIdx] = useState<number | null>(null);
   
-  // Keep a ref to the latest items so dragOver doesn't cause re-render loops
+  // Refs for pointer-based drag (Safari/touch compatible)
   const itemsRef = useRef(items);
   itemsRef.current = items;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const dragCloneRef = useRef<HTMLDivElement | null>(null);
+  const dragStartYRef = useRef(0);
+  const dragOffsetYRef = useRef(0);
+  const itemRectsRef = useRef<DOMRect[]>([]);
+  const isDraggingRef = useRef(false);
+  const draggedIdxRef = useRef<number | null>(null);
+  const overIdxRef = useRef<number | null>(null);
+  // Threshold in px before a pointer-hold becomes a drag
+  const DRAG_THRESHOLD = 5;
+  const pendingDragRef = useRef<{ idx: number, startY: number, startX: number, pointerId: number } | null>(null);
 
   useEffect(() => {
     if (props.settings.widgetOrder) {
@@ -2209,49 +2220,140 @@ function WidgetReorderList(props: { settings: DSBSettings, updateSetting: Functi
     }
   }, [props.settings.widgetOrder]);
 
-  const handleDragStart = (e: any, idx: number) => {
-    e.dataTransfer.effectAllowed = 'move';
-    // Use setTimeout so the browser can screenshot the original element
-    // before we hide it to create the 'hole'
-    setTimeout(() => {
+  // Snapshot item positions for hit-testing during drag
+  const snapshotRects = () => {
+    if (!containerRef.current) return;
+    const children = containerRef.current.children;
+    const rects: DOMRect[] = [];
+    for (let i = 0; i < children.length; i++) {
+      rects.push(children[i].getBoundingClientRect());
+    }
+    itemRectsRef.current = rects;
+  };
+
+  // Find which index the pointer is currently over
+  const getOverIndex = (clientY: number): number | null => {
+    const rects = itemRectsRef.current;
+    for (let i = 0; i < rects.length; i++) {
+      const mid = rects[i].top + rects[i].height / 2;
+      if (clientY < mid) return i;
+    }
+    return rects.length - 1;
+  };
+
+  const handlePointerDown = (e: PointerEvent, idx: number) => {
+    // Only start drag from the grip handle area or the item itself, not from buttons
+    const target = e.target as HTMLElement;
+    if (target.closest('button')) return;
+
+    // Store pending drag info – we'll confirm it's a drag once we exceed the threshold
+    pendingDragRef.current = { idx, startY: e.clientY, startX: e.clientX, pointerId: e.pointerId };
+    
+    // Capture the pointer so we get move/up events even outside the element
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  };
+
+  const handlePointerMove = (e: PointerEvent) => {
+    // If we have a pending drag, check threshold
+    if (pendingDragRef.current && !isDraggingRef.current) {
+      const dy = Math.abs(e.clientY - pendingDragRef.current.startY);
+      const dx = Math.abs(e.clientX - pendingDragRef.current.startX);
+      if (dy < DRAG_THRESHOLD && dx < DRAG_THRESHOLD) return;
+
+      // Start the drag
+      const { idx, startY } = pendingDragRef.current;
+      isDraggingRef.current = true;
+      draggedIdxRef.current = idx;
+      overIdxRef.current = idx;
       setDraggedIdx(idx);
       setOverIdx(idx);
-    }, 0);
-  };
 
-  const handleDragOver = (e: any, idx: number) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    if (draggedIdx === null || idx === overIdx) return;
-    setOverIdx(idx);
-  };
+      snapshotRects();
 
-  const handleDrop = (e: any, dropIdx: number) => {
-    e.preventDefault();
-    if (draggedIdx === null || draggedIdx === dropIdx) {
-      setDraggedIdx(null);
-      setOverIdx(null);
-      return;
+      // Create floating clone
+      if (containerRef.current) {
+        const el = containerRef.current.children[idx] as HTMLElement;
+        const rect = el.getBoundingClientRect();
+        dragStartYRef.current = startY;
+        dragOffsetYRef.current = startY - rect.top;
+
+        const clone = el.cloneNode(true) as HTMLDivElement;
+        clone.style.position = 'fixed';
+        clone.style.left = `${rect.left}px`;
+        clone.style.top = `${rect.top}px`;
+        clone.style.width = `${rect.width}px`;
+        clone.style.height = `${rect.height}px`;
+        clone.style.zIndex = '9999';
+        clone.style.pointerEvents = 'none';
+        clone.style.boxShadow = '0 8px 24px rgba(0,0,0,0.18)';
+        clone.style.opacity = '0.92';
+        clone.style.borderRadius = 'var(--rounding-sm)';
+        clone.style.transition = 'none';
+        clone.style.transform = 'scale(1.03)';
+        clone.style.willChange = 'top';
+        document.body.appendChild(clone);
+        dragCloneRef.current = clone;
+      }
     }
-    const newItems = [...itemsRef.current];
-    const draggedItem = newItems[draggedIdx];
-    newItems.splice(draggedIdx, 1);
-    newItems.splice(dropIdx, 0, draggedItem);
-    setItems(newItems);
-    props.updateSetting('widgetOrder', newItems);
+
+    if (!isDraggingRef.current) return;
+
+    e.preventDefault();
+
+    // Move clone
+    if (dragCloneRef.current) {
+      const newTop = e.clientY - dragOffsetYRef.current;
+      dragCloneRef.current.style.top = `${newTop}px`;
+    }
+
+    // Determine which slot we're over
+    const newOverIdx = getOverIndex(e.clientY);
+    if (newOverIdx !== null && newOverIdx !== overIdxRef.current) {
+      overIdxRef.current = newOverIdx;
+      setOverIdx(newOverIdx);
+    }
+  };
+
+  const handlePointerUp = (e: PointerEvent) => {
+    pendingDragRef.current = null;
+
+    if (!isDraggingRef.current) return;
+    isDraggingRef.current = false;
+
+    const dIdx = draggedIdxRef.current;
+    const oIdx = overIdxRef.current;
+
+    // Clean up clone
+    if (dragCloneRef.current) {
+      dragCloneRef.current.remove();
+      dragCloneRef.current = null;
+    }
+
+    // Commit reorder
+    if (dIdx !== null && oIdx !== null && dIdx !== oIdx) {
+      const newItems = [...itemsRef.current];
+      const draggedItem = newItems[dIdx];
+      newItems.splice(dIdx, 1);
+      newItems.splice(oIdx, 0, draggedItem);
+      setItems(newItems);
+      props.updateSetting('widgetOrder', newItems);
+    }
+
+    draggedIdxRef.current = null;
+    overIdxRef.current = null;
     setDraggedIdx(null);
     setOverIdx(null);
   };
 
-  const handleDragEnd = () => {
-    // If drop didn't fire (e.g. dropped outside), still commit the reorder
-    if (draggedIdx !== null && overIdx !== null && draggedIdx !== overIdx) {
-      const newItems = [...itemsRef.current];
-      const draggedItem = newItems[draggedIdx];
-      newItems.splice(draggedIdx, 1);
-      newItems.splice(overIdx, 0, draggedItem);
-      setItems(newItems);
-      props.updateSetting('widgetOrder', newItems);
+  // Also clean up if pointer is cancelled (e.g. system gesture)
+  const handlePointerCancel = () => {
+    pendingDragRef.current = null;
+    isDraggingRef.current = false;
+    draggedIdxRef.current = null;
+    overIdxRef.current = null;
+    if (dragCloneRef.current) {
+      dragCloneRef.current.remove();
+      dragCloneRef.current = null;
     }
     setDraggedIdx(null);
     setOverIdx(null);
@@ -2297,7 +2399,7 @@ function WidgetReorderList(props: { settings: DSBSettings, updateSetting: Functi
     </div>
   );
 
-  // Compute smooth slide translations
+  // Compute smooth slide translations for items that aren't being dragged
   const getDropStyle = (idx: number): any => {
     if (draggedIdx === null || overIdx === null) return { transform: 'translateY(0px)', opacity: 1 };
     
@@ -2326,17 +2428,16 @@ function WidgetReorderList(props: { settings: DSBSettings, updateSetting: Functi
 
       <div style={{ height: '1px', background: 'var(--brighter-color)', margin: '4px 0' }} />
       
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <div ref={containerRef} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
         {items.map((item: string, idx: number) => {
           const isVisible = getVisibility(item);
           return (
             <div 
               key={item}
-              draggable
-              onDragStart={(e) => handleDragStart(e, idx)}
-              onDragOver={(e) => handleDragOver(e, idx)}
-              onDrop={(e) => handleDrop(e, idx)}
-              onDragEnd={handleDragEnd}
+              onPointerDown={(e) => handlePointerDown(e, idx)}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              onPointerCancel={handlePointerCancel}
               style={{ 
                 padding: '12px', 
                 background: 'var(--foreground-color)', 
@@ -2348,6 +2449,9 @@ function WidgetReorderList(props: { settings: DSBSettings, updateSetting: Functi
                 cursor: 'grab',
                 transition: 'transform 0.25s cubic-bezier(0.2, 1, 0.2, 1), opacity 0.15s ease',
                 boxShadow: 'var(--shadow-card)',
+                touchAction: 'none',
+                userSelect: 'none',
+                WebkitUserSelect: 'none',
                 ...getDropStyle(idx)
               }}
             >
