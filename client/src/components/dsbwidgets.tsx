@@ -3744,6 +3744,8 @@ function WelcomeBox(props: {
 function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings: DSBSettings }) {
   const [textParts, setTextParts] = useState<preact.ComponentChildren[] | null>(null);
   const [expanded, setExpanded] = useState(false);
+  const contentRef = useRef<HTMLParagraphElement>(null);
+
 
   useEffect(() => {
     async function fetchData() {
@@ -4111,8 +4113,8 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
           <polyline points="6 9 12 15 18 9"></polyline>
         </svg>
       </button>
-      <div class={`overview-text-wrapper ${expanded ? 'expanded' : 'collapsed'}`}>
-        <p class="overview-text" style={{ margin: 0 }}>
+      <div class={`overview-text-wrapper ${expanded ? 'expanded' : 'collapsed'}`} style={expanded && contentRef.current ? { maxHeight: contentRef.current.scrollHeight + 'px' } : {}}>
+        <p class="overview-text" style={{ margin: 0 }} ref={contentRef}>
           
           {(() => {
             let wordIndex = 0;
@@ -4120,7 +4122,7 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
               if (typeof node === "string") {
                 return node.split(/(\s+)/).map((word: string, idx: number) => {
                   if (!word.trim()) return word;
-                  const delay = (wordIndex++) * 0.04;
+                  const delay = 0.5 + (wordIndex++) * 0.04;
                   return <span class="fade-word" style={{ animationDelay: delay + 's' }} key={wordIndex}>{word}</span>;
                 });
               }
