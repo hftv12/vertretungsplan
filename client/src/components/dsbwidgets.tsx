@@ -3738,6 +3738,7 @@ function WelcomeBox(props: {
 //#endregion
 
 
+
 //#region OverviewBox
 function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings: DSBSettings }) {
   const [textParts, setTextParts] = useState<preact.ComponentChildren[] | null>(null);
@@ -3746,18 +3747,63 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
     async function fetchData() {
       try {
         const parts: preact.ComponentChildren[] = [];
-
-        // 1. Greeting & Time
         const now = new Date();
         const hour = now.getHours();
+        
+        // 1. Greeting & Time
         let greeting = "Guten Tag";
         if (hour < 10) greeting = "Guten Morgen";
         else if (hour > 17) greeting = "Guten Abend";
 
         const days = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
         const dayName = days[now.getDay()];
+        const timeStr = now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
         
-        parts.push(<>{greeting}! Heute ist <b>{dayName}</b>, der {now.toLocaleDateString('de-DE')}. </>);
+        parts.push(<>{greeting}! Heute ist <b>{dayName}</b>, der {now.toLocaleDateString('de-DE')}. Es ist aktuell <b class="overview-highlight">{timeStr} Uhr</b>. </>);
+
+        const isSchoolDayOver = hour > 16 || (hour === 16 && now.getMinutes() >= 15);
+        
+        // --- 4. Timetable (do this before substitutions to know next day) ---
+        let nextSchoolDayName = "";
+        let hoursRemaining = 0;
+        let totalHoursNextDay = 0;
+        try {
+          const ttDataRaw = localStorage.getItem("PersonalTimetableData");
+          if (ttDataRaw) {
+            const ttData = JSON.parse(ttDataRaw);
+            // very naive week detection (default to A)
+            const currentWeek = localStorage.getItem("currentWeek") || "A"; 
+            const weekData = ttData[currentWeek];
+            if (weekData) {
+              if (isSchoolDayOver || now.getDay() === 0 || now.getDay() === 6) {
+                // Find next school day
+                let checkDay = now.getDay() + 1;
+                if (checkDay > 5) checkDay = 1; // skip weekend, goto Monday
+                nextSchoolDayName = days[checkDay];
+                const dayData = weekData[nextSchoolDayName];
+                if (dayData) {
+                  totalHoursNextDay = Object.values(dayData).filter(v => v).length;
+                }
+              } else {
+                // Today remaining hours
+                const todayData = weekData[dayName];
+                if (todayData) {
+                  // assuming 1st hour is ~8:00, roughly hour-8 = hourNum
+                  const approxCurrentHour = Math.max(1, hour - 7);
+                  hoursRemaining = Object.keys(todayData)
+                    .filter(k => parseInt(k) >= approxCurrentHour && todayData[k])
+                    .length;
+                }
+              }
+            }
+          }
+        } catch(e) {}
+        
+        if (hoursRemaining > 0) {
+          parts.push(<>Du hast heute noch <b class="overview-highlight">{hoursRemaining} Stunden</b> Unterricht. </>);
+        } else if (totalHoursNextDay > 0) {
+          parts.push(<>Am {nextSchoolDayName} stehen <b class="overview-highlight">{totalHoursNextDay} Stunden</b> auf deinem Plan. </>);
+        }
 
         // 2. Fetch DSB Data
         const user = localStorage.getItem("user");
@@ -3769,7 +3815,6 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
           
           if (dsbRes.ok) {
             const json = await dsbRes.json();
-            const isSchoolDayOver = hour > 16 || (hour === 16 && now.getMinutes() >= 15);
             
             const isToday = (dString: string) => {
               const dateParts = dString.split('.');
@@ -3791,7 +3836,6 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
               isTomorrow = true;
             }
             
-            // Filter substitutions
             const subs = targetDay.substitutions || [];
             const filterStage = localStorage.getItem("filterStage") || FilterStage.GRADE;
             
@@ -3826,15 +3870,19 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
         }
 
         // 3. Homework
-        const hwRaw = localStorage.getItem("homework");
+        const hwRaw = localStorage.getItem("DSBHomework");
         if (hwRaw) {
           try {
             const hw = JSON.parse(hwRaw);
-            const openHw = hw.filter((h: any) => !h.done).length;
+            const openHw = hw.length;
             if (openHw > 0) {
-              parts.push(<>Du hast noch <b class="overview-highlight">{openHw} offene Hausaufgaben</b> zu erledigen. </>);
+              parts.push(<>Du hast noch <b class="overview-highlight">{openHw} Hausaufgabe{openHw !== 1 ? 'n' : ''}</b> zu erledigen. </>);
+            } else {
+              parts.push(<>Du hast momentan keine offenen Hausaufgaben. </>);
             }
           } catch(e) {}
+        } else {
+           parts.push(<>Du hast momentan keine offenen Hausaufgaben. </>);
         }
 
         // 4. Events
@@ -3842,11 +3890,10 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
           const year = now.getFullYear();
           const month = now.getMonth() + 1;
           const monthStr = month < 10 ? '0' + month : month.toString();
-          const eventsRes = await fetch(`https://www.stiftisches.de/termine/monat/${year}-${monthStr}/?ical=1`);
-          if (eventsRes.ok) {
-            const text = await eventsRes.text();
+          const eventsData = await fetchWithCorsProxy(`https://www.stiftisches.de/termine/monat/${year}-${monthStr}/?ical=1`);
+          if (eventsData) {
             let eventCount = 0;
-            const lines = text.split('\n');
+            const lines = eventsData.split('\n');
             let inEvent = false;
             let eventStart = "";
             let summary = "";
@@ -3861,7 +3908,7 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
                   const eventDate = new Date(y, m, d);
                   const diffTime = eventDate.getTime() - now.getTime();
                   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                  if (diffDays >= 0 && diffDays <= 3) {
+                  if (diffDays >= 0 && diffDays <= 7) {
                     eventCount++;
                   }
                 }
@@ -3878,7 +3925,7 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
               }
             }
             if (eventCount > 0) {
-              parts.push(<>In den nächsten Tagen stehen <b class="overview-highlight">{eventCount} schulische Termine</b> an. </>);
+              parts.push(<>In den nächsten 7 Tagen stehen <b class="overview-highlight">{eventCount} schulische Termine</b> an. </>);
             }
           }
         } catch(e) {}
@@ -3896,7 +3943,7 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
   if (!textParts) return null;
 
   return (
-    <div class="default-div" style={{ animation: 'tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both', borderColor: 'rgba(var(--accent-color-rgb), 0.2)', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)', marginBottom: '24px' }}>
+    <div class="default-div" style={{ animation: 'blurZoomUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both', border: '1px solid var(--accent-color)', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)', marginBottom: '16px' }}>
       <h2 style={{ marginBottom: '12px' }}>Tagesübersicht</h2>
       <p class="overview-text">
         {textParts.map((part, i) => <span key={i}>{part}</span>)}
