@@ -2513,8 +2513,8 @@ a.fakebutton:active {
     bottom: 0;
     left: 0;
     right: 0;
-    height: 2em;
-    background: linear-gradient(to bottom, transparent, var(--foreground-color));
+    height: 3.5em;
+    background: linear-gradient(to bottom, transparent, var(--foreground-color) 85%);
     pointer-events: none;
     transition: opacity 0.4s ease;
 }
@@ -2524,8 +2524,8 @@ a.fakebutton:active {
     bottom: 0;
     left: 0;
     right: 0;
-    height: 2em;
-    background: linear-gradient(to bottom, transparent, var(--foreground-color));
+    height: 3.5em;
+    background: linear-gradient(to bottom, transparent, var(--foreground-color) 85%);
     pointer-events: none;
     opacity: 0;
 }
@@ -2561,6 +2561,14 @@ a.fakebutton:active {
 }
 .overview-toggle-btn.expanded svg {
     transform: rotate(180deg);
+}
+.fade-word {
+    opacity: 0;
+    animation: fadeInWord 0.4s forwards;
+    display: inline;
+}
+@keyframes fadeInWord {
+    to { opacity: 1; }
 }
 /*#endregion*/
 

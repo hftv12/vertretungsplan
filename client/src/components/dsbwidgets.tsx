@@ -4049,7 +4049,7 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
                        if (dStart.getTime() === dEnd.getTime()) {
                          eventComponents.push(<>Heute ist <b class="overview-highlight">{summary}</b>.</>);
                        } else {
-                         eventComponents.push(<>Aktuell findet <b class="overview-highlight">{summary}</b> statt (bis ${formatDateToDayMonth(dEnd)}).</>);
+                         eventComponents.push(<>Aktuell findet <b class="overview-highlight">{summary}</b> statt (bis {formatDateToDayMonth(dEnd)}).</>);
                        }
                     } else if (isUpcoming) {
                        const isTomorrowEvent = diffStart === 1;
@@ -4059,7 +4059,7 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
                        if (dStart.getTime() === dEnd.getTime()) {
                          eventComponents.push(<>{dateText} ist <b class="overview-highlight">{summary}</b>.</>);
                        } else {
-                         eventComponents.push(<>{dateText} beginnt <b class="overview-highlight">{summary}</b> (bis ${formatDateToDayMonth(dEnd)}).</>);
+                         eventComponents.push(<>{dateText} beginnt <b class="overview-highlight">{summary}</b> (bis {formatDateToDayMonth(dEnd)}).</>);
                        }
                     }
                   }
@@ -4113,7 +4113,34 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
       </button>
       <div class={`overview-text-wrapper ${expanded ? 'expanded' : 'collapsed'}`}>
         <p class="overview-text" style={{ margin: 0 }}>
-          {textParts.map((part, i) => <span key={i}>{part}</span>)}
+          
+          {(() => {
+            let wordIndex = 0;
+            const processNode = (node: any): any => {
+              if (typeof node === "string") {
+                return node.split(/(\s+)/).map((word: string, idx: number) => {
+                  if (!word.trim()) return word;
+                  const delay = (wordIndex++) * 0.04;
+                  return <span class="fade-word" style={{ animationDelay: delay + 's' }} key={wordIndex}>{word}</span>;
+                });
+              }
+              if (Array.isArray(node)) {
+                return node.map(processNode);
+              }
+              if (node && typeof node === "object" && node.props) {
+                return {
+                  ...node,
+                  props: {
+                    ...node.props,
+                    children: processNode(node.props.children)
+                  }
+                };
+              }
+              return node;
+            };
+            return textParts.map((part, i) => <span key={i}>{processNode(part)}</span>);
+          })()}
+
         </p>
       </div>
     </div>
