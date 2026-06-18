@@ -2496,9 +2496,71 @@ a.fakebutton:active {
     color: var(--accent-color);
     font-weight: 600;
 }
+.overview-text-wrapper {
+    position: relative;
+    overflow: hidden;
+    transition: max-height 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.overview-text-wrapper.collapsed {
+    max-height: 4.2em;
+}
+.overview-text-wrapper.expanded {
+    max-height: 40em;
+}
+.overview-text-wrapper.collapsed::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2em;
+    background: linear-gradient(to bottom, transparent, var(--foreground-color));
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+}
+.overview-text-wrapper.expanded::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2em;
+    background: linear-gradient(to bottom, transparent, var(--foreground-color));
+    pointer-events: none;
+    opacity: 0;
+}
 .overview-text {
     line-height: 1.6;
     font-size: 1.05rem;
+}
+.overview-toggle-btn {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    background: none;
+    border: 1px solid var(--brighter-color);
+    border-radius: var(--rounding-sm, 8px);
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-secondary);
+    transition: color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, background 0.2s ease;
+    z-index: 5;
+    padding: 0;
+}
+.overview-toggle-btn:hover {
+    color: var(--accent-color);
+    border-color: var(--accent-color);
+    background: var(--accent-light, rgba(99, 102, 241, 0.08));
+}
+.overview-toggle-btn svg {
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.overview-toggle-btn.expanded svg {
+    transform: rotate(180deg);
 }
 /*#endregion*/
 

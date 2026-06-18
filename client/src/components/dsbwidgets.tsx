@@ -3739,9 +3739,11 @@ function WelcomeBox(props: {
 
 
 
+
 //#region OverviewBox
 function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings: DSBSettings }) {
   const [textParts, setTextParts] = useState<preact.ComponentChildren[] | null>(null);
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -3763,79 +3765,111 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
 
         const isSchoolDayOver = hour > 16 || (hour === 16 && now.getMinutes() >= 15);
         
-        // --- 4. Timetable (do this before substitutions to know next day) ---
+        // Helper formatting list
+        const formatList = (arr: string[]) => {
+          if (arr.length === 0) return "";
+          if (arr.length === 1) return arr[0];
+          return arr.slice(0, -1).join(", ") + " und " + arr[arr.length - 1];
+        };
+
+        const getCourseInfo = (courseStr: string) => {
+          return props.courses.find(c => (c.subject + (c.course ? "-" + c.course : "")) === courseStr);
+        };
+        const getSubjectName = (courseStr: string) => {
+          const info = getCourseInfo(courseStr);
+          return info ? info.subject_name : courseStr;
+        };
+
+        // --- 2. Fetch DSB Data ---
         let nextSchoolDayName = "";
-        let hoursRemaining = 0;
-        let totalHoursNextDay = 0;
+        const user = localStorage.getItem("user");
+        const key = localStorage.getItem("key");
+        
+        let dsbDataRaw = null;
+        if (user && key) {
+          try {
+            const dsbRes = await fetch("https://kirillathome.uucode.com/api/v1/dsb", { headers: { user, key } });
+            if (dsbRes.ok) {
+              dsbDataRaw = await dsbRes.json();
+            }
+          } catch(e) {}
+        }
+        
+        let isTomorrow = false;
+        let targetDay: DayTimetable | null = null;
+
+        if (dsbDataRaw) {
+          const isToday = (dString: string) => {
+            const dateParts = dString.split('.');
+            if (dateParts.length >= 3) {
+              return parseInt(dateParts[0]) === now.getDate() && parseInt(dateParts[1]) === now.getMonth() + 1 && parseInt(dateParts[2]) === now.getFullYear();
+            }
+            return false;
+          };
+
+          targetDay = dsbDataRaw.day_one;
+          
+          if (isToday(dsbDataRaw.day_two.date)) {
+            targetDay = dsbDataRaw.day_two;
+          } else if (isToday(dsbDataRaw.day_one.date) && isSchoolDayOver) {
+            targetDay = dsbDataRaw.day_two;
+            isTomorrow = true;
+          } else if (!isToday(dsbDataRaw.day_one.date) && !isToday(dsbDataRaw.day_two.date)) {
+            isTomorrow = true;
+          }
+          
+          // Determine next school day name from API
+          if (isTomorrow && targetDay) {
+            nextSchoolDayName = targetDay.day;
+          }
+        }
+
+        // --- 3. Timetable ---
+        let ttSubjects: string[] = [];
         try {
           const ttDataRaw = localStorage.getItem("PersonalTimetableData");
           if (ttDataRaw) {
             const ttData = JSON.parse(ttDataRaw);
-            // very naive week detection (default to A)
             const currentWeek = localStorage.getItem("currentWeek") || "A"; 
             const weekData = ttData[currentWeek];
             if (weekData) {
-              if (isSchoolDayOver || now.getDay() === 0 || now.getDay() === 6) {
-                // Find next school day
-                let checkDay = now.getDay() + 1;
-                if (checkDay > 5) checkDay = 1; // skip weekend, goto Monday
-                nextSchoolDayName = days[checkDay];
-                const dayData = weekData[nextSchoolDayName];
+              if (isTomorrow) {
+                // Next school day
+                const checkDay = nextSchoolDayName || days[now.getDay() + 1 > 6 ? 1 : now.getDay() + 1];
+                const dayData = weekData[checkDay];
                 if (dayData) {
-                  totalHoursNextDay = Object.values(dayData).filter(v => v).length;
+                  ttSubjects = Object.values(dayData).filter(v => v).map(v => getSubjectName(v as string));
                 }
               } else {
                 // Today remaining hours
                 const todayData = weekData[dayName];
                 if (todayData) {
-                  // assuming 1st hour is ~8:00, roughly hour-8 = hourNum
+                  // roughly assume hours map to times linearly
                   const approxCurrentHour = Math.max(1, hour - 7);
-                  hoursRemaining = Object.keys(todayData)
+                  ttSubjects = Object.keys(todayData)
                     .filter(k => parseInt(k) >= approxCurrentHour && todayData[k])
-                    .length;
+                    .map(k => getSubjectName(todayData[k]));
                 }
               }
             }
           }
         } catch(e) {}
         
-        if (hoursRemaining > 0) {
-          parts.push(<>Du hast heute noch <b class="overview-highlight">{hoursRemaining} Stunden</b> Unterricht. </>);
-        } else if (totalHoursNextDay > 0) {
-          parts.push(<>Am {nextSchoolDayName} stehen <b class="overview-highlight">{totalHoursNextDay} Stunden</b> auf deinem Plan. </>);
+        // Remove duplicates from ttSubjects
+        ttSubjects = [...new Set(ttSubjects)];
+
+        if (ttSubjects.length > 0) {
+          const subjectStr = formatList(ttSubjects);
+          if (isTomorrow) {
+            const dayStr = nextSchoolDayName || "Morgen";
+            parts.push(<>Am {dayStr} stehen <b class="overview-highlight">{subjectStr}</b> auf deinem Plan. </>);
+          } else {
+            parts.push(<>Du hast heute noch Unterricht in <b class="overview-highlight">{subjectStr}</b>. </>);
+          }
         }
 
-        // 2. Fetch DSB Data
-        const user = localStorage.getItem("user");
-        const key = localStorage.getItem("key");
-        
-        if (user && key) {
-          const dsbRes = await fetch("https://kirillathome.uucode.com/api/v1/dsb", { headers: { user, key } });
-          let relevantSubstitutions = 0;
-          
-          if (dsbRes.ok) {
-            const json = await dsbRes.json();
-            
-            const isToday = (dString: string) => {
-              const dateParts = dString.split('.');
-              if (dateParts.length >= 3) {
-                return parseInt(dateParts[0]) === now.getDate() && parseInt(dateParts[1]) === now.getMonth() + 1 && parseInt(dateParts[2]) === now.getFullYear();
-              }
-              return false;
-            };
-
-            let targetDay: DayTimetable = json.day_one;
-            let isTomorrow = false;
-            
-            if (isToday(json.day_two.date)) {
-              targetDay = json.day_two;
-            } else if (isToday(json.day_one.date) && isSchoolDayOver) {
-              targetDay = json.day_two;
-              isTomorrow = true;
-            } else if (!isToday(json.day_one.date) && !isToday(json.day_two.date)) {
-              isTomorrow = true;
-            }
-            
+        // --- Substitutions ---
+        if (dsbDataRaw && targetDay) {
             const subs = targetDay.substitutions || [];
             const filterStage = localStorage.getItem("filterStage") || FilterStage.GRADE;
             
@@ -3858,25 +3892,38 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
               return true;
             });
             
-            relevantSubstitutions = filtered.length;
-            
+            const relevantSubstitutions = filtered.length;
             const timeText = isTomorrow ? "Für den nächsten Schultag" : "Für heute";
+            
             if (relevantSubstitutions > 0) {
-              parts.push(<>{timeText} liegen <b class="overview-highlight">{relevantSubstitutions} relevante Vertretungen</b> für dich vor. </>);
+              if (filterStage === FilterStage.COURSES) {
+                 const substSubjects = [...new Set(filtered.map(s => {
+                    // Try to match usual_subject to our courses for readable name
+                    let usual = s.usual_subject;
+                    if (usual[1] === " ") usual = usual[0] + usual.substring(2);
+                    const courseInfo = props.courses.find(c => {
+                       const name = c.course !== "" ? c.subject + " " + c.course[0] + c.course[2] : c.subject;
+                       return name === usual;
+                    });
+                    return courseInfo ? courseInfo.subject_name : s.usual_subject;
+                 }))];
+                 parts.push(<>{timeText} liegen <b class="overview-highlight">relevante Vertretungen in {formatList(substSubjects)}</b> für dich vor. </>);
+              } else {
+                 parts.push(<>{timeText} liegen <b class="overview-highlight">{relevantSubstitutions} relevante Vertretungen</b> für deine Stufe vor. </>);
+              }
             } else {
               parts.push(<>{timeText} hast du nach aktuellem Stand <b class="overview-highlight">keine Vertretungen</b>. </>);
             }
-          }
         }
 
-        // 3. Homework
+        // --- 5. Homework ---
         const hwRaw = localStorage.getItem("DSBHomework");
         if (hwRaw) {
           try {
             const hw = JSON.parse(hwRaw);
-            const openHw = hw.length;
-            if (openHw > 0) {
-              parts.push(<>Du hast noch <b class="overview-highlight">{openHw} Hausaufgabe{openHw !== 1 ? 'n' : ''}</b> zu erledigen. </>);
+            if (hw.length > 0) {
+              const hwSubjects: string[] = Array.from(new Set(hw.map((h: any) => getSubjectName(h.course) as string)));
+              parts.push(<>Du hast noch Hausaufgaben in <b class="overview-highlight">{formatList(hwSubjects)}</b> zu erledigen. </>);
             } else {
               parts.push(<>Du hast momentan keine offenen Hausaufgaben. </>);
             }
@@ -3884,15 +3931,48 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
         } else {
            parts.push(<>Du hast momentan keine offenen Hausaufgaben. </>);
         }
+        
+        // --- 6. Exams ---
+        try {
+          const listName = localStorage.getItem("examList");
+          if (listName && user && key) {
+            const stringToDate = (str: string): Date => { 
+              const s = str.split(".");
+              return new Date(`${s[2]}-${s[1]}-${s[0]}T16:00:00`);
+            };
+            const examRes = await fetch("https://kirillathome.uucode.com/api/v1/exams/" + listName, { headers: { user, key } });
+            if (examRes.ok) {
+               const rawExamDays = await examRes.json() as ExamDay[];
+               let upcomingExams: string[] = [];
+               for (const ed of rawExamDays) {
+                 const examDate = stringToDate(ed.date);
+                 const diffTime = examDate.getTime() - now.getTime();
+                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                 if (diffDays >= 0 && diffDays <= 14) { // Check next 14 days for exams
+                   for (const ex of ed.exams) {
+                     const isRelevant = props.courses.filter(c => !!c.written && (c.course === "" ? c.subject === ex.course.split("-")[0] : c.subject === ex.course.split("-")[0] && c.course === ex.course.split("-")[1])).length > 0;
+                     if (isRelevant) {
+                       upcomingExams.push(getSubjectName(ex.course));
+                     }
+                   }
+                 }
+               }
+               upcomingExams = [...new Set(upcomingExams)];
+               if (upcomingExams.length > 0) {
+                 parts.push(<>In den nächsten zwei Wochen schreibst du Klausuren in <b class="overview-highlight">{formatList(upcomingExams)}</b>. </>);
+               }
+            }
+          }
+        } catch(e) {}
 
-        // 4. Events
+        // --- 7. Events ---
         try {
           const year = now.getFullYear();
           const month = now.getMonth() + 1;
           const monthStr = month < 10 ? '0' + month : month.toString();
           const eventsData = await fetchWithCorsProxy(`https://www.stiftisches.de/termine/monat/${year}-${monthStr}/?ical=1`);
           if (eventsData) {
-            let eventCount = 0;
+            let upcomingEvents: string[] = [];
             const lines = eventsData.split('\n');
             let inEvent = false;
             let eventStart = "";
@@ -3909,7 +3989,7 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
                   const diffTime = eventDate.getTime() - now.getTime();
                   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                   if (diffDays >= 0 && diffDays <= 7) {
-                    eventCount++;
+                    upcomingEvents.push(summary);
                   }
                 }
                 inEvent = false;
@@ -3924,8 +4004,8 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
                 }
               }
             }
-            if (eventCount > 0) {
-              parts.push(<>In den nächsten 7 Tagen stehen <b class="overview-highlight">{eventCount} schulische Termine</b> an. </>);
+            if (upcomingEvents.length > 0) {
+              parts.push(<>Schulische Termine in den nächsten 7 Tagen: <b class="overview-highlight">{formatList(upcomingEvents)}</b>. </>);
             }
           }
         } catch(e) {}
@@ -3943,11 +4023,23 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
   if (!textParts) return null;
 
   return (
-    <div class="default-div" style={{ animation: 'blurZoomUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both', border: '1px solid var(--accent-color)', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)', marginBottom: '16px' }}>
+    <div class="default-div" style={{ animation: 'blurZoomUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both', border: '1px solid var(--accent-color)', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)', marginBottom: '16px', position: 'relative' }}>
       <h2 style={{ marginBottom: '12px' }}>Tagesübersicht</h2>
-      <p class="overview-text">
-        {textParts.map((part, i) => <span key={i}>{part}</span>)}
-      </p>
+      <button
+        type="button"
+        class={`overview-toggle-btn ${expanded ? 'expanded' : ''}`}
+        onClick={() => setExpanded(!expanded)}
+        aria-label={expanded ? 'Einklappen' : 'Ausklappen'}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </button>
+      <div class={`overview-text-wrapper ${expanded ? 'expanded' : 'collapsed'}`}>
+        <p class="overview-text">
+          {textParts.map((part, i) => <span key={i}>{part}</span>)}
+        </p>
+      </div>
     </div>
   );
 }

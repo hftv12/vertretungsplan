@@ -1,0 +1,22 @@
+[2m20:10:56[22m [34m[content][39m Syncing content
+[2m20:10:56[22m [34m[content][39m Synced content
+[2m20:10:56[22m [34m[types][39m Generated [2m95ms[22m
+[2m20:10:56[22m [34m[check][39m Getting diagnostics for Astro files in C:\Users\janne\Documents\vertretungsplan\client...
+[96msrc/components/dsbwidgets.tsx[0m:[93m2318[0m:[93m28[0m - [93mwarning[0m[90m ts(6133): [0m'e' is declared but its value is never read.
+
+[7m2318[0m   const handlePointerUp = (e: PointerEvent) => {
+[7m    [0m [93m                           ~[0m
+[96msrc/components/dsbwidgets.tsx[0m:[93m1779[0m:[93m22[0m - [93mwarning[0m[90m ts(7044): [0mParameter 'prev' implicitly has an 'any' type, but a better type may be inferred from usage.
+
+[7m1779[0m     setEditingColors(prev => {
+[7m    [0m [93m                     ~~~~[0m
+[96msrc/components/dsbwidgets.tsx[0m:[93m10[0m:[93m44[0m - [93mwarning[0m[90m ts(6133): [0m'ImportantIcon' is declared but its value is never read.
+
+[7m10[0m import { EyeIcon, EyeOffIcon, RefreshIcon, ImportantIcon, FilterIcon, PencilIcon, HelpIcon } from "./icons";
+[7m  [0m [93m                                           ~~~~~~~~~~~~~[0m
+
+Result (16 files): 
+- 0 errors
+- 0 warnings
+- 3 hints
+
