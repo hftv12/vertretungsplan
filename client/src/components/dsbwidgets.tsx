@@ -624,10 +624,25 @@ function DSBTable(props: { // the main feature of this website
           return false;
         };
 
+        const isPastDay = (dString: string) => {
+          const parts = dString.split('.');
+          if (parts.length >= 3) {
+            const dYear = parseInt(parts[2]);
+            const dMonth = parseInt(parts[1]);
+            const dDate = parseInt(parts[0]);
+            if (dYear < todayYear) return true;
+            if (dYear === todayYear && dMonth < todayMonth) return true;
+            if (dYear === todayYear && dMonth === todayMonth && dDate < todayDate) return true;
+          }
+          return false;
+        };
+
         const isSchoolDayOver = now.getHours() > 16 || (now.getHours() === 16 && now.getMinutes() >= 15);
         if (isToday(json.day_two.date)) {
           setCurrentDay(json.day_two);
         } else if (isToday(json.day_one.date) && isSchoolDayOver) {
+          setCurrentDay(json.day_two);
+        } else if (!isToday(json.day_one.date) && isPastDay(json.day_one.date)) {
           setCurrentDay(json.day_two);
         } else {
           setCurrentDay(json.day_one);
@@ -2400,6 +2415,23 @@ function WidgetReorderList(props: { settings: DSBSettings, updateSetting: Functi
     </div>
   );
 
+  const ToggleableStaticBox = ({ id, name, isVisible, onToggle }: { id: string, name: string, isVisible: boolean, onToggle: (id: string) => void }) => (
+    <div style={{ padding: '12px', background: 'var(--foreground-color)', borderRadius: 'var(--rounding-sm)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid var(--brighter-color)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <LockIcon />
+        <span style={{ fontWeight: 600, opacity: isVisible ? 1 : 0.5, color: 'var(--text-secondary)' }}>{name}</span>
+      </div>
+      <button 
+        type="button"
+        class="imgInput" 
+        onClick={() => onToggle(id)} 
+        title={isVisible ? "Ausblenden" : "Einblenden"}
+      >
+        {isVisible ? <EyeIcon width="20" height="20" /> : <EyeOffIcon width="20" height="20" />}
+      </button>
+    </div>
+  );
+
   // Compute smooth slide translations for items that aren't being dragged
   const getDropStyle = (idx: number): any => {
     if (draggedIdx === null || overIdx === null) return { transform: 'translateY(0px)', opacity: 1 };
@@ -2424,6 +2456,12 @@ function WidgetReorderList(props: { settings: DSBSettings, updateSetting: Functi
       </p>
       
       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        <ToggleableStaticBox 
+           id="tagesuebersicht" 
+           name="Tagesübersicht" 
+           isVisible={props.settings.showOverview !== false} 
+           onToggle={() => props.updateSetting('showOverview', props.settings.showOverview === false ? true : false)} 
+        />
         <StaticBox name="Vertretungen" />
       </div>
 
@@ -3770,7 +3808,7 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
         };
 
         const formatDateToDayMonth = (dateObj: Date) => {
-           return dateObj.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }) + ".";
+           return dateObj.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }).replace(/\.+$/, '') + ".";
         };
 
         const addPart = (content: preact.ComponentChildren) => {
@@ -3786,7 +3824,7 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
         const dayName = days[now.getDay()];
         const timeStr = now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
         
-        addPart(<>{greeting}! Heute ist <b>{dayName}</b>, der {now.toLocaleDateString('de-DE')}. Es ist aktuell <b class="overview-highlight">{timeStr} Uhr</b>.</>);
+        addPart(<>{greeting}! Heute ist <b>{dayName}</b>, der {now.toLocaleDateString('de-DE').replace(/\.+$/, '')}. Es ist aktuell <b class="overview-highlight">{timeStr} Uhr</b>.</>);
 
         const isSchoolDayOver = hour > 16 || (hour === 16 && now.getMinutes() >= 15);
         
@@ -3826,6 +3864,23 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
             isTomorrow = true;
           } else if (!isToday(dsbDataRaw.day_one.date) && !isToday(dsbDataRaw.day_two.date)) {
             isTomorrow = true;
+            
+            const isPastDay = (dString: string) => {
+              const parts = dString.split('.');
+              if (parts.length >= 3) {
+                const dYear = parseInt(parts[2]);
+                const dMonth = parseInt(parts[1]);
+                const dDate = parseInt(parts[0]);
+                if (dYear < now.getFullYear()) return true;
+                if (dYear === now.getFullYear() && dMonth < now.getMonth() + 1) return true;
+                if (dYear === now.getFullYear() && dMonth === now.getMonth() + 1 && dDate < now.getDate()) return true;
+              }
+              return false;
+            };
+            
+            if (isPastDay(dsbDataRaw.day_one.date)) {
+               targetDay = dsbDataRaw.day_two;
+            }
           }
           
           // Determine next school day name from API

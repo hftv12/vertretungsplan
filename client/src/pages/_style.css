@@ -2502,7 +2502,7 @@ a.fakebutton:active {
     transition: max-height 0.4s cubic-bezier(0.25, 1, 0.5, 1);
 }
 .overview-text-wrapper.collapsed {
-    max-height: 6.4em;
+    max-height: 6.8em;
 }
 .overview-text-wrapper.expanded {
     max-height: 25em;
@@ -2513,8 +2513,8 @@ a.fakebutton:active {
     bottom: 0;
     left: 0;
     right: 0;
-    height: 3.5em;
-    background: linear-gradient(to bottom, transparent, var(--foreground-color) 85%);
+    height: 4em;
+    background: linear-gradient(to bottom, transparent, var(--foreground-color) 95%);
     pointer-events: none;
     transition: opacity 0.4s ease;
 }
