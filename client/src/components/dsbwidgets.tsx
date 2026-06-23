@@ -4340,19 +4340,24 @@ export default function DSBWidgets(props: {
               <p>Diese Webseite nutzt folgende externe Dienste:</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <div style={{ padding: '10px 14px', backgroundColor: 'var(--input-bg)', border: '1px solid var(--brighter-color)', borderRadius: 'var(--rounding-sm)', fontSize: '0.9rem' }}>
-                  <b>DSBMobile</b> — Quelle für die Vertretungsplan-Daten
+                  <b style={{ display: 'block', marginBottom: '2px' }}>DSBMobile</b>
+                  <span style={{ color: 'var(--text-secondary)' }}>Quelle für die Vertretungsplan-Daten</span>
                 </div>
                 <div style={{ padding: '10px 14px', backgroundColor: 'var(--input-bg)', border: '1px solid var(--brighter-color)', borderRadius: 'var(--rounding-sm)', fontSize: '0.9rem' }}>
-                  <b>kirillathome.uucode.com</b> — Backend-API für Vertretungs- und Klausurdaten
+                  <b style={{ display: 'block', marginBottom: '2px' }}>kirillathome.uucode.com</b>
+                  <span style={{ color: 'var(--text-secondary)' }}>Backend-API für Vertretungs- und Klausurdaten</span>
                 </div>
                 <div style={{ padding: '10px 14px', backgroundColor: 'var(--input-bg)', border: '1px solid var(--brighter-color)', borderRadius: 'var(--rounding-sm)', fontSize: '0.9rem' }}>
-                  <b>stiftisches.de</b> — Schultermine (iCal-Kalender)
+                  <b style={{ display: 'block', marginBottom: '2px' }}>stiftisches.de</b>
+                  <span style={{ color: 'var(--text-secondary)' }}>Schultermine (iCal-Kalender)</span>
                 </div>
                 <div style={{ padding: '10px 14px', backgroundColor: 'var(--input-bg)', border: '1px solid var(--brighter-color)', borderRadius: 'var(--rounding-sm)', fontSize: '0.9rem' }}>
-                  <b>corsproxy.io / allorigins.win</b> — CORS-Proxys für externen Datenabruf
+                  <b style={{ display: 'block', marginBottom: '2px' }}>corsproxy.io / allorigins.win</b>
+                  <span style={{ color: 'var(--text-secondary)' }}>CORS-Proxys für externen Datenabruf</span>
                 </div>
                 <div style={{ padding: '10px 14px', backgroundColor: 'var(--input-bg)', border: '1px solid var(--brighter-color)', borderRadius: 'var(--rounding-sm)', fontSize: '0.9rem' }}>
-                  <b>Astro / Preact</b> — Web-Framework der Seite
+                  <b style={{ display: 'block', marginBottom: '2px' }}>Astro / Preact</b>
+                  <span style={{ color: 'var(--text-secondary)' }}>Web-Framework der Seite</span>
                 </div>
               </div>
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "preact/hooks";
+import { useState, useEffect, useRef } from "preact/hooks";
 import { CalendarIcon, DocumentTextIcon, CheckBadgeIcon, ClockIcon, PencilIcon, CogIcon, InfoIcon, EventsIcon } from "./icons";
 
 export default function BottomNav() {
