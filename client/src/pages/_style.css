@@ -2493,6 +2493,12 @@ a.fakebutton:active {
     0% { opacity: 0; transform: translateY(25px) scale(0.98); filter: blur(10px); }
     100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
 }
+
+@keyframes delayedFadeIn {
+    0% { opacity: 0; }
+    80% { opacity: 0; }
+    100% { opacity: 0.7; }
+}
 .overview-highlight {
     color: var(--accent-color);
     font-weight: 600;

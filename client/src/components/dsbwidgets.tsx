@@ -4171,9 +4171,11 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
         <span style={{ fontSize: '0.6em', padding: '2px 8px', borderRadius: '12px', backgroundColor: 'var(--accent-light)', color: 'var(--accent-color)', fontWeight: 600, border: '1px solid var(--accent-color)', textTransform: 'uppercase', lineHeight: 1 }}>Beta</span>
       </h2>
       {!textParts ? (
-        <p class="overview-text" style={{ margin: 0, opacity: 0.7, fontStyle: 'italic' }}>
-          Lade Übersicht...
-        </p>
+        <div style={{ minHeight: '120px', display: 'flex', alignItems: 'center' }}>
+          <p class="overview-text" style={{ margin: 0, opacity: 0, fontStyle: 'italic', animation: 'delayedFadeIn 1.5s forwards' }}>
+            Lade Übersicht...
+          </p>
+        </div>
       ) : (
         <>
           <button
