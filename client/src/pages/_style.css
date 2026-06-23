@@ -2489,7 +2489,7 @@ a.fakebutton:active {
 
 /*#region Tagesuebersicht*/
 @keyframes blurZoomUp {
-    0% { opacity: 0; transform: translateY(15px) scale(0.97); filter: blur(4px); }
+    0% { opacity: 0; transform: translateY(25px) scale(0.98); filter: blur(10px); }
     100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
 }
 .overview-highlight {
