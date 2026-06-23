@@ -3901,7 +3901,10 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
           const ttDataRaw = localStorage.getItem("PersonalTimetableData");
           if (ttDataRaw) {
             const ttData = JSON.parse(ttDataRaw);
-            const currentWeek = localStorage.getItem("currentWeek") || "A"; 
+            let currentWeek = "A";
+            if (targetDay && targetDay.day) {
+              currentWeek = targetDay.day.includes("B") ? "B" : "A";
+            }
             const weekData = ttData[currentWeek];
             if (weekData) {
               if (isTomorrow) {
@@ -3921,10 +3924,21 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
                 // Today remaining hours
                 const todayData = weekData[dayName];
                 if (todayData) {
-                  // roughly assume hours map to times linearly
-                  const approxCurrentHour = Math.max(1, hour - 7);
+                  const hourEndTimes: Record<number, string> = {
+                    1: "08:35", 2: "09:25", 3: "10:25", 4: "11:15",
+                    5: "12:15", 6: "13:05", 7: "13:55", 8: "14:45",
+                    9: "15:30", 10: "16:15"
+                  };
+                  const currentMinutes = now.getHours() * 60 + now.getMinutes();
                   ttSubjects = Object.keys(todayData)
-                    .filter(k => parseInt(k) >= approxCurrentHour && todayData[k])
+                    .filter(k => {
+                      const hourNum = parseInt(k);
+                      if (!todayData[k]) return false;
+                      const endStr = hourEndTimes[hourNum];
+                      if (!endStr) return false;
+                      const [endH, endM] = endStr.split(":").map(Number);
+                      return currentMinutes < endH * 60 + endM;
+                    })
                     .map(k => getSubjectName(todayData[k]));
                 }
               }
@@ -4320,6 +4334,27 @@ export default function DSBWidgets(props: {
               <p>Diese Webseite basiert auf dem DSB-Scraper von Kirill (kirillathome)</p>
               <p><b>Hinweis:</b> Alle deine eingetragenen Daten (wie Kurse, Stundenplan und Einstellungen) werden ausschließlich lokal auf deinem Gerät gespeichert.</p>
               <p><b>Wichtig:</b> Die hier bereitgestellten Daten (wie der Vertretungsplan) können Fehler aufweisen. Bitte vergewissere dich bei Unklarheiten zusätzlich am schwarzen Brett der Schule.</p>
+
+              <Placeholder height='10px' />
+              <h3>Drittanbieter-Services</h3>
+              <p>Diese Webseite nutzt folgende externe Dienste:</p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ padding: '10px 14px', backgroundColor: 'var(--input-bg)', border: '1px solid var(--brighter-color)', borderRadius: 'var(--rounding-sm)', fontSize: '0.9rem' }}>
+                  <b>DSBMobile</b> — Quelle für die Vertretungsplan-Daten
+                </div>
+                <div style={{ padding: '10px 14px', backgroundColor: 'var(--input-bg)', border: '1px solid var(--brighter-color)', borderRadius: 'var(--rounding-sm)', fontSize: '0.9rem' }}>
+                  <b>kirillathome.uucode.com</b> — Backend-API für Vertretungs- und Klausurdaten
+                </div>
+                <div style={{ padding: '10px 14px', backgroundColor: 'var(--input-bg)', border: '1px solid var(--brighter-color)', borderRadius: 'var(--rounding-sm)', fontSize: '0.9rem' }}>
+                  <b>stiftisches.de</b> — Schultermine (iCal-Kalender)
+                </div>
+                <div style={{ padding: '10px 14px', backgroundColor: 'var(--input-bg)', border: '1px solid var(--brighter-color)', borderRadius: 'var(--rounding-sm)', fontSize: '0.9rem' }}>
+                  <b>corsproxy.io / allorigins.win</b> — CORS-Proxys für externen Datenabruf
+                </div>
+                <div style={{ padding: '10px 14px', backgroundColor: 'var(--input-bg)', border: '1px solid var(--brighter-color)', borderRadius: 'var(--rounding-sm)', fontSize: '0.9rem' }}>
+                  <b>Astro / Preact</b> — Web-Framework der Seite
+                </div>
+              </div>
 
               <Placeholder height='20px' />
   

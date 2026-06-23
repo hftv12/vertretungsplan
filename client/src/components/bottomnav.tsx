@@ -77,9 +77,12 @@ export default function BottomNav() {
 
 	const menuItems = navOrder.map(id => allMenuItems[id]).filter(item => item.show).slice(0, maxItems);
 
+	const activeIdRef = useRef(activeId);
+	activeIdRef.current = activeId;
+
 	useEffect(() => {
 		const handleScroll = () => {
-			let currentActive = activeId;
+			let currentActive = activeIdRef.current;
 			let minDistance = Infinity;
 
 			for (const item of menuItems) {
@@ -95,17 +98,24 @@ export default function BottomNav() {
 				}
 			}
 
-			if (currentActive !== activeId) {
+			if (currentActive !== activeIdRef.current) {
 				setActiveId(currentActive);
 			}
 		};
 
 		window.addEventListener('scroll', handleScroll, { passive: true });
-		// Initial check
-		setTimeout(handleScroll, 100);
+		// Initial checks mit steigendem Delay für stabileres Layout
+		const t1 = setTimeout(handleScroll, 150);
+		const t2 = setTimeout(handleScroll, 500);
+		const t3 = setTimeout(handleScroll, 1200);
 
-		return () => window.removeEventListener('scroll', handleScroll);
-	}, [menuItems, activeId]);
+		return () => {
+			window.removeEventListener('scroll', handleScroll);
+			clearTimeout(t1);
+			clearTimeout(t2);
+			clearTimeout(t3);
+		};
+	}, [menuItems.length]);
 
 	const scrollTo = (id: string) => {
 		const el = document.getElementById(id);
