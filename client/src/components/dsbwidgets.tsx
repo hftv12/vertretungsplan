@@ -4164,20 +4164,24 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
     fetchData();
   }, [props.grade, props.courses]);
 
-  if (!textParts) return null;
-
   return (
-    <div class="default-div" style={{ animation: 'blurZoomUp 0.85s cubic-bezier(0.22, 1, 0.36, 1) both', border: '1px solid var(--accent-color)', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)', position: 'relative' }}>
+    <div class="default-div" style={{ border: '1px solid var(--accent-color)', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)', position: 'relative' }}>
       <h2 style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
         Tagesübersicht
         <span style={{ fontSize: '0.6em', padding: '2px 8px', borderRadius: '12px', backgroundColor: 'var(--accent-light)', color: 'var(--accent-color)', fontWeight: 600, border: '1px solid var(--accent-color)', textTransform: 'uppercase', lineHeight: 1 }}>Beta</span>
       </h2>
-      <button
-        type="button"
-        class={`overview-toggle-btn ${expanded ? 'expanded' : ''}`}
-        onClick={() => setExpanded(!expanded)}
-        aria-label={expanded ? 'Einklappen' : 'Ausklappen'}
-      >
+      {!textParts ? (
+        <p class="overview-text" style={{ margin: 0, opacity: 0.7, fontStyle: 'italic' }}>
+          Lade Übersicht...
+        </p>
+      ) : (
+        <>
+          <button
+            type="button"
+            class={`overview-toggle-btn ${expanded ? 'expanded' : ''}`}
+            onClick={() => setExpanded(!expanded)}
+            aria-label={expanded ? 'Einklappen' : 'Ausklappen'}
+          >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <polyline points="6 9 12 15 18 9"></polyline>
         </svg>
@@ -4217,6 +4221,8 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
 
         </p>
       </div>
+      </>
+      )}
     </div>
   );
 }
