@@ -2512,7 +2512,7 @@ a.fakebutton:active {
     max-height: 6.8em;
 }
 .overview-text-wrapper.expanded {
-    max-height: 200em;
+    max-height: 25em;
 }
 .overview-text-wrapper.collapsed::after {
     content: '';

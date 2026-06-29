@@ -3895,6 +3895,13 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
   const [textParts, setTextParts] = useState<preact.ComponentChildren[] | null>(null);
   const [expanded, setExpanded] = useState(false);
   const contentRef = useRef<HTMLParagraphElement>(null);
+  const [expandedHeight, setExpandedHeight] = useState(0);
+
+  useEffect(() => {
+    if (contentRef.current) {
+      setExpandedHeight(contentRef.current.scrollHeight);
+    }
+  }, [textParts]);
 
 
   useEffect(() => {
@@ -4324,7 +4331,7 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
           <polyline points="6 9 12 15 18 9"></polyline>
         </svg>
       </button>
-      <div class={`overview-text-wrapper ${expanded ? 'expanded' : 'collapsed'}`}>
+      <div class={`overview-text-wrapper ${expanded ? 'expanded' : 'collapsed'}`} style={expanded && expandedHeight ? { maxHeight: expandedHeight + 'px' } : {}}>
         <p class="overview-text" style={{ margin: 0 }} ref={contentRef}>
           
           {(() => {
