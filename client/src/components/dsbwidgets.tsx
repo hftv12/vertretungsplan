@@ -177,6 +177,82 @@ enum FilterStage {
   GRADE = "grade",
   COURSES = "courses",
 }
+
+function matchSubstitutionHour(hoursStr: string | undefined, hourNum: number): boolean {
+  if (!hoursStr) return false;
+  const hStr = hourNum.toString();
+  const cleaned = hoursStr.replace(/\./g, '');
+  const parts = cleaned.split(/[\s\-]+/).filter(Boolean);
+  if (parts.includes(hStr)) return true;
+  if (parts.length >= 2) {
+    const start = parseInt(parts[0]);
+    const end = parseInt(parts[parts.length - 1]);
+    if (!isNaN(start) && !isNaN(end) && hourNum >= start && hourNum <= end) return true;
+  }
+  return false;
+}
+
+function isSubstitutionForCourse(s: Substitution, courseStr: string, courses: CourseInfo[], grade: GradeInfo): boolean {
+  if (!s || !courseStr || !grade) return false;
+  if (!s.classes.includes(grade.gradeName)) return false;
+  if (grade.gradeLetter !== "" && !s.classes.includes(grade.gradeLetter)) return false;
+  
+  const courseInfo = courses ? courses.find(c => (c.subject + (c.course ? "-" + c.course : "")) === courseStr) : null;
+  if (!courseInfo) {
+    const subjName = courseStr.split("-")[0];
+    let usual = s.usual_subject || "";
+    if (usual[1] === " ") usual = usual[0] + usual.substring(2);
+    let subj = s.subject || "";
+    if (subj[1] === " ") subj = subj[0] + subj.substring(2);
+    return usual.startsWith(subjName) || subj.startsWith(subjName);
+  }
+
+  const name = courseInfo.course !== "" ? courseInfo.subject + " " + courseInfo.course[0] + courseInfo.course[2] : courseInfo.subject;
+  let usual_subject = s.usual_subject || "";
+  if (usual_subject[1] === " ") usual_subject = usual_subject[0] + usual_subject.substring(2);
+  let subject = s.subject || "";
+  if (subject[1] === " ") subject = subject[0] + subject.substring(2);
+
+  return usual_subject === name || subject === name || usual_subject === courseInfo.subject || subject === courseInfo.subject || usual_subject === courseInfo.subject_name;
+}
+
+function calcIsSchoolDayOver(weekType: string): boolean {
+  const now = new Date();
+  const hour = now.getHours();
+  let isOver = hour > 16 || (hour === 16 && now.getMinutes() >= 15);
+  try {
+    const ttDataRaw = localStorage.getItem("PersonalTimetableData");
+    if (ttDataRaw) {
+      const ttData = JSON.parse(ttDataRaw);
+      const days = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
+      const dayName = days[now.getDay()];
+      const weekData = ttData[weekType || "A"];
+      if (weekData) {
+        const todayData = weekData[dayName];
+        if (todayData) {
+          let lastHour = 0;
+          for (const hStr in todayData) {
+            if (todayData[hStr]) {
+              const hNum = parseInt(hStr);
+              if (hNum > lastHour) lastHour = hNum;
+            }
+          }
+          if (lastHour > 0) {
+            const hourEndTimes: Record<number, string> = {
+              1: "08:35", 2: "09:25", 3: "10:25", 4: "11:15",
+              5: "12:15", 6: "13:05", 7: "13:55", 8: "14:45",
+              9: "15:30", 10: "16:15"
+            };
+            const endStr = hourEndTimes[lastHour] || "16:15";
+            const [endH, endM] = endStr.split(":").map(Number);
+            isOver = (hour > endH) || (hour === endH && now.getMinutes() >= endM);
+          }
+        }
+      }
+    }
+  } catch(e) {}
+  return isOver;
+}
 //#endregion
 
 //#region tl dumpsterfire
@@ -637,7 +713,8 @@ function DSBTable(props: { // the main feature of this website
           return false;
         };
 
-        const isSchoolDayOver = now.getHours() > 16 || (now.getHours() === 16 && now.getMinutes() >= 15);
+        const weekType = json.day_one && json.day_one.day && json.day_one.day.includes("B") ? "B" : "A";
+        const isSchoolDayOver = calcIsSchoolDayOver(weekType);
         if (isToday(json.day_two.date)) {
           setCurrentDay(json.day_two);
         } else if (isToday(json.day_one.date) && isSchoolDayOver) {
@@ -2928,7 +3005,7 @@ function PersonalTimetable(props: {
     const handler = (e: any) => {
       if (e.detail?.week) {
         const weekStr = e.detail.week as string;
-        setCurrentWeek(weekStr.includes("A") ? "A" : "B");
+        setCurrentWeek(weekStr.includes("B") ? "B" : "A");
         
         // Auto-select day
         if (weekStr.includes("Montag")) scrollToDay(0);
@@ -3042,34 +3119,22 @@ function PersonalTimetable(props: {
 
   const getSubstitutionStyle = (dayName: string, hourNum: number, courseStr: string) => {
     if (!dsbDataRaw || !courseStr || !props.grade) return {};
-    let subs = [];
+    let subs: Substitution[] = [];
     if (dsbDataRaw.day_one?.day?.includes(dayName)) subs = dsbDataRaw.day_one.substitutions || [];
     else if (dsbDataRaw.day_two?.day?.includes(dayName)) subs = dsbDataRaw.day_two.substitutions || [];
     
     if (subs.length === 0) return {};
     
-    const courseInfo = getCourseInfo(courseStr);
-    const shortName = courseInfo ? courseInfo.subject : courseStr;
-    const expectedCourseName = courseInfo && courseInfo.course !== "" ? courseInfo.subject + " " + courseInfo.course[0] + courseInfo.course[2] : shortName;
-    
-    const s = subs.find((sub: any) => {
-      const periodMatch = sub.period.toString() === hourNum.toString() || sub.period.toString().split(" - ").includes(hourNum.toString());
-      const classMatch = sub.classes.includes(props.grade.gradeName) && (props.grade.gradeLetter === "" || sub.classes.includes(props.grade.gradeLetter));
-      if (!periodMatch || !classMatch) return false;
-      
-      let usual = sub.usual_subject;
-      if (usual && usual[1] === " ") usual = usual[0] + usual.substring(2);
-      let subj = sub.subject;
-      if (subj && subj[1] === " ") subj = subj[0] + subj.substring(2);
-      
-      return usual === expectedCourseName || subj === expectedCourseName || usual === courseInfo?.subject_name;
+    const s = subs.find((sub: Substitution) => {
+      if (!matchSubstitutionHour(sub.hours, hourNum)) return false;
+      return isSubstitutionForCourse(sub, courseStr, props.courses, props.grade);
     });
     
     if (s) {
-      if (s.room === "PS1" || s.room === "---") return { backgroundColor: "rgba(239, 68, 68, 0.15)" }; // Red (Ausfall)
-      if (s.usual_subject === s.subject) return { backgroundColor: "rgba(59, 130, 246, 0.15)" }; // Blue (Raumänderung)
-      if (s.usual_subject === "&nbsp;") return { backgroundColor: "rgba(59, 130, 246, 0.15)" }; // Klausur
-      return { backgroundColor: "rgba(249, 115, 22, 0.15)" }; // Orange (Vertretung)
+      if (s.room === "PS1" || s.room === "---") return { backgroundColor: "rgba(239, 68, 68, 0.2)", borderColor: "#ef4444" }; // Red (Ausfall)
+      if (s.usual_subject === s.subject) return { backgroundColor: "rgba(59, 130, 246, 0.2)", borderColor: "#3b82f6" }; // Blue (Raumänderung)
+      if (s.usual_subject === "&nbsp;") return { backgroundColor: "rgba(59, 130, 246, 0.2)", borderColor: "#3b82f6" }; // Klausur
+      return { backgroundColor: "rgba(249, 115, 22, 0.2)", borderColor: "#f97316" }; // Orange (Vertretung)
     }
     return {};
   };
@@ -3888,42 +3953,8 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
           } catch(e) {}
         }
         
-        let isSchoolDayOver = hour > 16 || (hour === 16 && now.getMinutes() >= 15);
-        if (dsbDataRaw) {
-          try {
-            const ttDataRaw = localStorage.getItem("PersonalTimetableData");
-            if (ttDataRaw) {
-              const ttData = JSON.parse(ttDataRaw);
-              let currentWeek = "A";
-              if (dsbDataRaw.day_one && dsbDataRaw.day_one.day) {
-                currentWeek = dsbDataRaw.day_one.day.includes("B") ? "B" : "A";
-              }
-              const weekData = ttData[currentWeek];
-              if (weekData) {
-                const todayData = weekData[dayName];
-                if (todayData) {
-                  let lastHour = 0;
-                  for (const hStr in todayData) {
-                    if (todayData[hStr]) {
-                      const hNum = parseInt(hStr);
-                      if (hNum > lastHour) lastHour = hNum;
-                    }
-                  }
-                  if (lastHour > 0) {
-                    const hourEndTimes: Record<number, string> = {
-                      1: "08:35", 2: "09:25", 3: "10:25", 4: "11:15",
-                      5: "12:15", 6: "13:05", 7: "13:55", 8: "14:45",
-                      9: "15:30", 10: "16:15"
-                    };
-                    const endStr = hourEndTimes[lastHour] || "16:15";
-                    const [endH, endM] = endStr.split(":").map(Number);
-                    isSchoolDayOver = (hour > endH) || (hour === endH && now.getMinutes() >= endM);
-                  }
-                }
-              }
-            }
-          } catch(e) {}
-        }
+        const weekType = dsbDataRaw && dsbDataRaw.day_one && dsbDataRaw.day_one.day && dsbDataRaw.day_one.day.includes("B") ? "B" : "A";
+        let isSchoolDayOver = calcIsSchoolDayOver(weekType);
 
         let isTomorrow = isSchoolDayOver;
         let targetDay: any = null;
@@ -4004,11 +4035,10 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
                     if (!dayData[k]) return false;
                     if (targetDay && targetDay.substitutions) {
                       const subs = targetDay.substitutions;
-                      const isCancelled = subs.some((s: any) => {
-                        const periodMatch = s.period.toString() === k || s.period.toString().split(" - ").includes(k);
-                        const classMatch = s.classes.includes(props.grade.gradeName) && (props.grade.gradeLetter === "" || s.classes.includes(props.grade.gradeLetter));
-                        const typeMatch = s.room === "PS1" || s.room === "---";
-                        return periodMatch && classMatch && typeMatch;
+                      const isCancelled = subs.some((s: Substitution) => {
+                        if (!matchSubstitutionHour(s.hours, parseInt(k))) return false;
+                        if (s.room !== "PS1" && s.room !== "---") return false;
+                        return isSubstitutionForCourse(s, dayData[k], props.courses, props.grade);
                       });
                       if (isCancelled) return false;
                     }
@@ -4035,11 +4065,10 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
                       
                       if (targetDay && targetDay.substitutions) {
                         const subs = targetDay.substitutions;
-                        const isCancelled = subs.some((s: any) => {
-                          const periodMatch = s.period.toString() === k || s.period.toString().split(" - ").includes(k);
-                          const classMatch = s.classes.includes(props.grade.gradeName) && (props.grade.gradeLetter === "" || s.classes.includes(props.grade.gradeLetter));
-                          const typeMatch = s.room === "PS1" || s.room === "---";
-                          return periodMatch && classMatch && typeMatch;
+                        const isCancelled = subs.some((s: Substitution) => {
+                          if (!matchSubstitutionHour(s.hours, hourNum)) return false;
+                          if (s.room !== "PS1" && s.room !== "---") return false;
+                          return isSubstitutionForCourse(s, todayData[k], props.courses, props.grade);
                         });
                         if (isCancelled) return false;
                       }
@@ -4295,7 +4324,7 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
           <polyline points="6 9 12 15 18 9"></polyline>
         </svg>
       </button>
-      <div class={`overview-text-wrapper ${expanded ? 'expanded' : 'collapsed'}`} style={expanded && contentRef.current ? { maxHeight: contentRef.current.scrollHeight + 'px' } : {}}>
+      <div class={`overview-text-wrapper ${expanded ? 'expanded' : 'collapsed'}`}>
         <p class="overview-text" style={{ margin: 0 }} ref={contentRef}>
           
           {(() => {
