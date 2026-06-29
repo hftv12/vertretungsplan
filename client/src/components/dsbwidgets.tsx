@@ -2859,6 +2859,10 @@ export function Settings(props: { // settings block
       </div>)}
     </div>
   );
+}
+//#endregion
+
+//#region Personal Timetable
 function PersonalTimetable(props: {
   courses: CourseInfo[],
   settings: DSBSettings,
@@ -2877,7 +2881,6 @@ function PersonalTimetable(props: {
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
-    fetch("/api/dsb").then(r => r.json()).then(data => setDsbDataRaw(data)).catch(() => {});
     return () => clearInterval(timer);
   }, []);
 
