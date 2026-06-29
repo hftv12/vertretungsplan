@@ -2542,15 +2542,13 @@ export function Settings(props: { // settings block
   const fileRef = useRef();
 
   const updateSetting = useCallback((setting: string, value: any) => {
-    // console.log("UPDATING SETTINGS");
-    // console.log(`updating ${setting} to ${value}`);
-    // console.log(`old settings notif: ${settings}`)
-    const s = props.settings;
-    s[setting] = value;
-    props.setSettings({...s})
-    localStorage.setItem("DSBSettings", JSON.stringify(s));
-    window.dispatchEvent(new CustomEvent('dsb-settings-change', { detail: s }));
-  }, [props.setSettings, props.settings]);
+    props.setSettings((prev: DSBSettings) => {
+      const newSettings = { ...prev, [setting]: value };
+      localStorage.setItem("DSBSettings", JSON.stringify(newSettings));
+      window.dispatchEvent(new CustomEvent('dsb-settings-change', { detail: newSettings }));
+      return newSettings;
+    });
+  }, [props.setSettings]);
 
   const uploadCourse = useCallback(async () => {
     if (!!fileRef) {
@@ -2861,26 +2859,25 @@ export function Settings(props: { // settings block
       </div>)}
     </div>
   );
-}
-//#endregion
-
-//#region Personal Timetable
 function PersonalTimetable(props: {
   courses: CourseInfo[],
   settings: DSBSettings,
+  grade: GradeInfo,
 }) {
   const [isEditMode, setIsEditMode] = useState(false);
   const [currentWeek, setCurrentWeek] = useState<"A" | "B">("A");
-  const [currentDayIdx, setCurrentDayIdx] = useState(0);
-  const [timetableData, setTimetableData] = useState<any>({ A: {}, B: {} });
+  const [timetableData, setTimetableData] = useState<any>({});
+  const [currentDayIdx, setCurrentDayIdx] = useState(new Date().getDay() >= 1 && new Date().getDay() <= 5 ? new Date().getDay() - 1 : 0);
   const containerRef = useRef<HTMLDivElement>(null);
   const dayWrapperRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [timetableHeight, setTimetableHeight] = useState<number | null>(null);
+  const [dsbDataRaw, setDsbDataRaw] = useState<any>(null);
 
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+    fetch("/api/dsb").then(r => r.json()).then(data => setDsbDataRaw(data)).catch(() => {});
     return () => clearInterval(timer);
   }, []);
 
@@ -2939,6 +2936,19 @@ function PersonalTimetable(props: {
       }
     };
     window.addEventListener("dsb-week-switch", handler);
+    
+    const fetchDSB = async () => {
+      const user = localStorage.getItem("user");
+      const key = localStorage.getItem("key");
+      if (user && key) {
+        try {
+          const res = await fetch("https://kirillathome.uucode.com/api/v1/dsb", { headers: { user, key } });
+          if (res.ok) setDsbDataRaw(await res.json());
+        } catch(e) {}
+      }
+    };
+    fetchDSB();
+    
     return () => window.removeEventListener("dsb-week-switch", handler);
   }, []);
 
@@ -3027,6 +3037,40 @@ function PersonalTimetable(props: {
     return () => clearTimeout(timeout);
   }, [currentDayIdx, currentWeek, isEditMode, timetableData]);
 
+  const getSubstitutionStyle = (dayName: string, hourNum: number, courseStr: string) => {
+    if (!dsbDataRaw || !courseStr || !props.grade) return {};
+    let subs = [];
+    if (dsbDataRaw.day_one?.day?.includes(dayName)) subs = dsbDataRaw.day_one.substitutions || [];
+    else if (dsbDataRaw.day_two?.day?.includes(dayName)) subs = dsbDataRaw.day_two.substitutions || [];
+    
+    if (subs.length === 0) return {};
+    
+    const courseInfo = getCourseInfo(courseStr);
+    const shortName = courseInfo ? courseInfo.subject : courseStr;
+    const expectedCourseName = courseInfo && courseInfo.course !== "" ? courseInfo.subject + " " + courseInfo.course[0] + courseInfo.course[2] : shortName;
+    
+    const s = subs.find((sub: any) => {
+      const periodMatch = sub.period.toString() === hourNum.toString() || sub.period.toString().split(" - ").includes(hourNum.toString());
+      const classMatch = sub.classes.includes(props.grade.gradeName) && (props.grade.gradeLetter === "" || sub.classes.includes(props.grade.gradeLetter));
+      if (!periodMatch || !classMatch) return false;
+      
+      let usual = sub.usual_subject;
+      if (usual && usual[1] === " ") usual = usual[0] + usual.substring(2);
+      let subj = sub.subject;
+      if (subj && subj[1] === " ") subj = subj[0] + subj.substring(2);
+      
+      return usual === expectedCourseName || subj === expectedCourseName || usual === courseInfo?.subject_name;
+    });
+    
+    if (s) {
+      if (s.room === "PS1" || s.room === "---") return { backgroundColor: "rgba(239, 68, 68, 0.15)" }; // Red (Ausfall)
+      if (s.usual_subject === s.subject) return { backgroundColor: "rgba(59, 130, 246, 0.15)" }; // Blue (Raumänderung)
+      if (s.usual_subject === "&nbsp;") return { backgroundColor: "rgba(59, 130, 246, 0.15)" }; // Klausur
+      return { backgroundColor: "rgba(249, 115, 22, 0.15)" }; // Orange (Vertretung)
+    }
+    return {};
+  };
+
   return (
     <div class="default-div" id="stundenplan">
       <CornerHelpButton 
@@ -3092,7 +3136,7 @@ function PersonalTimetable(props: {
                     })}
                   </select>
                 ) : (
-                  <div class={`timetable-course ${!timetableData[currentWeek]?.[day.full]?.[h.num] ? "empty" : ""}`} style={{ borderColor: getCourseInfo(timetableData[currentWeek]?.[day.full]?.[h.num])?.color || "var(--brighter-color)" }}>
+                  <div class={`timetable-course ${!timetableData[currentWeek]?.[day.full]?.[h.num] ? "empty" : ""}`} style={{ borderColor: getCourseInfo(timetableData[currentWeek]?.[day.full]?.[h.num])?.color || "var(--brighter-color)", ...getSubstitutionStyle(day.full, h.num, timetableData[currentWeek]?.[day.full]?.[h.num]) }}>
                     {timetableData[currentWeek]?.[day.full]?.[h.num] ? (
                       <>
                         <span>{getCourseInfo(timetableData[currentWeek]?.[day.full]?.[h.num])?.subject_name || timetableData[currentWeek]?.[day.full]?.[h.num]}</span>
@@ -3825,15 +3869,13 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
         const timeStr = now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
         
         addPart(<>{greeting}! Heute ist <b>{dayName}</b>, der {now.toLocaleDateString('de-DE').replace(/\.+$/, '')}. Es ist aktuell <b class="overview-highlight">{timeStr} Uhr</b>.</>);
-
-        const isSchoolDayOver = hour > 16 || (hour === 16 && now.getMinutes() >= 15);
         
         // --- 2. Fetch DSB Data ---
         let nextSchoolDayName = "";
         const user = localStorage.getItem("user");
         const key = localStorage.getItem("key");
         
-        let dsbDataRaw = null;
+        let dsbDataRaw: any = null;
         if (user && key) {
           try {
             const dsbRes = await fetch("https://kirillathome.uucode.com/api/v1/dsb", { headers: { user, key } });
@@ -3843,8 +3885,45 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
           } catch(e) {}
         }
         
+        let isSchoolDayOver = hour > 16 || (hour === 16 && now.getMinutes() >= 15);
+        if (dsbDataRaw) {
+          try {
+            const ttDataRaw = localStorage.getItem("PersonalTimetableData");
+            if (ttDataRaw) {
+              const ttData = JSON.parse(ttDataRaw);
+              let currentWeek = "A";
+              if (dsbDataRaw.day_one && dsbDataRaw.day_one.day) {
+                currentWeek = dsbDataRaw.day_one.day.includes("B") ? "B" : "A";
+              }
+              const weekData = ttData[currentWeek];
+              if (weekData) {
+                const todayData = weekData[dayName];
+                if (todayData) {
+                  let lastHour = 0;
+                  for (const hStr in todayData) {
+                    if (todayData[hStr]) {
+                      const hNum = parseInt(hStr);
+                      if (hNum > lastHour) lastHour = hNum;
+                    }
+                  }
+                  if (lastHour > 0) {
+                    const hourEndTimes: Record<number, string> = {
+                      1: "08:35", 2: "09:25", 3: "10:25", 4: "11:15",
+                      5: "12:15", 6: "13:05", 7: "13:55", 8: "14:45",
+                      9: "15:30", 10: "16:15"
+                    };
+                    const endStr = hourEndTimes[lastHour] || "16:15";
+                    const [endH, endM] = endStr.split(":").map(Number);
+                    isSchoolDayOver = (hour > endH) || (hour === endH && now.getMinutes() >= endM);
+                  }
+                }
+              }
+            }
+          } catch(e) {}
+        }
+
         let isTomorrow = isSchoolDayOver;
-        let targetDay: DayTimetable | null = null;
+        let targetDay: any = null;
 
         if (dsbDataRaw) {
           const isToday = (dString: string) => {
@@ -3918,7 +3997,20 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
                 }
                 const dayData = weekData[checkDay];
                 if (dayData) {
-                  ttSubjects = Object.values(dayData).filter(v => v).map(v => getSubjectName(v as string));
+                  ttSubjects = Object.keys(dayData).filter(k => {
+                    if (!dayData[k]) return false;
+                    if (targetDay && targetDay.substitutions) {
+                      const subs = targetDay.substitutions;
+                      const isCancelled = subs.some((s: any) => {
+                        const periodMatch = s.period.toString() === k || s.period.toString().split(" - ").includes(k);
+                        const classMatch = s.classes.includes(props.grade.gradeName) && (props.grade.gradeLetter === "" || s.classes.includes(props.grade.gradeLetter));
+                        const typeMatch = s.room === "PS1" || s.room === "---";
+                        return periodMatch && classMatch && typeMatch;
+                      });
+                      if (isCancelled) return false;
+                    }
+                    return true;
+                  }).map(k => getSubjectName(dayData[k] as string));
                 }
               } else {
                 // Today remaining hours
@@ -3937,6 +4029,18 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
                       const endStr = hourEndTimes[hourNum];
                       if (!endStr) return false;
                       const [endH, endM] = endStr.split(":").map(Number);
+                      
+                      if (targetDay && targetDay.substitutions) {
+                        const subs = targetDay.substitutions;
+                        const isCancelled = subs.some((s: any) => {
+                          const periodMatch = s.period.toString() === k || s.period.toString().split(" - ").includes(k);
+                          const classMatch = s.classes.includes(props.grade.gradeName) && (props.grade.gradeLetter === "" || s.classes.includes(props.grade.gradeLetter));
+                          const typeMatch = s.room === "PS1" || s.room === "---";
+                          return periodMatch && classMatch && typeMatch;
+                        });
+                        if (isCancelled) return false;
+                      }
+                      
                       return currentMinutes < endH * 60 + endM;
                     })
                     .map(k => getSubjectName(todayData[k]));
@@ -4319,7 +4423,7 @@ export default function DSBWidgets(props: {
                 return <CourseList key="kurswahl" grade={grade} setGrade={setGrade} courses={courses} setCourses={setCourses} subjectSelectRef={subjectSelectRef} settings={settings} />;
               }
               if (widgetId === 'stundenplan' && settings.showStundenplan !== false) {
-                return <PersonalTimetable key="stundenplan" settings={settings} courses={courses} />;
+                return <PersonalTimetable key="stundenplan" settings={settings} courses={courses} grade={grade} />;
               }
               if (widgetId === 'termine' && settings.showTermine !== false) {
                 return <Events key="termine" settings={settings} />;
