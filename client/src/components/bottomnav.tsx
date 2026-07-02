@@ -81,25 +81,33 @@ export default function BottomNav() {
 	activeIdRef.current = activeId;
 
 	useEffect(() => {
+		let ticking = false;
+
 		const handleScroll = () => {
-			let currentActive = activeIdRef.current;
-			let minDistance = Infinity;
+			if (!ticking) {
+				window.requestAnimationFrame(() => {
+					let currentActive = activeIdRef.current;
+					let minDistance = Infinity;
 
-			for (const item of menuItems) {
-				const el = document.getElementById(item.id);
-				if (el) {
-					const rect = el.getBoundingClientRect();
-					const distance = Math.abs(rect.top - window.innerHeight / 3);
-					
-					if (distance < minDistance) {
-						minDistance = distance;
-						currentActive = item.id;
+					for (const item of menuItems) {
+						const el = document.getElementById(item.id);
+						if (el) {
+							const rect = el.getBoundingClientRect();
+							const distance = Math.abs(rect.top - window.innerHeight / 4);
+							
+							if (distance < minDistance) {
+								minDistance = distance;
+								currentActive = item.id;
+							}
+						}
 					}
-				}
-			}
 
-			if (currentActive !== activeIdRef.current) {
-				setActiveId(currentActive);
+					if (currentActive !== activeIdRef.current) {
+						setActiveId(currentActive);
+					}
+					ticking = false;
+				});
+				ticking = true;
 			}
 		};
 

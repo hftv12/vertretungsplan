@@ -12,6 +12,57 @@ import { EyeIcon, EyeOffIcon, RefreshIcon, ImportantIcon, FilterIcon, PencilIcon
 import plink from "../assets/placeholder.gif";
 // import dsbIcon from "/favicons/dsb_simplistic192.png";
 
+function SkeletonCard(props: { type: "list" | "card" | "exam" | "event" }) {
+  if (props.type === "card") {
+    return (
+      <div class="new-s skeleton-shimmer" style={{ minHeight: "120px", border: "1px solid var(--brighter-color)" }}>
+        <div style={{ padding: "12px 20px", height: "40px", borderBottom: "1px solid var(--brighter-color)", opacity: 0.3 }} />
+        <div style={{ padding: "18px 20px 10px", display: "flex", justifyContent: "space-between" }}>
+          <div style={{ width: "60%", height: "20px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.15 }} />
+          <div style={{ width: "20%", height: "20px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.15 }} />
+        </div>
+        <div style={{ padding: "0 20px 20px", display: "flex", flexDirection: "column", gap: "8px" }}>
+          <div style={{ width: "40%", height: "14px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.15 }} />
+          <div style={{ width: "80%", height: "14px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.15 }} />
+        </div>
+      </div>
+    );
+  }
+  
+  if (props.type === "exam") {
+    return (
+      <div class="exam skeleton-shimmer" style={{ padding: "16px", border: "1px solid var(--brighter-color)", minHeight: "100px", marginTop: "12px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%" }}>
+          <div style={{ width: "50%", height: "20px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.15 }} />
+          <div style={{ width: "30%", height: "14px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.15 }} />
+          <div style={{ width: "40%", height: "14px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.15 }} />
+        </div>
+      </div>
+    );
+  }
+
+  if (props.type === "event") {
+    return (
+      <div class="event-card skeleton-shimmer" style={{ border: "1px solid var(--brighter-color)" }}>
+        <div style={{ width: "70px", height: "70px", backgroundColor: "var(--accent-light)", opacity: 0.3, borderRight: "1px solid var(--brighter-color)" }} />
+        <div style={{ padding: "12px 16px", flex: 1, display: "flex", flexDirection: "column", gap: "8px" }}>
+          <div style={{ width: "60%", height: "18px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.15 }} />
+          <div style={{ width: "40%", height: "14px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.15 }} />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", gap: "12px", padding: "12px 16px", borderBottom: "1px solid var(--brighter-color)" }} class="skeleton-shimmer">
+      <div style={{ width: "20%", height: "16px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.15 }} />
+      <div style={{ width: "15%", height: "16px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.15 }} />
+      <div style={{ width: "30%", height: "16px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.15 }} />
+      <div style={{ width: "15%", height: "16px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.15 }} />
+      <div style={{ width: "20%", height: "16px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.15 }} />
+    </div>
+  );
+}
 
 function AutoHeight(props: { children: preact.ComponentChildren }) {
   const contentRef = useRef<HTMLDivElement>(null);
@@ -518,7 +569,7 @@ function DSBTableToolbar(props: { // toolbar for switching day & filtering optio
 
 function DSBSubstitution(props: Substitution & { idx?: number }) { // old design substitution
   return (
-    <tr style={props.idx !== undefined ? { animation: `tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) ${0.1 + props.idx * 0.05}s both` } : {}}>
+    <tr style={props.idx !== undefined ? { animation: `tileReveal 0.4s cubic-bezier(0.16, 1, 0.3, 1) ${Math.min(0.2, props.idx * 0.03)}s both` } : {}}>
       <th>{props.classes}</th>
       <th>{props.hours}</th>
       {/* <th>{props.usual_subject !== "&nbsp;" ? props.usual_subject : "\u21B3"}</th> */}
@@ -551,7 +602,7 @@ function DSBNewSubstitution(props: Substitution & { idx?: number }) { // new des
 
   return (
     // <div class="new-s" style={`rotate: ${(Math.random() - 0.5) * 15}deg`}> // for that one screenshot
-    <div class="new-s" style={props.idx !== undefined ? { animation: `tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) ${0.1 + props.idx * 0.05}s both` } : {}}>
+    <div class="new-s" style={props.idx !== undefined ? { animation: `tileReveal 0.4s cubic-bezier(0.16, 1, 0.3, 1) ${Math.min(0.2, props.idx * 0.03)}s both` } : {}}>
       {getType() === SubstitutionType.FREE ? // Ausfall
         <div>
           <div class="s-free">
@@ -841,8 +892,34 @@ function DSBTable(props: { // the main feature of this website
         setSuccess={setSuccess}
       />
       {currentDay === null && success !== false && (
-        <div>
-          <h2>Lade, bitte warten...</h2>
+        <div style={{ animation: 'tileReveal 0.4s cubic-bezier(0.16, 1, 0.3, 1) both' }}>
+          <h2 style={{ marginBottom: '12px' }}>Vertretungen</h2>
+          {props.settings.newDesign === true ? (
+            <div id="new-slist">
+              <SkeletonCard type="card" />
+              <SkeletonCard type="card" />
+              <SkeletonCard type="card" />
+            </div>
+          ) : (
+            <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch', width: '100%' }}>
+              <table style={{ margin: 0 }}>
+                <thead>
+                  <tr>
+                    <th>Klasse/Stufe</th>
+                    <th>Stunde(n)</th>
+                    <th>Kurs</th>
+                    <th>Ersatz</th>
+                    <th>Raum</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td colspan={5} style={{ padding: 0 }}><SkeletonCard type="list" /></td></tr>
+                  <tr><td colspan={5} style={{ padding: 0 }}><SkeletonCard type="list" /></td></tr>
+                  <tr><td colspan={5} style={{ padding: 0 }}><SkeletonCard type="list" /></td></tr>
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
       {currentDay === null && success === false && (
@@ -1739,8 +1816,17 @@ function ExamList(props: { // sorted list of all of your exams (probably the mos
 
   return props.settings.exams !== ExamVisibility.NONE && (
     <div class="default-div" id="klausuren">
-      {(availableLists === undefined || examList === undefined) && (  // this logic is slightly broken I think but who cares
-        <h2>Lade, bitte warten...</h2>
+      {(availableLists === undefined || examList === undefined) && (
+        <div style={{ animation: 'tileReveal 0.4s cubic-bezier(0.16, 1, 0.3, 1) both' }}>
+          <h2>Klausuren</h2>
+          <div id="exam-list-wrapper" style={{ marginTop: '16px' }}>
+            <div id="exam-selector" class="skeleton-shimmer" style={{ height: "60px", borderRadius: "12px", width: "100%" }}></div>
+            <div id="exam-list" style={{ marginTop: "24px" }}>
+              <SkeletonCard type="exam" />
+              <SkeletonCard type="exam" />
+            </div>
+          </div>
+        </div>
       )}
       {availableLists !== undefined && (
         <>
@@ -1831,7 +1917,7 @@ function ExamList(props: { // sorted list of all of your exams (probably the mos
                 <div id="exam-list">
                   {canDisplay() ? examList.map((e, idx) => {
                     return shouldDisplayDay(e, props.settings, props.courses, date) && (
-                      <div key={list + "-" + e[0].date} style={{ animation: `tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) ${0.05 + (idx * 0.05)}s both` }}>
+                      <div key={list + "-" + e[0].date} style={{ animation: `tileReveal 0.4s cubic-bezier(0.16, 1, 0.3, 1) ${Math.min(0.2, idx * 0.03)}s both` }}>
                         <ExamDayDisplay examDays={e} subjectSelectRef={props.subjectSelectRef} settings={props.settings} courses={props.courses} list={list} />
                       </div>
                     )
@@ -3476,7 +3562,11 @@ function Events(props: {
         <span>Heute ist <b>{week[new Date().getDay()]}</b>, der <b>{new Date().getDate() < 10 ? 0 : null}{new Date().getDate()}.{new Date().getMonth() + 1 < 10 ? 0 : null}{new Date().getMonth() + 1}.{new Date().getFullYear()}</b></span>
       </div>
       {loading ? (
-        <p style={{ marginTop: '12px' }}><i>Lade Termine...</i></p>
+        <div class="events-list" style={{ marginTop: '12px' }}>
+          <SkeletonCard type="event" />
+          <SkeletonCard type="event" />
+          <SkeletonCard type="event" />
+        </div>
       ) : filteredEvents.length === 0 ? (
         <p style={{ marginTop: '12px' }}><i>Keine Termine in diesem Monat.</i></p>
       ) : (
@@ -3489,7 +3579,7 @@ function Events(props: {
             const isMultiDay = inclusiveEnd && inclusiveEnd.getTime() !== evt.date.getTime() && inclusiveEnd.getTime() > evt.date.getTime();
 
             return (
-              <div key={evt.id + "-" + selectedMonth} class="event-card" style={{ animation: `tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) ${0.1 + idx * 0.05}s both` }}>
+              <div key={evt.id + "-" + selectedMonth} class="event-card" style={{ animation: `tileReveal 0.4s cubic-bezier(0.16, 1, 0.3, 1) ${Math.min(0.2, idx * 0.03)}s both` }}>
                 <div class="event-date">
                   <span class="day">{evt.date.getDate()}</span>
                   <span class="month">{getMonthName(evt.date.getMonth())}</span>
@@ -3898,9 +3988,14 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
   const [expandedHeight, setExpandedHeight] = useState(0);
 
   useEffect(() => {
-    if (contentRef.current) {
-      setExpandedHeight(contentRef.current.scrollHeight);
-    }
+    if (!contentRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setExpandedHeight(entry.target.scrollHeight);
+      }
+    });
+    observer.observe(contentRef.current);
+    return () => observer.disconnect();
   }, [textParts]);
 
 
@@ -4331,7 +4426,12 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
           <polyline points="6 9 12 15 18 9"></polyline>
         </svg>
       </button>
-      <div class={`overview-text-wrapper ${expanded ? 'expanded' : 'collapsed'}`} style={expanded && expandedHeight ? { maxHeight: expandedHeight + 'px' } : {}}>
+      <div 
+        class="overview-text-wrapper" 
+        style={{ 
+          maxHeight: expanded ? (expandedHeight ? `${expandedHeight}px` : '1000px') : '110px'
+        }}
+      >
         <p class="overview-text" style={{ margin: 0 }} ref={contentRef}>
           
           {(() => {
@@ -4365,6 +4465,17 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
           </span>
 
         </p>
+        <div style={{
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: '4em',
+          background: 'linear-gradient(to bottom, transparent, var(--foreground-color) 95%)',
+          pointerEvents: 'none',
+          opacity: expanded ? 0 : 1,
+          transition: 'opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+        }} />
       </div>
       </>
       )}

@@ -4,24 +4,22 @@ import Notice from "./notice";
 export default function OnlineIndicator() {
     const [offline, setOffline] = useState(false);
     const offlineCallback = useCallback(() => {
-        if (!!navigator.onLine) {
-            setOffline(false);
-        }
-        if (!!!navigator.onLine) {
-            setOffline(true);
-        }
+        setOffline(!navigator.onLine);
     }, [setOffline]);
     
     useEffect(() => {
         offlineCallback();
-    }, [])
-
-    window.onoffline = offlineCallback;
-    window.ononline = offlineCallback;
+        window.addEventListener("offline", offlineCallback);
+        window.addEventListener("online", offlineCallback);
+        return () => {
+            window.removeEventListener("offline", offlineCallback);
+            window.removeEventListener("online", offlineCallback);
+        };
+    }, [offlineCallback]);
 
     return (
-        <div class="notice-wrapper">
-           {offline && (<Notice text="Notiz: Du bist offline." />)}
+        <div class={`notice-wrapper ${offline ? 'visible' : ''}`}>
+           <Notice text="Notiz: Du bist offline." />
         </div>
     );
 }
