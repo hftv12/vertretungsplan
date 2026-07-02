@@ -669,8 +669,9 @@ function DSBTable(props: { // the main feature of this website
   const [filterStage, setFilterStage] = useState(FilterStage.GRADE);
   const [success, setSuccess] = useState(null);
   const [easterEggActive, setEasterEggActive] = useState(false);
-  const [slideDirection, setSlideDirection] = useState<"left" | "right" | null>(null);
-  const [animationTrigger, setAnimationTrigger] = useState(0);
+  const [slideDir, setSlideDir] = useState<"left" | "right" | null>(null);
+  const [slidePhase, setSlidePhase] = useState<"idle" | "exiting" | "entering">("idle");
+  const [pendingDay, setPendingDay] = useState<string | null>(null);
 
   useEffect(() => {
     const handleEasterEgg = () => {
@@ -789,18 +790,26 @@ function DSBTable(props: { // the main feature of this website
 
   const changeCurrentDay = useCallback((day: string) => {
     window.dispatchEvent(new Event('dsb-day-switch'));
-    if (!timetable) return;
+    if (!timetable || !currentDay || slidePhase !== "idle") return;
 
-    if (day === "day_one" && currentDay?.date === timetable.day_two.date) {
-      setSlideDirection("right");
-      setAnimationTrigger(prev => prev + 1);
-      setCurrentDay(timetable.day_one);
-    } else if (day === "day_two" && currentDay?.date === timetable.day_one.date) {
-      setSlideDirection("left");
-      setAnimationTrigger(prev => prev + 1);
-      setCurrentDay(timetable.day_two);
+    const targetDay = day === "day_one" ? timetable.day_one : timetable.day_two;
+    if (targetDay.date === currentDay.date) return;
+
+    setSlideDir(day === "day_two" ? "left" : "right");
+    setSlidePhase("exiting");
+    setPendingDay(day);
+  }, [timetable, currentDay, slidePhase]);
+
+  useEffect(() => {
+    if (slidePhase === "exiting" && pendingDay && timetable) {
+      const timer = setTimeout(() => {
+        setCurrentDay(pendingDay === "day_one" ? timetable.day_one : timetable.day_two);
+        setSlidePhase("entering");
+        setPendingDay(null);
+      }, 150);
+      return () => clearTimeout(timer);
     }
-  }, [setCurrentDay, timetable, currentDay]);
+  }, [slidePhase, pendingDay, timetable]);
 
   const getFilteredSubstitutions = useCallback((): Array<Substitution> => {
     if (easterEggActive) {
@@ -935,9 +944,16 @@ function DSBTable(props: { // the main feature of this website
       )}
       {currentDay !== null && (
         <div 
-          key={currentDay.date + "-" + animationTrigger} 
-          class={slideDirection ? `slide-container slide-${slideDirection}` : ''}
-          onAnimationEnd={() => setSlideDirection(null)}
+          class={
+            slidePhase === "exiting" && slideDir ? `slide-out-${slideDir}` :
+            slidePhase === "entering" && slideDir ? `slide-in-from-${slideDir === "left" ? "right" : "left"}` : ''
+          }
+          onAnimationEnd={() => {
+            if (slidePhase === "entering") {
+              setSlidePhase("idle");
+              setSlideDir(null);
+            }
+          }}
         >
           <div key={"header-" + currentDay.date} style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', animation: 'slideUpFade 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both' }}>
             <div style={{ backgroundColor: 'var(--input-bg)', padding: '8px 16px', borderRadius: 'var(--rounding-sm)', border: '1px solid var(--brighter-color)' }}>
