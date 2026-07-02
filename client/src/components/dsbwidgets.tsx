@@ -946,9 +946,10 @@ function DSBTable(props: { // the main feature of this website
         <div 
           class={
             slidePhase === "exiting" && slideDir ? `slide-out-${slideDir}` :
-            slidePhase === "entering" && slideDir ? `slide-in-from-${slideDir === "left" ? "right" : "left"}` : ''
+            slidePhase === "entering" ? 'slide-in-up' : ''
           }
-          onAnimationEnd={() => {
+          onAnimationEnd={(e: any) => {
+            if (e.target !== e.currentTarget) return;
             if (slidePhase === "entering") {
               setSlidePhase("idle");
               setSlideDir(null);
