@@ -3040,3 +3040,34 @@ html:root[data-color-theme="minimal"] {
         background-position: -200% 0;
     }
 }
+
+/* Subscriptions Sliding Animations */
+.slide-container.slide-left {
+    animation: slideFromRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.slide-container.slide-right {
+    animation: slideFromLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideFromRight {
+    from {
+        opacity: 0;
+        transform: translateX(16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideFromLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}

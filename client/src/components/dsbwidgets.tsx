@@ -669,6 +669,8 @@ function DSBTable(props: { // the main feature of this website
   const [filterStage, setFilterStage] = useState(FilterStage.GRADE);
   const [success, setSuccess] = useState(null);
   const [easterEggActive, setEasterEggActive] = useState(false);
+  const [slideDirection, setSlideDirection] = useState<"left" | "right" | null>(null);
+  const [animationTrigger, setAnimationTrigger] = useState(0);
 
   useEffect(() => {
     const handleEasterEgg = () => {
@@ -787,14 +789,18 @@ function DSBTable(props: { // the main feature of this website
 
   const changeCurrentDay = useCallback((day: string) => {
     window.dispatchEvent(new Event('dsb-day-switch'));
-    if (day === "day_one") {
+    if (!timetable) return;
+
+    if (day === "day_one" && currentDay?.date === timetable.day_two.date) {
+      setSlideDirection("right");
+      setAnimationTrigger(prev => prev + 1);
       setCurrentDay(timetable.day_one);
-      return;
-    }
-    if (day === "day_two") {
+    } else if (day === "day_two" && currentDay?.date === timetable.day_one.date) {
+      setSlideDirection("left");
+      setAnimationTrigger(prev => prev + 1);
       setCurrentDay(timetable.day_two);
     }
-  }, [setCurrentDay, timetable]);
+  }, [setCurrentDay, timetable, currentDay]);
 
   const getFilteredSubstitutions = useCallback((): Array<Substitution> => {
     if (easterEggActive) {
@@ -928,7 +934,11 @@ function DSBTable(props: { // the main feature of this website
         </div>
       )}
       {currentDay !== null && (
-        <div>
+        <div 
+          key={currentDay.date + "-" + animationTrigger} 
+          class={slideDirection ? `slide-container slide-${slideDirection}` : ''}
+          onAnimationEnd={() => setSlideDirection(null)}
+        >
           <div key={"header-" + currentDay.date} style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', animation: 'slideUpFade 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both' }}>
             <div style={{ backgroundColor: 'var(--input-bg)', padding: '8px 16px', borderRadius: 'var(--rounding-sm)', border: '1px solid var(--brighter-color)' }}>
               <h2 style={{ margin: 0, fontSize: '1.2rem' }}>
@@ -4409,7 +4419,7 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
         <span style={{ fontSize: '0.6em', padding: '2px 8px', borderRadius: '12px', backgroundColor: 'var(--accent-light)', color: 'var(--accent-color)', fontWeight: 600, border: '1px solid var(--accent-color)', textTransform: 'uppercase', lineHeight: 1 }}>Beta</span>
       </h2>
       {!textParts ? (
-        <div style={{ minHeight: '120px', display: 'flex', alignItems: 'center' }}>
+        <div style={{ height: '110px', display: 'flex', alignItems: 'center' }}>
           <p class="overview-text" style={{ margin: 0, opacity: 0, fontStyle: 'italic', animation: 'delayedFadeIn 1.5s forwards' }}>
             Lade Übersicht...
           </p>
@@ -4437,8 +4447,9 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
           {(() => {
             let wordIndex = 0;
             const processNode = (node: any): any => {
-              if (typeof node === "string") {
-                return node.split(/(\s+)/).map((word: string, idx: number) => {
+              if (typeof node === "string" || typeof node === "number") {
+                const nodeStr = node.toString();
+                return nodeStr.split(/(\s+)/).map((word: string, idx: number) => {
                   if (!word.trim()) return word;
                   const delay = 0.5 + (wordIndex++) * 0.04;
                   return <span class="fade-word" style={{ animationDelay: delay + 's' }} key={wordIndex}>{word}</span>;
