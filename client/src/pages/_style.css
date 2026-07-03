@@ -1368,10 +1368,10 @@ tbody tr:last-child td {
 }
 
 /* Injecting a colored status dot before status labels using ::before */
-.s-free p b::before,
-.s-moved p b::before,
-.s-exam p b::before,
-.s-subst p b::before {
+.s-free p:first-child b::before,
+.s-moved p:first-child b::before,
+.s-exam p:first-child b::before,
+.s-subst p:first-child b::before {
     content: "";
     display: inline-block;
     width: 8px;
@@ -1381,19 +1381,19 @@ tbody tr:last-child td {
     vertical-align: middle;
 }
 
-.s-free p b::before {
+.s-free p:first-child b::before {
     background-color: var(--s-free-border);
 }
 
-.s-moved p b::before {
+.s-moved p:first-child b::before {
     background-color: var(--s-moved-border);
 }
 
-.s-exam p b::before {
+.s-exam p:first-child b::before {
     background-color: var(--s-exam-border);
 }
 
-.s-subst p b::before {
+.s-subst p:first-child b::before {
     background-color: var(--s-subst-border);
 }
 

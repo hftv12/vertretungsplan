@@ -7,7 +7,7 @@ import { CheckButton, Select } from "./settingshelper";
 
 //import serializeEvent from "../util/event_helper";
 
-import { EyeIcon, EyeOffIcon, RefreshIcon, ImportantIcon, FilterIcon, PencilIcon, HelpIcon } from "./icons";
+import { EyeIcon, EyeOffIcon, RefreshIcon, ImportantIcon, FilterIcon, PencilIcon, HelpIcon, ExternalLinkIcon } from "./icons";
 // @ts-ignore
 import plink from "../assets/placeholder.gif";
 // import dsbIcon from "/favicons/dsb_simplistic192.png";
@@ -4007,6 +4007,24 @@ function WelcomeBox(props: {
 
 
 
+function ClickableHighlight(props: { children: preact.ComponentChildren, targetId: string }) {
+  return (
+    <b class="overview-highlight clickable" onClick={(e) => {
+      e.preventDefault();
+      const el = document.getElementById(props.targetId);
+      if (el) {
+        const headerOffset = 100;
+        const elementPosition = el.getBoundingClientRect().top;
+        const offsetPosition = elementPosition + window.scrollY - headerOffset;
+        window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
+      }
+    }} style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}>
+      <span style={{ whiteSpace: 'normal' }}>{props.children}</span>
+      <ExternalLinkIcon width="14" height="14" style={{ display: 'inline-block', verticalAlign: 'middle', marginLeft: '4px', opacity: 0.8 }} />
+    </b>
+  );
+}
+
 //#region OverviewBox
 function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings: DSBSettings }) {
   const [textParts, setTextParts] = useState<preact.ComponentChildren[] | null>(null);
@@ -4065,7 +4083,7 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
         const dayName = days[now.getDay()];
         const timeStr = now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
         
-        addPart(<>{greeting}! Heute ist <b>{dayName}</b>, der {now.toLocaleDateString('de-DE').replace(/\.+$/, '')}. Es ist aktuell <b class="overview-highlight">{timeStr} Uhr</b>.</>);
+        addPart(<>{greeting}! Heute ist <b>{dayName}</b>, der {now.toLocaleDateString('de-DE').replace(/\.+$/, '')}. Es ist aktuell <b>{timeStr} Uhr</b>.</>);
         
         // --- 2. Fetch DSB Data ---
         let nextSchoolDayName = "";
@@ -4218,9 +4236,9 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
           const subjectStr = formatList(ttSubjects);
           if (isTomorrow) {
             const dayStr = nextSchoolDayName || "Morgen";
-            addPart(<>Am {dayStr} stehen <b class="overview-highlight">{subjectStr}</b> auf deinem Plan.</>);
+            addPart(<>Am {dayStr} stehen <ClickableHighlight targetId="stundenplan">{subjectStr}</ClickableHighlight> auf deinem Plan.</>);
           } else {
-            addPart(<>Du hast heute noch Unterricht in <b class="overview-highlight">{subjectStr}</b>.</>);
+            addPart(<>Du hast heute noch Unterricht in <ClickableHighlight targetId="stundenplan">{subjectStr}</ClickableHighlight>.</>);
           }
         }
 
@@ -4263,12 +4281,12 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
                     });
                     return courseInfo ? courseInfo.subject_name : s.usual_subject;
                  }))];
-                 addPart(<>{timeText} liegen <b class="overview-highlight">relevante Vertretungen in {formatList(substSubjects)}</b> für dich vor.</>);
+                 addPart(<>{timeText} liegen <ClickableHighlight targetId="vertretungsplan">relevante Vertretungen in {formatList(substSubjects)}</ClickableHighlight> für dich vor.</>);
               } else {
-                 addPart(<>{timeText} liegen <b class="overview-highlight">{relevantSubstitutions} relevante Vertretungen</b> für deine Stufe vor.</>);
+                 addPart(<>{timeText} liegen <ClickableHighlight targetId="vertretungsplan">{relevantSubstitutions} relevante Vertretungen</ClickableHighlight> für deine Stufe vor.</>);
               }
             } else {
-              addPart(<>{timeText} hast du nach aktuellem Stand <b class="overview-highlight">keine Vertretungen</b>.</>);
+              addPart(<>{timeText} hast du nach aktuellem Stand <ClickableHighlight targetId="vertretungsplan">keine Vertretungen</ClickableHighlight>.</>);
             }
         }
 
@@ -4279,7 +4297,7 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
             const hw = JSON.parse(hwRaw);
             if (hw.length > 0) {
               const hwSubjects: string[] = Array.from(new Set(hw.map((h: any) => getSubjectName(h.course) as string)));
-              addPart(<>Du hast noch Hausaufgaben in <b class="overview-highlight">{formatList(hwSubjects)}</b> zu erledigen.</>);
+              addPart(<>Du hast noch Hausaufgaben in <ClickableHighlight targetId="hausaufgaben">{formatList(hwSubjects)}</ClickableHighlight> zu erledigen.</>);
             } else {
               addPart(<>Du hast momentan keine offenen Hausaufgaben.</>);
             }
@@ -4324,7 +4342,7 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
                      if (isToday) dateText = "Heute";
                      else if (isTomorrowExam) dateText = "Morgen";
                      
-                     examStrings.push(<>{dateText} schreibst du eine Klausur in <b class="overview-highlight">{formatList(dayExams)}</b>.</>);
+                     examStrings.push(<>{dateText} schreibst du eine Klausur in <ClickableHighlight targetId="klausuren">{formatList(dayExams)}</ClickableHighlight>.</>);
                    }
                  }
                }
@@ -4383,9 +4401,9 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
                   if (isOngoing || isUpcoming) {
                     if (isOngoing) {
                        if (dStart.getTime() === dEnd.getTime()) {
-                         eventComponents.push(<>Heute ist <b class="overview-highlight">{summary}</b>.</>);
+                         eventComponents.push(<>Heute ist <ClickableHighlight targetId="termine">{summary}</ClickableHighlight>.</>);
                        } else {
-                         eventComponents.push(<>Aktuell findet <b class="overview-highlight">{summary}</b> statt (bis {formatDateToDayMonth(dEnd)}).</>);
+                         eventComponents.push(<>Aktuell findet <ClickableHighlight targetId="termine">{summary}</ClickableHighlight> statt (bis {formatDateToDayMonth(dEnd)}).</>);
                        }
                     } else if (isUpcoming) {
                        const isTomorrowEvent = diffStart === 1;
@@ -4393,9 +4411,9 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
                        if (isTomorrowEvent) dateText = "Morgen";
                        
                        if (dStart.getTime() === dEnd.getTime()) {
-                         eventComponents.push(<>{dateText} ist <b class="overview-highlight">{summary}</b>.</>);
+                         eventComponents.push(<>{dateText} ist <ClickableHighlight targetId="termine">{summary}</ClickableHighlight>.</>);
                        } else {
-                         eventComponents.push(<>{dateText} beginnt <b class="overview-highlight">{summary}</b> (bis {formatDateToDayMonth(dEnd)}).</>);
+                         eventComponents.push(<>{dateText} beginnt <ClickableHighlight targetId="termine">{summary}</ClickableHighlight> (bis {formatDateToDayMonth(dEnd)}).</>);
                        }
                     }
                   }
@@ -4433,7 +4451,6 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
     <div class="default-div" style={{ border: '1px solid var(--accent-color)', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)', position: 'relative' }}>
       <h2 style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
         Tagesübersicht
-        <span style={{ fontSize: '0.6em', padding: '2px 8px', borderRadius: '12px', backgroundColor: 'var(--accent-light)', color: 'var(--accent-color)', fontWeight: 600, border: '1px solid var(--accent-color)', textTransform: 'uppercase', lineHeight: 1 }}>Beta</span>
       </h2>
       {!textParts ? (
         <div style={{ height: '110px', display: 'flex', alignItems: 'center' }}>
