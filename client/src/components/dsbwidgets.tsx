@@ -4020,7 +4020,7 @@ function ClickableHighlight(props: { children: preact.ComponentChildren, targetI
       }
     }} style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}>
       <span style={{ whiteSpace: 'normal' }}>{props.children}</span>
-      <ExternalLinkIcon width="14" height="14" style={{ display: 'inline-block', verticalAlign: 'middle', marginLeft: '4px', opacity: 0.8 }} />
+      <ExternalLinkIcon width="16" height="16" style={{ display: 'inline-block', verticalAlign: 'middle', marginLeft: '4px', color: 'var(--accent-color)' }} />
     </b>
   );
 }
