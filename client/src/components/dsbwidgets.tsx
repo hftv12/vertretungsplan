@@ -4007,11 +4007,11 @@ function WelcomeBox(props: {
 
 
 
-function ClickableHighlight(props: { children: preact.ComponentChildren, targetId: string }) {
+const createClickableHighlight = (children: preact.ComponentChildren, targetId: string) => {
   return (
     <b class="overview-highlight clickable" onClick={(e) => {
       e.preventDefault();
-      const el = document.getElementById(props.targetId);
+      const el = document.getElementById(targetId);
       if (el) {
         const headerOffset = 100;
         const elementPosition = el.getBoundingClientRect().top;
@@ -4019,11 +4019,11 @@ function ClickableHighlight(props: { children: preact.ComponentChildren, targetI
         window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
       }
     }} style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}>
-      <span style={{ whiteSpace: 'normal' }}>{props.children}</span>
-      <ExternalLinkIcon width="16" height="16" style={{ display: 'inline-block', verticalAlign: 'baseline', transform: 'translateY(2px)', marginLeft: '4px', color: 'var(--accent-color)' }} />
+      <span style={{ whiteSpace: 'normal' }}>{children}</span>
+      <ExternalLinkIcon data-fade-icon={true} width="16" height="16" style={{ display: 'inline-block', verticalAlign: 'baseline', transform: 'translateY(2px)', marginLeft: '4px', color: 'var(--accent-color)' }} />
     </b>
   );
-}
+};
 
 //#region OverviewBox
 function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings: DSBSettings }) {
@@ -4236,9 +4236,9 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
           const subjectStr = formatList(ttSubjects);
           if (isTomorrow) {
             const dayStr = nextSchoolDayName || "Morgen";
-            addPart(<>Am {dayStr} stehen <ClickableHighlight targetId="stundenplan">{subjectStr}</ClickableHighlight> auf deinem Plan.</>);
+            addPart(<>Am {dayStr} stehen {createClickableHighlight(subjectStr, "stundenplan")} auf deinem Plan.</>);
           } else {
-            addPart(<>Du hast heute noch Unterricht in <ClickableHighlight targetId="stundenplan">{subjectStr}</ClickableHighlight>.</>);
+            addPart(<>Du hast heute noch Unterricht in {createClickableHighlight(subjectStr, "stundenplan")}.</>);
           }
         }
 
@@ -4281,12 +4281,12 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
                     });
                     return courseInfo ? courseInfo.subject_name : s.usual_subject;
                  }))];
-                 addPart(<>{timeText} liegen <ClickableHighlight targetId="vertretungsplan">relevante Vertretungen in {formatList(substSubjects)}</ClickableHighlight> für dich vor.</>);
+                 addPart(<>{timeText} liegen {createClickableHighlight(<>relevante Vertretungen in {formatList(substSubjects)}</>, "vertretungsplan")} für dich vor.</>);
               } else {
-                 addPart(<>{timeText} liegen <ClickableHighlight targetId="vertretungsplan">{relevantSubstitutions} relevante Vertretungen</ClickableHighlight> für deine Stufe vor.</>);
+                 addPart(<>{timeText} liegen {createClickableHighlight(<>{relevantSubstitutions} relevante Vertretungen</>, "vertretungsplan")} für deine Stufe vor.</>);
               }
             } else {
-              addPart(<>{timeText} hast du nach aktuellem Stand <ClickableHighlight targetId="vertretungsplan">keine Vertretungen</ClickableHighlight>.</>);
+              addPart(<>{timeText} hast du nach aktuellem Stand {createClickableHighlight("keine Vertretungen", "vertretungsplan")}.</>);
             }
         }
 
@@ -4297,7 +4297,7 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
             const hw = JSON.parse(hwRaw);
             if (hw.length > 0) {
               const hwSubjects: string[] = Array.from(new Set(hw.map((h: any) => getSubjectName(h.course) as string)));
-              addPart(<>Du hast noch Hausaufgaben in <ClickableHighlight targetId="hausaufgaben">{formatList(hwSubjects)}</ClickableHighlight> zu erledigen.</>);
+              addPart(<>Du hast noch Hausaufgaben in {createClickableHighlight(formatList(hwSubjects), "hausaufgaben")} zu erledigen.</>);
             } else {
               addPart(<>Du hast momentan keine offenen Hausaufgaben.</>);
             }
@@ -4342,7 +4342,7 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
                      if (isToday) dateText = "Heute";
                      else if (isTomorrowExam) dateText = "Morgen";
                      
-                     examStrings.push(<>{dateText} schreibst du eine Klausur in <ClickableHighlight targetId="klausuren">{formatList(dayExams)}</ClickableHighlight>.</>);
+                     examStrings.push(<>{dateText} schreibst du eine Klausur in {createClickableHighlight(formatList(dayExams), "klausuren")}.</>);
                    }
                  }
                }
@@ -4401,9 +4401,9 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
                   if (isOngoing || isUpcoming) {
                     if (isOngoing) {
                        if (dStart.getTime() === dEnd.getTime()) {
-                         eventComponents.push(<>Heute ist <ClickableHighlight targetId="termine">{summary}</ClickableHighlight>.</>);
+                         eventComponents.push(<>Heute ist {createClickableHighlight(summary, "termine")}.</>);
                        } else {
-                         eventComponents.push(<>Aktuell findet <ClickableHighlight targetId="termine">{summary}</ClickableHighlight> statt (bis {formatDateToDayMonth(dEnd)}).</>);
+                         eventComponents.push(<>Aktuell findet {createClickableHighlight(summary, "termine")} statt (bis {formatDateToDayMonth(dEnd)}).</>);
                        }
                     } else if (isUpcoming) {
                        const isTomorrowEvent = diffStart === 1;
@@ -4411,9 +4411,9 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
                        if (isTomorrowEvent) dateText = "Morgen";
                        
                        if (dStart.getTime() === dEnd.getTime()) {
-                         eventComponents.push(<>{dateText} ist <ClickableHighlight targetId="termine">{summary}</ClickableHighlight>.</>);
+                         eventComponents.push(<>{dateText} ist {createClickableHighlight(summary, "termine")}.</>);
                        } else {
-                         eventComponents.push(<>{dateText} beginnt <ClickableHighlight targetId="termine">{summary}</ClickableHighlight> (bis {formatDateToDayMonth(dEnd)}).</>);
+                         eventComponents.push(<>{dateText} beginnt {createClickableHighlight(summary, "termine")} (bis {formatDateToDayMonth(dEnd)}).</>);
                        }
                     }
                   }
@@ -4493,6 +4493,10 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
                 return node.map(processNode);
               }
               if (node && typeof node === "object" && node.props) {
+                if (node.props['data-fade-icon']) {
+                  const delay = 0.5 + (wordIndex++) * 0.04;
+                  return <span class="fade-word" style={{ animationDelay: delay + 's', display: 'inline-block' }} key={wordIndex}>{node}</span>;
+                }
                 return {
                   ...node,
                   props: {
