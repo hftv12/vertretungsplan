@@ -458,6 +458,18 @@ function DSBRefreshButton(props: { // refresh button used for reloading substitu
   success: boolean,
   setSuccess: Function,
 }) {
+  const [iconStatus, setIconStatus] = useState<boolean | null>(props.success);
+
+  useEffect(() => {
+    setIconStatus(props.success);
+    if (props.success !== null) {
+      const timer = setTimeout(() => {
+        setIconStatus(null);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [props.success]);
+
   const handleClick = useCallback(async () => {
     props.setSuccess(null);
     const status = await props.getData();
@@ -466,7 +478,7 @@ function DSBRefreshButton(props: { // refresh button used for reloading substitu
 
   return (
     <button type="button" onClick={handleClick} class="imgInput" aria-label="Aktualisieren">
-      <RefreshIcon status={props.success} width="20" height="20" />
+      <RefreshIcon status={iconStatus} width="20" height="20" />
     </button>
   );
 }
@@ -3443,8 +3455,8 @@ function Events(props: {
   const getMonthName = (month: number) => ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"][month];
   const getFullMonthName = (month: number) => ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"][month];
 
-  useEffect(() => {
-    const fetchAllEvents = async () => {
+  const fetchAllEvents = useCallback(async () => {
+      setLoading(true);
       try {
         const now = new Date();
         const currentYear = now.getFullYear();
@@ -3530,9 +3542,11 @@ function Events(props: {
       } finally {
         setLoading(false);
       }
-    };
-    fetchAllEvents();
   }, []);
+
+  useEffect(() => {
+    fetchAllEvents();
+  }, [fetchAllEvents]);
 
   if (props.settings.showTermine === false) return null;
 
@@ -3566,6 +3580,15 @@ function Events(props: {
         title="Termine" 
         helpText="Hier findest du alle anstehenden Schultermine und Veranstaltungen. Diese werden automatisch aktualisiert."
       />
+      <button
+        type="button"
+        class="imgInput"
+        style={{ position: 'absolute', top: '16px', right: '48px', zIndex: 10 }}
+        onClick={fetchAllEvents}
+        aria-label="Aktualisieren"
+      >
+        <RefreshIcon status={null} width="20" height="20" />
+      </button>
       <h2>Termine</h2>
       {!loading && availableMonths.length > 0 && (
         <select 
@@ -4044,8 +4067,8 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
   }, [textParts]);
 
 
-  useEffect(() => {
-    async function fetchData() {
+  const fetchData = useCallback(async () => {
+      setTextParts(null);
       try {
         const parts: preact.ComponentChildren[] = [];
         const now = new Date();
@@ -4442,10 +4465,11 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
         console.error("OverviewBox error:", e);
         setTextParts([<>Willkommen beim Vertretungsplan!</>]);
       }
-    }
-    
-    fetchData();
   }, [props.grade, props.courses]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   return (
     <div class="default-div" style={{ border: '1px solid var(--accent-color)', boxShadow: '0 4px 20px rgba(0, 0, 0, 0.05)', position: 'relative' }}>
@@ -4453,13 +4477,22 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
         Tagesübersicht
       </h2>
       {!textParts ? (
-        <div style={{ height: '110px', display: 'flex', alignItems: 'center' }}>
-          <p class="overview-text" style={{ margin: 0, opacity: 0, fontStyle: 'italic', animation: 'delayedFadeIn 1.5s forwards' }}>
-            Lade Übersicht...
-          </p>
+        <div style={{ height: '110px', display: 'flex', flexDirection: 'column', gap: '12px', justifyContent: 'center' }}>
+          <div style={{ width: '85%', height: '18px', backgroundColor: 'var(--text-secondary)', borderRadius: '4px', opacity: 0.15 }} class="skeleton-shimmer" />
+          <div style={{ width: '60%', height: '18px', backgroundColor: 'var(--text-secondary)', borderRadius: '4px', opacity: 0.15 }} class="skeleton-shimmer" />
+          <div style={{ width: '75%', height: '18px', backgroundColor: 'var(--text-secondary)', borderRadius: '4px', opacity: 0.15 }} class="skeleton-shimmer" />
         </div>
       ) : (
         <>
+          <button
+            type="button"
+            onClick={fetchData}
+            aria-label="Aktualisieren"
+            class="overview-toggle-btn"
+            style={{ right: '54px' }}
+          >
+            <RefreshIcon status={null} width="16" height="16" />
+          </button>
           <button
             type="button"
             class={`overview-toggle-btn ${expanded ? 'expanded' : ''}`}
