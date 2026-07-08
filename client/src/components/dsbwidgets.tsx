@@ -12,18 +12,36 @@ import { EyeIcon, EyeOffIcon, RefreshIcon, ImportantIcon, FilterIcon, PencilIcon
 import plink from "../assets/placeholder.gif";
 // import dsbIcon from "/favicons/dsb_simplistic192.png";
 
-function SkeletonCard(props: { type: "list" | "card" | "exam" | "event" }) {
+function SkeletonCard(props: { type: "list" | "card" | "exam" | "event" | "header" }) {
+  if (props.type === "header") {
+    return (
+      <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap' }}>
+        <div class="skeleton-shimmer" style={{ width: '140px', height: '42px', borderRadius: 'var(--rounding-sm)', border: '1px solid var(--brighter-color)' }} />
+        <div class="skeleton-shimmer" style={{ width: '110px', height: '42px', borderRadius: 'var(--rounding-sm)', border: '1px solid var(--brighter-color)' }} />
+      </div>
+    );
+  }
+
   if (props.type === "card") {
     return (
       <div class="new-s skeleton-shimmer" style={{ minHeight: "120px", border: "1px solid var(--brighter-color)" }}>
-        <div style={{ padding: "12px 20px", height: "40px", borderBottom: "1px solid var(--brighter-color)", opacity: 0.3 }} />
-        <div style={{ padding: "18px 20px 10px", display: "flex", justifyContent: "space-between" }}>
-          <div style={{ width: "60%", height: "20px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.15 }} />
-          <div style={{ width: "20%", height: "20px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.15 }} />
+        {/* Badge strip – matches .s-free/.s-subst etc */}
+        <div style={{ padding: "12px 20px", borderBottom: "1px solid var(--brighter-color)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <div style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "var(--text-secondary)", opacity: 0.2 }} />
+            <div style={{ width: "70px", height: "12px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.15 }} />
+          </div>
+          <div style={{ width: "40px", height: "22px", backgroundColor: "var(--input-bg)", borderRadius: "6px", border: "1px solid var(--brighter-color)" }} />
         </div>
-        <div style={{ padding: "0 20px 20px", display: "flex", flexDirection: "column", gap: "8px" }}>
-          <div style={{ width: "40%", height: "14px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.15 }} />
-          <div style={{ width: "80%", height: "14px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.15 }} />
+        {/* Title row – matches .s-title-row */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", alignItems: "center", margin: "18px 20px 10px", gap: "10px" }}>
+          <div style={{ width: "75%", height: "22px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.15 }} />
+          <div style={{ width: "55px", height: "18px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.12 }} />
+        </div>
+        {/* Detail grid – matches .s-grid */}
+        <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", columnGap: "14px", rowGap: "8px", padding: "0 20px 20px" }}>
+          <div style={{ width: "35px", height: "13px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.12 }} />
+          <div style={{ width: "60px", height: "13px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.15 }} />
         </div>
       </div>
     );
@@ -691,6 +709,22 @@ function DSBTable(props: { // the main feature of this website
   const [slideDir, setSlideDir] = useState<"left" | "right" | null>(null);
   const [slidePhase, setSlidePhase] = useState<"idle" | "exiting" | "entering">("idle");
   const [pendingDay, setPendingDay] = useState<string | null>(null);
+  const [showSkeleton, setShowSkeleton] = useState(true);
+  const prevCurrentDayRef = useRef<DayTimetable | null>(null);
+
+  useEffect(() => {
+    // Show skeleton for 1s when data first arrives (null -> value)
+    if (currentDay !== null && prevCurrentDayRef.current === null) {
+      setShowSkeleton(true);
+      const timer = setTimeout(() => setShowSkeleton(false), 1000);
+      prevCurrentDayRef.current = currentDay;
+      return () => clearTimeout(timer);
+    }
+    prevCurrentDayRef.current = currentDay;
+    if (currentDay === null) {
+      setShowSkeleton(true);
+    }
+  }, [currentDay]);
 
   useEffect(() => {
     const handleEasterEgg = () => {
@@ -925,8 +959,9 @@ function DSBTable(props: { // the main feature of this website
         success={success}
         setSuccess={setSuccess}
       />
-      {currentDay === null && success !== false && (
+      {(currentDay === null || showSkeleton) && success !== false && (
         <div style={{ animation: 'tileReveal 0.4s cubic-bezier(0.16, 1, 0.3, 1) both' }}>
+          <SkeletonCard type="header" />
           <h2 style={{ marginBottom: '12px' }}>Vertretungen</h2>
           {props.settings.newDesign === true ? (
             <div id="new-slist">
@@ -961,7 +996,7 @@ function DSBTable(props: { // the main feature of this website
           <p><i>aktuell nicht verfügbar.</i></p>
         </div>
       )}
-      {currentDay !== null && (
+      {currentDay !== null && !showSkeleton && (
         <div 
           class={
             slidePhase === "exiting" && slideDir ? `slide-out-${slideDir}` :
