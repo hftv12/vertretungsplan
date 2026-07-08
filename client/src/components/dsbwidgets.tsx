@@ -3483,7 +3483,10 @@ function Events(props: {
   const getMonthName = (month: number) => ["Jan", "Feb", "Mär", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"][month];
   const getFullMonthName = (month: number) => ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"][month];
 
-  const fetchAllEvents = useCallback(async () => {
+  const [showSkeleton, setShowSkeleton] = useState(true);
+
+  const fetchAllEvents = useCallback(async (): Promise<boolean> => {
+      if (loading) return false;
       setLoading(true);
       try {
         const now = new Date();
