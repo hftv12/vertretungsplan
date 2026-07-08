@@ -3611,16 +3611,16 @@ function Events(props: {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
         <span>Heute ist <b>{week[new Date().getDay()]}</b>, der <b>{new Date().getDate() < 10 ? 0 : null}{new Date().getDate()}.{new Date().getMonth() + 1 < 10 ? 0 : null}{new Date().getMonth() + 1}.{new Date().getFullYear()}</b></span>
       </div>
-      {loading ? (
+      {loading && allEvents.length === 0 ? (
         <div class="events-list" style={{ marginTop: '12px' }}>
           <SkeletonCard type="event" />
           <SkeletonCard type="event" />
           <SkeletonCard type="event" />
         </div>
-      ) : filteredEvents.length === 0 ? (
+      ) : filteredEvents.length === 0 && !loading ? (
         <p style={{ marginTop: '12px' }}><i>Keine Termine in diesem Monat.</i></p>
       ) : (
-        <div class="events-list">
+        <div class="events-list" style={{ opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s', pointerEvents: loading ? 'none' : 'auto' }}>
           {filteredEvents.map((evt, idx) => {
             let inclusiveEnd = evt.endDate ? new Date(evt.endDate.getTime()) : null;
             if (inclusiveEnd && evt.allDay && inclusiveEnd.getTime() > evt.date.getTime()) {
@@ -4476,6 +4476,26 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
       <h2 style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
         Tagesübersicht
       </h2>
+      <button
+        type="button"
+        onClick={fetchData}
+        aria-label="Aktualisieren"
+        class="overview-toggle-btn"
+        style={{ right: '54px' }}
+      >
+        <RefreshIcon status={null} width="16" height="16" />
+      </button>
+      <button
+        type="button"
+        class={`overview-toggle-btn ${expanded ? 'expanded' : ''}`}
+        onClick={() => setExpanded(!expanded)}
+        aria-label={expanded ? 'Einklappen' : 'Ausklappen'}
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </button>
+
       {!textParts ? (
         <div style={{ height: '110px', display: 'flex', flexDirection: 'column', gap: '12px', justifyContent: 'center' }}>
           <div style={{ width: '85%', height: '18px', backgroundColor: 'var(--text-secondary)', borderRadius: '4px', opacity: 0.15 }} class="skeleton-shimmer" />
@@ -4483,32 +4503,12 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
           <div style={{ width: '75%', height: '18px', backgroundColor: 'var(--text-secondary)', borderRadius: '4px', opacity: 0.15 }} class="skeleton-shimmer" />
         </div>
       ) : (
-        <>
-          <button
-            type="button"
-            onClick={fetchData}
-            aria-label="Aktualisieren"
-            class="overview-toggle-btn"
-            style={{ right: '54px' }}
-          >
-            <RefreshIcon status={null} width="16" height="16" />
-          </button>
-          <button
-            type="button"
-            class={`overview-toggle-btn ${expanded ? 'expanded' : ''}`}
-            onClick={() => setExpanded(!expanded)}
-            aria-label={expanded ? 'Einklappen' : 'Ausklappen'}
-          >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="6 9 12 15 18 9"></polyline>
-        </svg>
-      </button>
-      <div 
-        class="overview-text-wrapper" 
-        style={{ 
-          maxHeight: expanded ? (expandedHeight ? `${expandedHeight}px` : '1000px') : '110px'
-        }}
-      >
+        <div 
+          class="overview-text-wrapper" 
+          style={{ 
+            maxHeight: expanded ? (expandedHeight ? `${expandedHeight}px` : '1000px') : '110px'
+          }}
+        >
         <p class="overview-text" style={{ margin: 0 }} ref={contentRef}>
           
           {(() => {
@@ -4559,7 +4559,6 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
           transition: 'opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
         }} />
       </div>
-      </>
       )}
     </div>
   );
