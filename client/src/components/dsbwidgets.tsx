@@ -455,8 +455,11 @@ function DSBLogin(props: { // login panel
 
 function DSBRefreshButton(props: { // refresh button used for reloading substitutions (& exams sometimes)
   getData: Function,
-  success: boolean,
+  success: boolean | null,
   setSuccess: Function,
+  className?: string,
+  style?: any,
+  iconSize?: string,
 }) {
   const [iconStatus, setIconStatus] = useState<boolean | null>(props.success);
 
@@ -477,8 +480,8 @@ function DSBRefreshButton(props: { // refresh button used for reloading substitu
   }, [props]);
 
   return (
-    <button type="button" onClick={handleClick} class="imgInput" aria-label="Aktualisieren">
-      <RefreshIcon status={iconStatus} width="20" height="20" />
+    <button type="button" onClick={handleClick} class={props.className !== undefined ? props.className : "imgInput"} style={props.style} aria-label="Aktualisieren">
+      <RefreshIcon status={iconStatus} width={props.iconSize || "20"} height={props.iconSize || "20"} />
     </button>
   );
 }
@@ -3375,9 +3378,10 @@ const parseICal = (icsData: string): AppEvent[] => {
     }
     
     if (line.startsWith('BEGIN:VEVENT')) {
-      currentEvent = { id: Math.random().toString(36).substring(2, 11), allDay: true, location: '' };
+      currentEvent = { id: '', allDay: true, location: '' };
     } else if (line.startsWith('END:VEVENT')) {
       if (currentEvent && currentEvent.title && currentEvent.date) {
+        currentEvent.id = (currentEvent.title + currentEvent.date.getTime()).replace(/[^a-zA-Z0-9]/g, '');
         events.push(currentEvent as AppEvent);
       }
       currentEvent = null;
@@ -3449,6 +3453,7 @@ function Events(props: {
 }) {
   const [allEvents, setAllEvents] = useState<AppEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshSuccess, setRefreshSuccess] = useState<boolean | null>(null);
   const [selectedMonth, setSelectedMonth] = useState<string>(""); // "YYYY-MM"
   const [availableMonths, setAvailableMonths] = useState<string[]>([]);
   
@@ -3537,8 +3542,10 @@ function Events(props: {
           setSelectedMonth(sortedMonths[0]);
         }
         
+        return true;
       } catch (err) {
         console.error("Failed to fetch events", err);
+        return false;
       } finally {
         setLoading(false);
       }
@@ -3580,15 +3587,12 @@ function Events(props: {
         title="Termine" 
         helpText="Hier findest du alle anstehenden Schultermine und Veranstaltungen. Diese werden automatisch aktualisiert."
       />
-      <button
-        type="button"
-        class="imgInput"
+      <DSBRefreshButton
+        getData={fetchAllEvents}
+        success={refreshSuccess}
+        setSuccess={setRefreshSuccess}
         style={{ position: 'absolute', top: '16px', right: '48px', zIndex: 10 }}
-        onClick={fetchAllEvents}
-        aria-label="Aktualisieren"
-      >
-        <RefreshIcon status={null} width="20" height="20" />
-      </button>
+      />
       <h2>Termine</h2>
       {!loading && availableMonths.length > 0 && (
         <select 
@@ -4054,6 +4058,7 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
   const [expanded, setExpanded] = useState(false);
   const contentRef = useRef<HTMLParagraphElement>(null);
   const [expandedHeight, setExpandedHeight] = useState(0);
+  const [refreshSuccess, setRefreshSuccess] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (!contentRef.current) return;
@@ -4070,6 +4075,7 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
   const fetchData = useCallback(async () => {
       setTextParts(null);
       try {
+        await new Promise(resolve => setTimeout(resolve, 1000));
         const parts: preact.ComponentChildren[] = [];
         const now = new Date();
         const hour = now.getHours();
@@ -4461,9 +4467,11 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
         } catch(e) {}
 
         setTextParts(parts);
+        return true;
       } catch (e) {
         console.error("OverviewBox error:", e);
         setTextParts([<>Willkommen beim Vertretungsplan!</>]);
+        return false;
       }
   }, [props.grade, props.courses]);
 
@@ -4476,15 +4484,14 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
       <h2 style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
         Tagesübersicht
       </h2>
-      <button
-        type="button"
-        onClick={fetchData}
-        aria-label="Aktualisieren"
-        class="overview-toggle-btn"
+      <DSBRefreshButton
+        getData={fetchData}
+        success={refreshSuccess}
+        setSuccess={setRefreshSuccess}
+        className="overview-toggle-btn"
         style={{ right: '54px' }}
-      >
-        <RefreshIcon status={null} width="16" height="16" />
-      </button>
+        iconSize="16"
+      />
       <button
         type="button"
         class={`overview-toggle-btn ${expanded ? 'expanded' : ''}`}
