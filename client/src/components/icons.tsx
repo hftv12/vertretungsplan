@@ -17,11 +17,11 @@ export function EyeOffIcon(props: JSX.SVGAttributes<SVGSVGElement>) {
   );
 }
 
-export function RefreshIcon(props: JSX.SVGAttributes<SVGSVGElement> & { status?: boolean | null }) {
+export function RefreshIcon(props: JSX.SVGAttributes<SVGSVGElement> & { status?: boolean | null, loading?: boolean }) {
   let statusClass = "";
   if (props.status === true) statusClass = "success";
   else if (props.status === false) statusClass = "fail";
-  else if (props.status === null) statusClass = "spinning";
+  else if (props.loading) statusClass = "spinning";
   
   return (
     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class={`refresh-icon ${statusClass} ${props.class || ""}`} style={props.style} width={props.width} height={props.height} onClick={props.onClick}>

@@ -462,6 +462,7 @@ function DSBRefreshButton(props: { // refresh button used for reloading substitu
   iconSize?: string,
 }) {
   const [iconStatus, setIconStatus] = useState<boolean | null>(props.success);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     setIconStatus(props.success);
@@ -474,14 +475,17 @@ function DSBRefreshButton(props: { // refresh button used for reloading substitu
   }, [props.success]);
 
   const handleClick = useCallback(async () => {
+    if (isLoading) return;
+    setIsLoading(true);
     props.setSuccess(null);
     const status = await props.getData();
     props.setSuccess(status);
-  }, [props]);
+    setIsLoading(false);
+  }, [props, isLoading]);
 
   return (
     <button type="button" onClick={handleClick} class={props.className !== undefined ? props.className : "imgInput"} style={props.style} aria-label="Aktualisieren">
-      <RefreshIcon status={iconStatus} width={props.iconSize || "20"} height={props.iconSize || "20"} />
+      <RefreshIcon status={iconStatus} loading={isLoading} width={props.iconSize || "20"} height={props.iconSize || "20"} />
     </button>
   );
 }
@@ -4504,10 +4508,10 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
       </button>
 
       {!textParts ? (
-        <div class="skeleton-shimmer" style={{ height: '110px', display: 'flex', flexDirection: 'column', gap: '12px', justifyContent: 'center', padding: '0 16px', borderRadius: 'var(--rounding-sm)', margin: '0 -16px' }}>
-          <div style={{ width: '85%', height: '18px', backgroundColor: 'var(--text-secondary)', borderRadius: '4px', opacity: 0.15 }} />
-          <div style={{ width: '60%', height: '18px', backgroundColor: 'var(--text-secondary)', borderRadius: '4px', opacity: 0.15 }} />
-          <div style={{ width: '75%', height: '18px', backgroundColor: 'var(--text-secondary)', borderRadius: '4px', opacity: 0.15 }} />
+        <div style={{ height: '110px', display: 'flex', flexDirection: 'column', gap: '12px', justifyContent: 'center' }}>
+          <div style={{ width: '85%', height: '18px', borderRadius: '4px' }} class="skeleton-shimmer" />
+          <div style={{ width: '60%', height: '18px', borderRadius: '4px' }} class="skeleton-shimmer" />
+          <div style={{ width: '75%', height: '18px', borderRadius: '4px' }} class="skeleton-shimmer" />
         </div>
       ) : (
         <div 
