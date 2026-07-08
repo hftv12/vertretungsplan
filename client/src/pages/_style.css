@@ -1252,7 +1252,7 @@ input[type='checkbox']:disabled {
 }
 
 /* Spinner class while loading */
-.imgInput:active .refresh-icon {
+.imgInput:active .refresh-icon, .refresh-icon.spinning {
     animation: spin 1.2s linear infinite;
 }
 

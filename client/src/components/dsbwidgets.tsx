@@ -3621,8 +3621,8 @@ function Events(props: {
           <SkeletonCard type="event" />
           <SkeletonCard type="event" />
         </div>
-      ) : filteredEvents.length === 0 && !loading ? (
-        <p style={{ marginTop: '12px' }}><i>Keine Termine in diesem Monat.</i></p>
+      ) : filteredEvents.length === 0 ? (
+        <p style={{ marginTop: '12px', opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s' }}><i>Keine Termine in diesem Monat.</i></p>
       ) : (
         <div class="events-list" style={{ opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s', pointerEvents: loading ? 'none' : 'auto' }}>
           {filteredEvents.map((evt, idx) => {
@@ -4504,10 +4504,10 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
       </button>
 
       {!textParts ? (
-        <div style={{ height: '110px', display: 'flex', flexDirection: 'column', gap: '12px', justifyContent: 'center' }}>
-          <div style={{ width: '85%', height: '18px', backgroundColor: 'var(--text-secondary)', borderRadius: '4px', opacity: 0.15 }} class="skeleton-shimmer" />
-          <div style={{ width: '60%', height: '18px', backgroundColor: 'var(--text-secondary)', borderRadius: '4px', opacity: 0.15 }} class="skeleton-shimmer" />
-          <div style={{ width: '75%', height: '18px', backgroundColor: 'var(--text-secondary)', borderRadius: '4px', opacity: 0.15 }} class="skeleton-shimmer" />
+        <div class="skeleton-shimmer" style={{ height: '110px', display: 'flex', flexDirection: 'column', gap: '12px', justifyContent: 'center', padding: '0 16px', borderRadius: 'var(--rounding-sm)', margin: '0 -16px' }}>
+          <div style={{ width: '85%', height: '18px', backgroundColor: 'var(--text-secondary)', borderRadius: '4px', opacity: 0.15 }} />
+          <div style={{ width: '60%', height: '18px', backgroundColor: 'var(--text-secondary)', borderRadius: '4px', opacity: 0.15 }} />
+          <div style={{ width: '75%', height: '18px', backgroundColor: 'var(--text-secondary)', borderRadius: '4px', opacity: 0.15 }} />
         </div>
       ) : (
         <div 
