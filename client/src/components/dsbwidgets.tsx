@@ -694,21 +694,6 @@ function DSBTable(props: { // the main feature of this website
   const [slidePhase, setSlidePhase] = useState<"idle" | "exiting" | "entering">("idle");
   const [pendingDay, setPendingDay] = useState<string | null>(null);
   const [showSkeleton, setShowSkeleton] = useState(true);
-  const prevCurrentDayRef = useRef<DayTimetable | null>(null);
-
-  useEffect(() => {
-    // Show skeleton for 1s when data first arrives (null -> value)
-    if (currentDay !== null && prevCurrentDayRef.current === null) {
-      setShowSkeleton(true);
-      const timer = setTimeout(() => setShowSkeleton(false), 700);
-      prevCurrentDayRef.current = currentDay;
-      return () => clearTimeout(timer);
-    }
-    prevCurrentDayRef.current = currentDay;
-    if (currentDay === null) {
-      setShowSkeleton(true);
-    }
-  }, [currentDay]);
 
   useEffect(() => {
     const handleEasterEgg = () => {
@@ -914,12 +899,21 @@ function DSBTable(props: { // the main feature of this website
     });
   }, [currentDay, filterStage, props.grade, props.courses, easterEggActive]);
 
-  const getDataAndUpdate = useCallback(async () => {
+  const refreshData = useCallback(async (): Promise<boolean> => {
+    setShowSkeleton(true);
     const status = await getData();
+    setTimeout(() => {
+      setShowSkeleton(false);
+    }, 700);
+    return status;
+  }, [getData]);
+
+  const getDataAndUpdate = useCallback(async () => {
+    const status = await refreshData();
     if (!!!status) {
       setSuccess(false);
     }
-  }, [setSuccess]);
+  }, [setSuccess, refreshData]);
 
   useEffect(() => { // load timetables on page load
     getDataAndUpdate();
@@ -935,7 +929,7 @@ function DSBTable(props: { // the main feature of this website
     <div class="default-div" id="vertretungsplan">
       <AutoHeight>
       <DSBTableToolbar
-        getData={getData}
+        getData={refreshData}
         setFilterStage={setFilterStage}
         timetable={timetable}
         currentDay={currentDay}
@@ -973,6 +967,10 @@ function DSBTable(props: { // the main feature of this website
               </table>
             </div>
           )}
+          <div style={{ marginTop: '20px' }}>
+            <h2 style={{ marginBottom: '12px' }}>Nachrichten</h2>
+            <SkeletonCard type="card" />
+          </div>
         </div>
       )}
       {currentDay === null && success === false && (
@@ -994,7 +992,7 @@ function DSBTable(props: { // the main feature of this website
             }
           }}
         >
-          <div key={"header-" + currentDay.date} style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', animation: 'slideUpFade 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both' }}>
+          <div key={"header-" + currentDay.date} style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', animation: 'slideUpFade 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) 0.2s both' }}>
             <div style={{ backgroundColor: 'var(--input-bg)', padding: '8px 16px', borderRadius: 'var(--rounding-sm)', border: '1px solid var(--brighter-color)' }}>
               <h2 style={{ margin: 0, fontSize: '1.2rem' }}>
                 {currentDay.day.substring(0, 2)}, {currentDay.date}
@@ -1010,11 +1008,11 @@ function DSBTable(props: { // the main feature of this website
           </div>
 
           {getFilteredSubstitutions().length == 0 && (
-            <div key={"nichts-" + currentDay.date} style={{ animation: 'tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) 0.05s both', marginTop: '20px' }}>
+            <div key={"nichts-" + currentDay.date} style={{ animation: 'tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) 0.25s both', marginTop: '20px' }}>
               <h2 style={{ marginBottom: '12px' }}>Vertretungen</h2>
-              <p>
-                <i>nichts...</i>
-              </p>
+              <div class="new-s" style={{ minHeight: '90px', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px 20px', textAlign: 'center' }}>
+                <b style={{ fontSize: '1.05rem', color: 'var(--text-color)' }}>Keine Vertretungen vorhanden für den ausgewählten Filter</b>
+              </div>
               {Math.random() > 0.975 && props.settings.easterEggs && ( // yeah this is the line for the easter egg if you want to add your own
                 <div>
 
@@ -1088,7 +1086,7 @@ function DSBTable(props: { // the main feature of this website
           )}
 
           {getFilteredSubstitutions().length > 0 && props.settings.newDesign === true && (
-            <div key={"subst-" + currentDay.date} style={{ animation: 'tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) 0.05s both', marginTop: '20px' }}>
+            <div key={"subst-" + currentDay.date} style={{ animation: 'tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) 0.25s both', marginTop: '20px' }}>
               <h2 style={{ marginBottom: '12px' }}>Vertretungen</h2>
               <div id="new-slist">
                 {/* <h1>NEUES DESIGN</h1> */}
@@ -1130,12 +1128,12 @@ function DSBTable(props: { // the main feature of this website
             </div>
           )}
 
-          <div key={"messages-" + currentDay.date} style={{ animation: 'tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) 0.1s both', marginTop: '20px' }}>
+          <div key={"messages-" + currentDay.date} style={{ animation: 'tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) 0.3s both', marginTop: '20px' }}>
             <h2 style={{ marginBottom: '12px' }}>Nachrichten</h2>
             {(currentDay.messages[0] === "" || currentDay.messages.length < 1) ? (
-              <p>
-                <i>nichts...</i>
-              </p>
+              <div class="new-s" style={{ minHeight: '90px', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px 20px', textAlign: 'center' }}>
+                <b style={{ fontSize: '1.05rem', color: 'var(--text-color)' }}>Keine Nachrichten vorhanden</b>
+              </div>
             ) : (
               <div class="new-s messages-tile" style={{ minHeight: 'auto', padding: '20px' }}>
                 {currentDay.messages.map((m, idx) => {
