@@ -3486,7 +3486,6 @@ function Events(props: {
   const [showSkeleton, setShowSkeleton] = useState(true);
 
   const fetchAllEvents = useCallback(async (): Promise<boolean> => {
-      if (loading) return false;
       setLoading(true);
       try {
         const now = new Date();
@@ -3575,7 +3574,7 @@ function Events(props: {
       } finally {
         setLoading(false);
       }
-  }, [loading]);
+  }, []);
 
   const refreshEvents = useCallback(async (): Promise<boolean> => {
     setShowSkeleton(true);
