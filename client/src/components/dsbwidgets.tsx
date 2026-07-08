@@ -24,25 +24,9 @@ function SkeletonCard(props: { type: "list" | "card" | "exam" | "event" | "heade
 
   if (props.type === "card") {
     return (
-      <div class="new-s skeleton-shimmer" style={{ minHeight: "120px", border: "1px solid var(--brighter-color)" }}>
-        {/* Badge strip – matches .s-free/.s-subst etc */}
-        <div style={{ padding: "12px 20px", borderBottom: "1px solid var(--brighter-color)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <div style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "var(--text-secondary)", opacity: 0.2 }} />
-            <div style={{ width: "70px", height: "12px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.15 }} />
-          </div>
-          <div style={{ width: "40px", height: "22px", backgroundColor: "var(--input-bg)", borderRadius: "6px", border: "1px solid var(--brighter-color)" }} />
-        </div>
-        {/* Title row – matches .s-title-row */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", alignItems: "center", margin: "18px 20px 10px", gap: "10px" }}>
-          <div style={{ width: "75%", height: "22px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.15 }} />
-          <div style={{ width: "55px", height: "18px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.12 }} />
-        </div>
-        {/* Detail grid – matches .s-grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", columnGap: "14px", rowGap: "8px", padding: "0 20px 20px" }}>
-          <div style={{ width: "35px", height: "13px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.12 }} />
-          <div style={{ width: "60px", height: "13px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.15 }} />
-        </div>
+      <div class="new-s skeleton-shimmer" style={{ minHeight: "90px", border: "1px solid var(--brighter-color)", padding: "16px 20px", display: "flex", flexDirection: "column", justifyContent: "center", gap: "10px" }}>
+        <div style={{ width: "55%", height: "16px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.15 }} />
+        <div style={{ width: "35%", height: "14px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.12 }} />
       </div>
     );
   }
@@ -716,7 +700,7 @@ function DSBTable(props: { // the main feature of this website
     // Show skeleton for 1s when data first arrives (null -> value)
     if (currentDay !== null && prevCurrentDayRef.current === null) {
       setShowSkeleton(true);
-      const timer = setTimeout(() => setShowSkeleton(false), 1000);
+      const timer = setTimeout(() => setShowSkeleton(false), 700);
       prevCurrentDayRef.current = currentDay;
       return () => clearTimeout(timer);
     }
