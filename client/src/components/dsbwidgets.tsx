@@ -1012,8 +1012,8 @@ function DSBTable(props: { // the main feature of this website
           {getFilteredSubstitutions().length == 0 && (
             <div key={"nichts-" + currentDay.date} style={{ animation: 'tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) 0.25s both', marginTop: '20px' }}>
               <h2 style={{ marginBottom: '12px' }}>Vertretungen</h2>
-              <div class="new-s" style={{ minHeight: '90px', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px 20px', textAlign: 'center' }}>
-                <b style={{ fontSize: '1.05rem', color: 'var(--text-color)' }}>Keine Vertretungen vorhanden für den ausgewählten Filter</b>
+              <div style={{ textAlign: 'center', padding: '32px 16px', backgroundColor: 'var(--input-bg)', borderRadius: 'var(--rounding)', border: '1px solid var(--brighter-color)' }}>
+                <b style={{ display: 'block', fontSize: '1.05rem' }}>{"Keine Vertretungen für den ausgewählten Filter vorhanden"}</b>
               </div>
               {Math.random() > 0.975 && props.settings.easterEggs && ( // yeah this is the line for the easter egg if you want to add your own
                 <div>
@@ -1133,8 +1133,8 @@ function DSBTable(props: { // the main feature of this website
           <div key={"messages-" + currentDay.date} style={{ animation: 'tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) 0.3s both', marginTop: '20px' }}>
             <h2 style={{ marginBottom: '12px' }}>Nachrichten</h2>
             {(currentDay.messages[0] === "" || currentDay.messages.length < 1) ? (
-              <div class="new-s" style={{ minHeight: '90px', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px 20px', textAlign: 'center' }}>
-                <b style={{ fontSize: '1.05rem', color: 'var(--text-color)' }}>Keine Nachrichten vorhanden</b>
+              <div style={{ textAlign: 'center', padding: '32px 16px', backgroundColor: 'var(--input-bg)', borderRadius: 'var(--rounding)', border: '1px solid var(--brighter-color)' }}>
+                <b style={{ display: 'block', fontSize: '1.05rem' }}>Keine Nachrichten vorhanden</b>
               </div>
             ) : (
               <div class="new-s messages-tile" style={{ minHeight: 'auto', padding: '20px' }}>
@@ -3627,37 +3627,46 @@ function Events(props: {
         style={{ position: 'absolute', top: '16px', right: '48px', zIndex: 10 }}
       />
       <h2>Termine</h2>
-      {!loading && availableMonths.length > 0 && (
-        <select 
-          class="events-month-select"
-          style={{ width: '100%', marginTop: '8px' }}
-          value={selectedMonth} 
-          onChange={handleMonthChange}
-        >
-          {availableMonths.map(monthKey => {
-            const [y, m] = monthKey.split('-');
-            return (
-              <option key={monthKey} value={monthKey}>
-                {getFullMonthName(parseInt(m) - 1)} {y}
-              </option>
-            );
-          })}
-        </select>
-      )}
-      <div class="events-today-badge">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-        <span>Heute ist <b>{week[new Date().getDay()]}</b>, der <b>{new Date().getDate() < 10 ? 0 : null}{new Date().getDate()}.{new Date().getMonth() + 1 < 10 ? 0 : null}{new Date().getMonth() + 1}.{new Date().getFullYear()}</b></span>
-      </div>
       {showSkeleton ? (
-        <div class="events-list" style={{ marginTop: '12px' }}>
-          <SkeletonCard type="event" />
-          <SkeletonCard type="event" />
-          <SkeletonCard type="event" />
+        <>
+          <div class="skeleton-shimmer" style={{ width: '100%', marginTop: '8px', height: '40px', borderRadius: 'var(--rounding-sm)', backgroundColor: 'var(--input-bg)', border: '1px solid var(--brighter-color)' }} />
+          <div class="skeleton-shimmer" style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 14px', borderRadius: 'var(--rounding-sm)', backgroundColor: 'var(--input-bg)', border: '1px solid var(--brighter-color)', marginTop: '8px' }}>
+            <div style={{ width: '16px', height: '16px', borderRadius: '3px', backgroundColor: 'var(--text-secondary)', opacity: 0.15, flexShrink: 0 }} />
+            <div style={{ width: '60%', height: '16px', borderRadius: '4px', backgroundColor: 'var(--text-secondary)', opacity: 0.15 }} />
+          </div>
+          <div class="events-list" style={{ marginTop: '12px' }}>
+            <SkeletonCard type="event" />
+            <SkeletonCard type="event" />
+            <SkeletonCard type="event" />
+          </div>
+        </>
+      ) : (
+        <>
+        {availableMonths.length > 0 && (
+          <select 
+            class="events-month-select"
+            style={{ width: '100%', marginTop: '8px' }}
+            value={selectedMonth} 
+            onChange={handleMonthChange}
+          >
+            {availableMonths.map(monthKey => {
+              const [y, m] = monthKey.split('-');
+              return (
+                <option key={monthKey} value={monthKey}>
+                  {getFullMonthName(parseInt(m) - 1)} {y}
+                </option>
+              );
+            })}
+          </select>
+        )}
+        <div class="events-today-badge">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+          <span>Heute ist <b>{week[new Date().getDay()]}</b>, der <b>{new Date().getDate() < 10 ? 0 : null}{new Date().getDate()}.{new Date().getMonth() + 1 < 10 ? 0 : null}{new Date().getMonth() + 1}.{new Date().getFullYear()}</b></span>
         </div>
-      ) : filteredEvents.length === 0 ? (
-        <div class="new-s" style={{ minHeight: '90px', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px 20px', textAlign: 'center', marginTop: '12px' }}>
-          <b style={{ fontSize: '1.05rem', color: 'var(--text-color)' }}>Aktuell keine Termine</b>
-        </div>
+        {filteredEvents.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '32px 16px', backgroundColor: 'var(--input-bg)', borderRadius: 'var(--rounding)', border: '1px solid var(--brighter-color)', marginTop: '12px' }}>
+            <b style={{ display: 'block', fontSize: '1.05rem' }}>Aktuell keine Termine</b>
+          </div>
       ) : (
         <div class="events-list" style={{ opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s', pointerEvents: loading ? 'none' : 'auto' }}>
           {filteredEvents.map((evt, idx) => {
@@ -3690,6 +3699,8 @@ function Events(props: {
             );
           })}
         </div>
+      )}
+      </>
       )}
       </AutoHeight>
     </div>
