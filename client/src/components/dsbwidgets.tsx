@@ -46,10 +46,13 @@ function SkeletonCard(props: { type: "list" | "card" | "exam" | "event" | "heade
   if (props.type === "event") {
     return (
       <div class="event-card skeleton-shimmer" style={{ border: "1px solid var(--brighter-color)" }}>
-        <div style={{ width: "70px", height: "70px", backgroundColor: "var(--accent-light)", opacity: 0.3, borderRight: "1px solid var(--brighter-color)" }} />
-        <div style={{ padding: "12px 16px", flex: 1, display: "flex", flexDirection: "column", gap: "8px" }}>
+        <div class="event-date" style={{ opacity: 0.5, borderRight: "1px solid var(--brighter-color)" }}>
+          <div style={{ width: "30px", height: "24px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.2 }} />
+          <div style={{ width: "40px", height: "14px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.15, marginTop: "4px" }} />
+        </div>
+        <div class="event-details" style={{ flex: 1 }}>
           <div style={{ width: "60%", height: "18px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.15 }} />
-          <div style={{ width: "40%", height: "14px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.15 }} />
+          <div style={{ width: "40%", height: "14px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.12, marginTop: "8px" }} />
         </div>
       </div>
     );
@@ -902,9 +905,8 @@ function DSBTable(props: { // the main feature of this website
   const refreshData = useCallback(async (): Promise<boolean> => {
     setShowSkeleton(true);
     const status = await getData();
-    setTimeout(() => {
-      setShowSkeleton(false);
-    }, 700);
+    await new Promise(r => setTimeout(r, 700));
+    setShowSkeleton(false);
     return status;
   }, [getData]);
 
@@ -3570,11 +3572,19 @@ function Events(props: {
       } finally {
         setLoading(false);
       }
-  }, []);
+  }, [loading]);
+
+  const refreshEvents = useCallback(async (): Promise<boolean> => {
+    setShowSkeleton(true);
+    const status = await fetchAllEvents();
+    await new Promise(r => setTimeout(r, 1000));
+    setShowSkeleton(false);
+    return status;
+  }, [fetchAllEvents]);
 
   useEffect(() => {
-    fetchAllEvents();
-  }, [fetchAllEvents]);
+    refreshEvents();
+  }, [refreshEvents]);
 
   if (props.settings.showTermine === false) return null;
 
@@ -3609,7 +3619,7 @@ function Events(props: {
         helpText="Hier findest du alle anstehenden Schultermine und Veranstaltungen. Diese werden automatisch aktualisiert."
       />
       <DSBRefreshButton
-        getData={fetchAllEvents}
+        getData={refreshEvents}
         success={refreshSuccess}
         setSuccess={setRefreshSuccess}
         style={{ position: 'absolute', top: '16px', right: '48px', zIndex: 10 }}
@@ -3636,14 +3646,16 @@ function Events(props: {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
         <span>Heute ist <b>{week[new Date().getDay()]}</b>, der <b>{new Date().getDate() < 10 ? 0 : null}{new Date().getDate()}.{new Date().getMonth() + 1 < 10 ? 0 : null}{new Date().getMonth() + 1}.{new Date().getFullYear()}</b></span>
       </div>
-      {loading && allEvents.length === 0 ? (
+      {showSkeleton ? (
         <div class="events-list" style={{ marginTop: '12px' }}>
           <SkeletonCard type="event" />
           <SkeletonCard type="event" />
           <SkeletonCard type="event" />
         </div>
       ) : filteredEvents.length === 0 ? (
-        <p style={{ marginTop: '12px', opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s' }}><i>Keine Termine in diesem Monat.</i></p>
+        <div class="new-s" style={{ minHeight: '90px', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '16px 20px', textAlign: 'center', marginTop: '12px' }}>
+          <b style={{ fontSize: '1.05rem', color: 'var(--text-color)' }}>Aktuell keine Termine</b>
+        </div>
       ) : (
         <div class="events-list" style={{ opacity: loading ? 0.6 : 1, transition: 'opacity 0.2s', pointerEvents: loading ? 'none' : 'auto' }}>
           {filteredEvents.map((evt, idx) => {
@@ -4534,7 +4546,7 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
         <div 
           class="overview-text-wrapper" 
           style={{ 
-            maxHeight: expanded ? (expandedHeight ? `${expandedHeight}px` : '1000px') : '110px'
+            height: expanded ? (expandedHeight ? `${expandedHeight}px` : 'auto') : '110px'
           }}
         >
         <p class="overview-text" style={{ margin: 0 }} ref={contentRef}>
