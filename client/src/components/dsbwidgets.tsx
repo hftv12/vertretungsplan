@@ -45,16 +45,10 @@ function SkeletonCard(props: { type: "list" | "card" | "exam" | "event" | "heade
 
   if (props.type === "event") {
     return (
-      <div class="event-card skeleton-shimmer" style={{ border: "1px solid var(--brighter-color)" }}>
-        <div class="event-date" style={{ opacity: 0.5, borderRight: "1px solid var(--brighter-color)" }}>
-          <div style={{ width: "30px", height: "24px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.2 }} />
-          <div style={{ width: "40px", height: "14px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.15, marginTop: "4px" }} />
+      <div class="skeleton-shimmer" style={{ padding: "16px 20px", backgroundColor: "var(--input-bg)", borderRadius: "var(--rounding-sm)", border: "1px solid var(--brighter-color)", display: "flex", flexDirection: "column", gap: "10px" }}>
+          <div style={{ width: "55%", height: "16px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.15 }} />
+          <div style={{ width: "35%", height: "14px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.12 }} />
         </div>
-        <div class="event-details" style={{ flex: 1 }}>
-          <div style={{ width: "60%", height: "18px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.15 }} />
-          <div style={{ width: "40%", height: "14px", backgroundColor: "var(--text-secondary)", borderRadius: "4px", opacity: 0.12, marginTop: "8px" }} />
-        </div>
-      </div>
     );
   }
 
