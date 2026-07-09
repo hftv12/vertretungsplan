@@ -4619,7 +4619,12 @@ export default function DSBWidgets(props: {
   version: string;
 }) { // main component that nests everything
   const [loggedIn, setLoggedIn] = useState(undefined); // hack to not show the login panel on page load
-  const [showWelcome, setShowWelcome] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(() => {
+    if (typeof localStorage !== "undefined") {
+      return localStorage.getItem("dismissedWelcome") !== "true";
+    }
+    return false;
+  });
   const [grade, setGrade] = useState({gradeName: "Q1", gradeLetter: ""} as GradeInfo); // it has to be this way cause fuck me I guess
   const [courses, setCourses] = useState(Array<CourseInfo>(0));
   const [settings, setSettings] = useState(
@@ -4643,10 +4648,6 @@ export default function DSBWidgets(props: {
     validateCredentials().then((valid) => {
       setLoggedIn(valid); // log in if the credentials are valid
     });
-    
-    if (localStorage.getItem("dismissedWelcome") !== "true") {
-      setShowWelcome(true);
-    }
   }, []);
 
   const dismissWelcome = () => {
