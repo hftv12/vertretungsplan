@@ -4642,7 +4642,16 @@ export default function DSBWidgets(props: {
     } as DSBSettings); // what
 
   const subjectSelectRef = useRef(null);
-  const [welcomeWrapper] = useAutoAnimate();
+  const [welcomeWrapper, enableAutoAnimate] = useAutoAnimate();
+
+  // Delay useAutoAnimate activation so it doesn't override the initial CSS entry animation.
+  // On mobile PWAs, auto-animate detects settings-triggered DOM changes and replaces
+  // the smooth CSS slideUpFade with its own fast ~250ms inline animation.
+  useEffect(() => {
+    enableAutoAnimate(false); // disable immediately
+    const timer = setTimeout(() => enableAutoAnimate(true), 1200);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     validateCredentials().then((valid) => {
