@@ -477,7 +477,7 @@ body {
 }
 
 .center-rows > * {
-    animation: slideUpFade 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: slideUpFade 1s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .center-rows>*:nth-child(1) {
@@ -527,12 +527,16 @@ body {
 
 /*#region Animations*/
 @keyframes slideUpFade {
-    from {
+    0% {
         opacity: 0;
-        transform: translateY(16px);
+        transform: translateY(30px);
     }
 
-    to {
+    60% {
+        opacity: 1;
+    }
+
+    100% {
         opacity: 1;
         transform: translateY(0);
     }
