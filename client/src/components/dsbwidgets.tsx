@@ -4637,7 +4637,6 @@ export default function DSBWidgets(props: {
     } as DSBSettings); // what
 
   const subjectSelectRef = useRef(null);
-  const [showLoading, setShowLoading] = useState(false);
   const [welcomeWrapper] = useAutoAnimate();
 
   useEffect(() => {
@@ -4648,9 +4647,6 @@ export default function DSBWidgets(props: {
     if (localStorage.getItem("dismissedWelcome") !== "true") {
       setShowWelcome(true);
     }
-
-    const loadingTimeout = setTimeout(() => setShowLoading(true), 2500);
-    return () => clearTimeout(loadingTimeout);
   }, []);
 
   const dismissWelcome = () => {
@@ -4669,11 +4665,6 @@ export default function DSBWidgets(props: {
   return (
     <div>
       <div class="center">
-        {loggedIn === undefined && showLoading && (
-          <div class="default-div" style={{ animation: 'fadeInScale 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}>
-            <h2>Lade, bitte warten...</h2>
-          </div>
-        )}
         {loggedIn === false && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%', maxWidth: '500px', margin: '0 auto' }}>
             <DSBLogin setLoggedIn={setLoggedIn} />
@@ -4687,7 +4678,7 @@ export default function DSBWidgets(props: {
             </div>
           </div>
         )}
-        {loggedIn && (
+        {loggedIn !== false && (
           <div class="center-rows" ref={welcomeWrapper}>
             {showWelcome && <WelcomeBox onDismiss={dismissWelcome} grade={grade} setGrade={setGrade} />}
             {settings.showOverview !== false && <OverviewBox grade={grade} courses={courses} settings={settings} />}
