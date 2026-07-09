@@ -4642,14 +4642,14 @@ export default function DSBWidgets(props: {
     } as DSBSettings); // what
 
   const subjectSelectRef = useRef(null);
-  const [welcomeWrapper, enableAutoAnimate] = useAutoAnimate();
+  const [welcomeWrapper] = useAutoAnimate();
+  const [autoAnimateReady, setAutoAnimateReady] = useState(false);
 
-  // Delay useAutoAnimate activation so it doesn't override the initial CSS entry animation.
-  // On mobile PWAs, auto-animate detects settings-triggered DOM changes and replaces
-  // the smooth CSS slideUpFade with its own fast ~250ms inline animation.
+  // Don't attach useAutoAnimate to the DOM until the CSS entry animation is done.
+  // useAutoAnimate's MutationObserver sets inline animation styles that override CSS,
+  // causing the smooth slideUpFade to be replaced with a fast ~250ms animation on mobile.
   useEffect(() => {
-    enableAutoAnimate(false); // disable immediately
-    const timer = setTimeout(() => enableAutoAnimate(true), 1200);
+    const timer = setTimeout(() => setAutoAnimateReady(true), 1500);
     return () => clearTimeout(timer);
   }, []);
 
@@ -4689,7 +4689,7 @@ export default function DSBWidgets(props: {
           </div>
         )}
         {loggedIn !== false && (
-          <div class="center-rows" ref={welcomeWrapper}>
+          <div class="center-rows" ref={autoAnimateReady ? welcomeWrapper : undefined}>
             {showWelcome && <WelcomeBox onDismiss={dismissWelcome} grade={grade} setGrade={setGrade} />}
             {settings.showOverview !== false && <OverviewBox grade={grade} courses={courses} settings={settings} />}
             <DSBTable grade={grade} courses={courses} settings={settings} />
