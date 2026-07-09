@@ -5,8 +5,14 @@ import OnlineIndicator from "../components/onlineindicator";
 
 import "./_style.css";
 
-const version = "v2.17.8";
+const version = "v2.17.9";
 ---
+
+<script>
+    if ('scrollRestoration' in history) {
+        history.scrollRestoration = 'manual';
+    }
+</script>
 
 <Legacy
     title="DSB Vertretungsplan"
