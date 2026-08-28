@@ -3460,14 +3460,67 @@ const parseICal = (icsData: string): AppEvent[] => {
 };
 
 const fetchWithCorsProxy = async (targetUrl: string): Promise<string | null> => {
-  const proxies = [
-    (url: string) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-    (url: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+  const fetchStrategies: (() => Promise<string | null>)[] = [
+    // 1. Direct fetch
+    async () => {
+      const res = await fetch(targetUrl);
+      if (res.ok) {
+        const text = await res.text();
+        if (text && text.includes("BEGIN:VCALENDAR")) return text;
+      }
+      return null;
+    },
+    // 2. proxy.cors.sh
+    async () => {
+      const res = await fetch(`https://proxy.cors.sh/${targetUrl}`);
+      if (res.ok) {
+        const text = await res.text();
+        if (text && text.includes("BEGIN:VCALENDAR")) return text;
+      }
+      return null;
+    },
+    // 3. codetabs proxy
+    async () => {
+      const res = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`);
+      if (res.ok) {
+        const text = await res.text();
+        if (text && text.includes("BEGIN:VCALENDAR")) return text;
+      }
+      return null;
+    },
+    // 4. allorigins get (JSON response)
+    async () => {
+      const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json && json.contents && json.contents.includes("BEGIN:VCALENDAR")) return json.contents;
+      }
+      return null;
+    },
+    // 5. corsproxy.io
+    async () => {
+      const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(targetUrl)}`);
+      if (res.ok) {
+        const text = await res.text();
+        if (text && text.includes("BEGIN:VCALENDAR")) return text;
+      }
+      return null;
+    },
+    // 6. allorigins raw
+    async () => {
+      const res = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`);
+      if (res.ok) {
+        const text = await res.text();
+        if (text && text.includes("BEGIN:VCALENDAR")) return text;
+      }
+      return null;
+    }
   ];
-  for (const makeProxy of proxies) {
+
+  for (const strategy of fetchStrategies) {
     try {
-      const res = await fetch(makeProxy(targetUrl));
-      if (res.ok) return await res.text();
+      const text = await strategy();
+      if (text) return text;
     } catch {}
   }
   return null;
@@ -3494,10 +3547,11 @@ function Events(props: {
         const currentYear = now.getFullYear();
         const currentMonth = now.getMonth(); // 0-indexed
         
-        // Build list of months to fetch: current month through end of year (or at least September)
+        // Build list of months to fetch: include previous month to capture spanning events, through end of year / at least September
         const monthsToFetch: {year: number, month: number}[] = [];
+        const startMonth = Math.max(0, currentMonth - 1);
         const endMonth = Math.max(8, currentMonth); // at least until September (index 8)
-        for (let m = currentMonth; m <= endMonth; m++) {
+        for (let m = startMonth; m <= endMonth; m++) {
           monthsToFetch.push({ year: currentYear, month: m });
         }
         
