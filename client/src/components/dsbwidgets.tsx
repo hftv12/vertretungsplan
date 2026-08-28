@@ -269,7 +269,7 @@ function isSubstitutionForCourse(s: Substitution, courseStr: string, courses: Co
 function calcIsSchoolDayOver(weekType: string): boolean {
   const now = new Date();
   const hour = now.getHours();
-  let isOver = hour > 16 || (hour === 16 && now.getMinutes() >= 15);
+  let isOver = hour >= 17;
   try {
     const ttDataRaw = localStorage.getItem("PersonalTimetableData");
     if (ttDataRaw) {
@@ -291,7 +291,7 @@ function calcIsSchoolDayOver(weekType: string): boolean {
             const hourEndTimes: Record<number, string> = {
               1: "08:35", 2: "09:25", 3: "10:25", 4: "11:15",
               5: "12:15", 6: "13:05", 7: "13:55", 8: "14:45",
-              9: "15:30", 10: "16:15"
+              9: "15:30", 10: "16:15", 11: "17:00"
             };
             const endStr = hourEndTimes[lastHour] || "16:15";
             const [endH, endM] = endStr.split(":").map(Number);
@@ -1338,6 +1338,10 @@ function CourseAdder(props: { // thing for adding courses (yes it's seperate I'm
             <option value='MU'>Musik</option>
             <option value='SP'>Sport</option>
           </optgroup>
+          <optgroup label='Zusatzkurse'>
+            <option value='GE'>Geschichte (ZK)</option>
+            <option value='SW'>Sozialwissenschaften (ZK)</option>
+          </optgroup>
         </select>
 
         <label for='course-id'>Kurs:</label>
@@ -1351,8 +1355,8 @@ function CourseAdder(props: { // thing for adding courses (yes it's seperate I'm
           <option value='LK1'>LK1</option>
           <option value='LK2'>LK2</option>
           <option value='LK3'>LK3</option>
-          {/* <option value='LK4'>LK4</option> */}
-          {/* <option value='PJK1'>PJK1</option> */}
+          <option value='ZK1'>ZK1</option>
+          <option value='ZK2'>ZK2</option>
         </select>
 
         <Placeholder height='26px' />
@@ -3126,6 +3130,7 @@ function PersonalTimetable(props: {
     { num: 8, label: "8. Stunde", type: "hour", start: "14:00", end: "14:45" },
     { num: 9, label: "9. Stunde", type: "hour", start: "14:45", end: "15:30" },
     { num: 10, label: "10. Stunde", type: "hour", start: "15:30", end: "16:15" },
+    { num: 11, label: "11. Stunde", type: "hour", start: "16:15", end: "17:00" },
   ];
 
   const isCurrentHour = (dayIdx: number, start?: string, end?: string) => {
@@ -3152,12 +3157,15 @@ function PersonalTimetable(props: {
         const weekStr = e.detail.week as string;
         setCurrentWeek(weekStr.includes("B") ? "B" : "A");
         
-        // Auto-select day
-        if (weekStr.includes("Montag")) scrollToDay(0);
-        else if (weekStr.includes("Dienstag")) scrollToDay(1);
-        else if (weekStr.includes("Mittwoch")) scrollToDay(2);
-        else if (weekStr.includes("Donnerstag")) scrollToDay(3);
-        else if (weekStr.includes("Freitag")) scrollToDay(4);
+        // Auto-select day only if the DSB day matches today's actual weekday
+        const now = new Date();
+        const todayDayIdx = now.getDay(); // 0=Sun, 1=Mon, ..., 5=Fri, 6=Sat
+        const dsbDayNames = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
+        const matchedDayIdx = dsbDayNames.findIndex(d => weekStr.includes(d));
+        // Only auto-scroll if the DSB day is today's actual weekday (todayDayIdx 1-5 maps to index 0-4)
+        if (matchedDayIdx !== -1 && matchedDayIdx === todayDayIdx - 1) {
+          scrollToDay(matchedDayIdx);
+        }
       }
     };
     window.addEventListener("dsb-week-switch", handler);
