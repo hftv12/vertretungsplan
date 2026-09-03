@@ -2295,12 +2295,6 @@ a.fakebutton:active {
     color: var(--accent-color);
     background: var(--accent-light);
 }
-.timetable-tab .today-dot {
-    margin-left: 3px;
-    font-size: 1rem;
-    line-height: 0;
-    vertical-align: middle;
-}
 
 .timetable-header-row {
     display: flex;
@@ -2386,9 +2380,11 @@ a.fakebutton:active {
 .timetable-course-name {
     white-space: nowrap;
     overflow: hidden;
-    text-overflow: ellipsis;
+    text-overflow: clip;
     flex: 1;
     min-width: 0;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 18px), transparent 100%);
+    mask-image: linear-gradient(to right, #000 calc(100% - 18px), transparent 100%);
 }
 .timetable-course-room {
     flex-shrink: 0;

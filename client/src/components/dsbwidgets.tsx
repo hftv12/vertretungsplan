@@ -3388,7 +3388,7 @@ function PersonalTimetable(props: {
               class={`timetable-tab ${idx === currentDayIdx ? "active" : ""} ${isTodayTab ? "is-today" : ""}`} 
               onClick={() => scrollToDay(idx)}
             >
-              {day.short} {isTodayTab && <span class="today-dot">•</span>}
+              {day.short}
             </div>
           );
         })}
@@ -3567,7 +3567,14 @@ const fetchWithCorsProxy = async (targetUrl: string): Promise<string | null> => 
       const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`);
       if (res.ok) {
         const json = await res.json();
-        if (json && json.contents && json.contents.includes("BEGIN:VCALENDAR")) return json.contents;
+        let contents = json?.contents;
+        if (typeof contents === 'string' && contents.startsWith('data:')) {
+          try {
+            const base64Part = contents.split(',')[1];
+            if (base64Part) contents = atob(base64Part);
+          } catch(e) {}
+        }
+        if (contents && contents.includes("BEGIN:VCALENDAR")) return contents;
       }
       return null;
     },
@@ -3617,40 +3624,47 @@ function Events(props: {
   const fetchAllEvents = useCallback(async (): Promise<boolean> => {
       setLoading(true);
       try {
-        const now = new Date();
-        const currentYear = now.getFullYear();
-        const currentMonth = now.getMonth(); // 0-indexed
-        
-        // Build list of months to fetch: include previous month to capture spanning events, and next 6 months
-        const monthsToFetch: {year: number, month: number}[] = [];
-        for (let offset = -1; offset <= 6; offset++) {
-          const d = new Date(currentYear, currentMonth + offset, 1);
-          monthsToFetch.push({ year: d.getFullYear(), month: d.getMonth() });
-        }
-        
-        // Fetch all months in parallel
-        const allParsed: AppEvent[] = [];
+        let allParsed: AppEvent[] = [];
         const seenIds = new Set<string>();
-        
-        await Promise.all(monthsToFetch.map(async ({ year, month }) => {
-          try {
-            const monthStr = String(month + 1).padStart(2, '0');
-            const targetUrl = `https://www.stiftisches.de/termine/monat/${year}-${monthStr}/?ical=1`;
-            const text = await fetchWithCorsProxy(targetUrl);
-            if (!text) return;
-            const parsed = parseICal(text);
-            for (const evt of parsed) {
-              // Deduplicate by title + date combo (since cross-month events appear in multiple fetches)
-              const evtKey = `${evt.title}_${evt.date.getTime()}_${evt.endDate?.getTime() || ''}`;
-              if (!seenIds.has(evtKey)) {
-                seenIds.add(evtKey);
-                allParsed.push(evt);
-              }
+
+        // Try main feed first (contains events for entire year in 1 fast call)
+        const mainFeedText = await fetchWithCorsProxy("https://www.stiftisches.de/termine/?ical=1");
+        if (mainFeedText) {
+          const parsed = parseICal(mainFeedText);
+          for (const evt of parsed) {
+            const evtKey = `${evt.title}_${evt.date.getTime()}_${evt.endDate?.getTime() || ''}`;
+            if (!seenIds.has(evtKey)) {
+              seenIds.add(evtKey);
+              allParsed.push(evt);
             }
-          } catch (err) {
-            console.error(`Failed to fetch month ${month + 1}`, err);
           }
-        }));
+        } else {
+          // Fallback: fetch individual month endpoints if main feed is blocked
+          const now = new Date();
+          const currentYear = now.getFullYear();
+          const currentMonth = now.getMonth();
+          const monthsToFetch: {year: number, month: number}[] = [];
+          for (let offset = -1; offset <= 4; offset++) {
+            const d = new Date(currentYear, currentMonth + offset, 1);
+            monthsToFetch.push({ year: d.getFullYear(), month: d.getMonth() });
+          }
+          await Promise.all(monthsToFetch.map(async ({ year, month }) => {
+            try {
+              const monthStr = String(month + 1).padStart(2, '0');
+              const targetUrl = `https://www.stiftisches.de/termine/monat/${year}-${monthStr}/?ical=1`;
+              const text = await fetchWithCorsProxy(targetUrl);
+              if (!text) return;
+              const parsed = parseICal(text);
+              for (const evt of parsed) {
+                const evtKey = `${evt.title}_${evt.date.getTime()}_${evt.endDate?.getTime() || ''}`;
+                if (!seenIds.has(evtKey)) {
+                  seenIds.add(evtKey);
+                  allParsed.push(evt);
+                }
+              }
+            } catch (err) {}
+          }));
+        }
         
         const today = new Date();
         today.setHours(0,0,0,0);
