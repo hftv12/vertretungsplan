@@ -3088,6 +3088,18 @@ export function Settings(props: { // settings block
 }
 //#endregion
 
+function getISOWeekNumber(d: Date): number {
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const dayNum = date.getUTCDay() || 7;
+  date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+  return Math.ceil((((date.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+}
+
+function getCalendarWeekType(d: Date = new Date()): "A" | "B" {
+  return getISOWeekNumber(d) % 2 === 0 ? "B" : "A";
+}
+
 //#region Personal Timetable
 function PersonalTimetable(props: {
   courses: CourseInfo[],
@@ -3095,7 +3107,7 @@ function PersonalTimetable(props: {
   grade: GradeInfo,
 }) {
   const [isEditMode, setIsEditMode] = useState(false);
-  const [currentWeek, setCurrentWeek] = useState<"A" | "B">("A");
+  const [currentWeek, setCurrentWeek] = useState<"A" | "B">(getCalendarWeekType());
   const [timetableData, setTimetableData] = useState<any>({});
   const [currentDayIdx, setCurrentDayIdx] = useState(new Date().getDay() >= 1 && new Date().getDay() <= 5 ? new Date().getDay() - 1 : 0);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -3133,9 +3145,60 @@ function PersonalTimetable(props: {
     { num: 11, label: "11. Stunde", type: "hour", start: "16:15", end: "17:00" },
   ];
 
+  const determineInitialTarget = (ttData: any): { dayIdx: number; weekType: "A" | "B" } => {
+    const now = new Date();
+    const realWeek = getCalendarWeekType(now);
+    const dayOfWeek = now.getDay(); // 0=Sun, 1=Mon, ..., 5=Fri, 6=Sat
+    const dayNames = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
+
+    const isSchoolOverForDay = (dayName: string, wType: string): boolean => {
+      const dayData = ttData?.[wType]?.[dayName];
+      let lastHour = 0;
+      if (dayData) {
+        for (const hStr in dayData) {
+          if (dayData[hStr]) {
+            const hNum = parseInt(hStr);
+            if (hNum > lastHour) lastHour = hNum;
+          }
+        }
+      }
+      const hourEndTimes: Record<number, string> = {
+        1: "08:35", 2: "09:25", 3: "10:25", 4: "11:15",
+        5: "12:15", 6: "13:05", 7: "13:55", 8: "14:45",
+        9: "15:30", 10: "16:15", 11: "17:00"
+      };
+      const endStr = hourEndTimes[lastHour || 6] || "13:05";
+      const [endH, endM] = endStr.split(":").map(Number);
+      const currH = now.getHours();
+      const currM = now.getMinutes();
+      return currH > endH || (currH === endH && currM >= endM);
+    };
+
+    if (dayOfWeek >= 1 && dayOfWeek <= 4) {
+      const todayName = dayNames[dayOfWeek - 1];
+      if (isSchoolOverForDay(todayName, realWeek)) {
+        return { dayIdx: dayOfWeek, weekType: realWeek };
+      } else {
+        return { dayIdx: dayOfWeek - 1, weekType: realWeek };
+      }
+    } else if (dayOfWeek === 5) {
+      if (isSchoolOverForDay("Freitag", realWeek)) {
+        const nextWeekType = realWeek === "A" ? "B" : "A";
+        return { dayIdx: 0, weekType: nextWeekType };
+      } else {
+        return { dayIdx: 4, weekType: realWeek };
+      }
+    } else {
+      const nextWeekType = realWeek === "A" ? "B" : "A";
+      return { dayIdx: 0, weekType: nextWeekType };
+    }
+  };
+
   const isCurrentHour = (dayIdx: number, start?: string, end?: string) => {
-    if (currentTime.getDay() !== dayIdx + 1) return false;
     if (!start || !end) return false;
+    const realDayIdx = currentTime.getDay() - 1; // 0=Mon, ..., 4=Fri
+    if (realDayIdx !== dayIdx) return false;
+    if (currentWeek !== getCalendarWeekType(currentTime)) return false;
 
     const currentMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
     const startParts = start.split(":");
@@ -3149,23 +3212,27 @@ function PersonalTimetable(props: {
 
   useEffect(() => {
     const data = localStorage.getItem("PersonalTimetableData");
+    let parsedTtData: any = null;
     if (data) {
-      try { setTimetableData(JSON.parse(data)); } catch (e) { }
+      try {
+        parsedTtData = JSON.parse(data);
+        setTimetableData(parsedTtData);
+      } catch (e) { }
     }
+    const initialTarget = determineInitialTarget(parsedTtData);
+    setCurrentWeek(initialTarget.weekType);
+    setCurrentDayIdx(initialTarget.dayIdx);
+    setTimeout(() => {
+      if (containerRef.current) {
+        const width = containerRef.current.clientWidth;
+        containerRef.current.scrollTo({ left: initialTarget.dayIdx * width, behavior: "auto" });
+      }
+    }, 50);
+
     const handler = (e: any) => {
       if (e.detail?.week) {
         const weekStr = e.detail.week as string;
         setCurrentWeek(weekStr.includes("B") ? "B" : "A");
-        
-        // Auto-select day only if the DSB day matches today's actual weekday
-        const now = new Date();
-        const todayDayIdx = now.getDay(); // 0=Sun, 1=Mon, ..., 5=Fri, 6=Sat
-        const dsbDayNames = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
-        const matchedDayIdx = dsbDayNames.findIndex(d => weekStr.includes(d));
-        // Only auto-scroll if the DSB day is today's actual weekday (todayDayIdx 1-5 maps to index 0-4)
-        if (matchedDayIdx !== -1 && matchedDayIdx === todayDayIdx - 1) {
-          scrollToDay(matchedDayIdx);
-        }
       }
     };
     window.addEventListener("dsb-week-switch", handler);
@@ -3313,11 +3380,18 @@ function PersonalTimetable(props: {
       </div>
 
       <div class="timetable-tabs">
-        {days.map((day, idx) => (
-          <div key={day.full} class={`timetable-tab ${idx === currentDayIdx ? "active" : ""}`} onClick={() => scrollToDay(idx)}>
-            {day.short}
-          </div>
-        ))}
+        {days.map((day, idx) => {
+          const isTodayTab = currentTime.getDay() - 1 === idx && currentWeek === getCalendarWeekType(currentTime);
+          return (
+            <div 
+              key={day.full} 
+              class={`timetable-tab ${idx === currentDayIdx ? "active" : ""} ${isTodayTab ? "is-today" : ""}`} 
+              onClick={() => scrollToDay(idx)}
+            >
+              {day.short} {isTodayTab && <span class="today-dot">•</span>}
+            </div>
+          );
+        })}
       </div>
 
       <div class="timetable-container" ref={containerRef} onScroll={handleScroll}
@@ -3360,8 +3434,8 @@ function PersonalTimetable(props: {
                   <div class={`timetable-course ${!timetableData[currentWeek]?.[day.full]?.[h.num] ? "empty" : ""}`} style={{ borderColor: getCourseInfo(timetableData[currentWeek]?.[day.full]?.[h.num])?.color || "var(--brighter-color)", ...getSubstitutionStyle(day.full, h.num, timetableData[currentWeek]?.[day.full]?.[h.num]) }}>
                     {timetableData[currentWeek]?.[day.full]?.[h.num] ? (
                       <>
-                        <span>{getCourseInfo(timetableData[currentWeek]?.[day.full]?.[h.num])?.subject_name || timetableData[currentWeek]?.[day.full]?.[h.num]}</span>
-                        <span style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>
+                        <span class="timetable-course-name">{getCourseInfo(timetableData[currentWeek]?.[day.full]?.[h.num])?.subject_name || timetableData[currentWeek]?.[day.full]?.[h.num]}</span>
+                        <span class="timetable-course-room" style={{ color: "var(--text-secondary)", fontSize: "0.9rem" }}>
                           {getCourseInfo(timetableData[currentWeek]?.[day.full]?.[h.num])?.room || getCourseInfo(timetableData[currentWeek]?.[day.full]?.[h.num])?.course}
                         </span>
                       </>
@@ -3547,12 +3621,11 @@ function Events(props: {
         const currentYear = now.getFullYear();
         const currentMonth = now.getMonth(); // 0-indexed
         
-        // Build list of months to fetch: include previous month to capture spanning events, through end of year / at least September
+        // Build list of months to fetch: include previous month to capture spanning events, and next 6 months
         const monthsToFetch: {year: number, month: number}[] = [];
-        const startMonth = Math.max(0, currentMonth - 1);
-        const endMonth = Math.max(8, currentMonth); // at least until September (index 8)
-        for (let m = startMonth; m <= endMonth; m++) {
-          monthsToFetch.push({ year: currentYear, month: m });
+        for (let offset = -1; offset <= 6; offset++) {
+          const d = new Date(currentYear, currentMonth + offset, 1);
+          monthsToFetch.push({ year: d.getFullYear(), month: d.getMonth() });
         }
         
         // Fetch all months in parallel
