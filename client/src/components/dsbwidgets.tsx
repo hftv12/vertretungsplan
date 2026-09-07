@@ -3106,10 +3106,70 @@ function PersonalTimetable(props: {
   settings: DSBSettings,
   grade: GradeInfo,
 }) {
+  const isProgrammaticScroll = useRef(false);
+  const scrollTimeout = useRef<any>(null);
+
+  const getInitialTargetFromStorage = () => {
+    let parsedTtData: any = null;
+    try {
+      const data = typeof window !== "undefined" ? localStorage.getItem("PersonalTimetableData") : null;
+      if (data) parsedTtData = JSON.parse(data);
+    } catch (e) {}
+    
+    const now = new Date();
+    const realWeek = getCalendarWeekType(now);
+    const dayOfWeek = now.getDay();
+    const dayNames = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
+
+    const isSchoolOverForDay = (dayName: string, wType: string): boolean => {
+      const dayData = parsedTtData?.[wType]?.[dayName];
+      let lastHour = 0;
+      if (dayData) {
+        for (const hStr in dayData) {
+          if (dayData[hStr]) {
+            const hNum = parseInt(hStr);
+            if (hNum > lastHour) lastHour = hNum;
+          }
+        }
+      }
+      const hourEndTimes: Record<number, string> = {
+        1: "08:35", 2: "09:25", 3: "10:25", 4: "11:15",
+        5: "12:15", 6: "13:05", 7: "13:55", 8: "14:45",
+        9: "15:30", 10: "16:15", 11: "17:00"
+      };
+      const endStr = hourEndTimes[lastHour || 6] || "13:05";
+      const [endH, endM] = endStr.split(":").map(Number);
+      const currH = now.getHours();
+      const currM = now.getMinutes();
+      return currH > endH || (currH === endH && currM >= endM);
+    };
+
+    if (dayOfWeek >= 1 && dayOfWeek <= 4) {
+      const todayName = dayNames[dayOfWeek - 1];
+      if (isSchoolOverForDay(todayName, realWeek)) {
+        return { dayIdx: dayOfWeek, weekType: realWeek };
+      } else {
+        return { dayIdx: dayOfWeek - 1, weekType: realWeek };
+      }
+    } else if (dayOfWeek === 5) {
+      if (isSchoolOverForDay("Freitag", realWeek)) {
+        const nextWeekType = realWeek === "A" ? "B" : "A";
+        return { dayIdx: 0, weekType: nextWeekType };
+      } else {
+        return { dayIdx: 4, weekType: realWeek };
+      }
+    } else {
+      const nextWeekType = realWeek === "A" ? "B" : "A";
+      return { dayIdx: 0, weekType: nextWeekType };
+    }
+  };
+
+  const initialTarget = useRef(getInitialTargetFromStorage());
+
   const [isEditMode, setIsEditMode] = useState(false);
-  const [currentWeek, setCurrentWeek] = useState<"A" | "B">(getCalendarWeekType());
+  const [currentWeek, setCurrentWeek] = useState<"A" | "B">(initialTarget.current.weekType);
   const [timetableData, setTimetableData] = useState<any>({});
-  const [currentDayIdx, setCurrentDayIdx] = useState(new Date().getDay() >= 1 && new Date().getDay() <= 5 ? new Date().getDay() - 1 : 0);
+  const [currentDayIdx, setCurrentDayIdx] = useState<number>(initialTarget.current.dayIdx);
   const containerRef = useRef<HTMLDivElement>(null);
   const dayWrapperRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [timetableHeight, setTimetableHeight] = useState<number | null>(null);
@@ -3219,15 +3279,22 @@ function PersonalTimetable(props: {
         setTimetableData(parsedTtData);
       } catch (e) { }
     }
-    const initialTarget = determineInitialTarget(parsedTtData);
-    setCurrentWeek(initialTarget.weekType);
-    setCurrentDayIdx(initialTarget.dayIdx);
-    setTimeout(() => {
+    const initialTargetVal = determineInitialTarget(parsedTtData);
+    setCurrentWeek(initialTargetVal.weekType);
+    setCurrentDayIdx(initialTargetVal.dayIdx);
+    
+    isProgrammaticScroll.current = true;
+    if (containerRef.current) {
+      const width = containerRef.current.clientWidth;
+      containerRef.current.scrollTo({ left: initialTargetVal.dayIdx * width, behavior: "auto" });
+    }
+    const initTimer = setTimeout(() => {
       if (containerRef.current) {
         const width = containerRef.current.clientWidth;
-        containerRef.current.scrollTo({ left: initialTarget.dayIdx * width, behavior: "auto" });
+        containerRef.current.scrollTo({ left: initialTargetVal.dayIdx * width, behavior: "auto" });
       }
-    }, 50);
+      isProgrammaticScroll.current = false;
+    }, 150);
 
     const handler = (e: any) => {
       if (e.detail?.week) {
@@ -3249,7 +3316,10 @@ function PersonalTimetable(props: {
     };
     fetchDSB();
     
-    return () => window.removeEventListener("dsb-week-switch", handler);
+    return () => {
+      clearTimeout(initTimer);
+      window.removeEventListener("dsb-week-switch", handler);
+    };
   }, []);
 
   const saveTimetableData = (newData: any) => {
@@ -3274,19 +3344,28 @@ function PersonalTimetable(props: {
   };
 
   const scrollToDay = (idx: number) => {
+    isProgrammaticScroll.current = true;
     setCurrentDayIdx(idx);
     if (containerRef.current) {
       const width = containerRef.current.clientWidth;
       containerRef.current.scrollTo({ left: idx * width, behavior: "smooth" });
     }
+    if (scrollTimeout.current) clearTimeout(scrollTimeout.current);
+    scrollTimeout.current = setTimeout(() => {
+      isProgrammaticScroll.current = false;
+    }, 400);
   };
 
   const handleScroll = () => {
+    if (isProgrammaticScroll.current) return;
     if (containerRef.current) {
       const width = containerRef.current.clientWidth;
+      if (!width) return;
       const scrollLeft = containerRef.current.scrollLeft;
       const newIdx = Math.round(scrollLeft / width);
-      if (newIdx !== currentDayIdx) setCurrentDayIdx(newIdx);
+      if (newIdx !== currentDayIdx && newIdx >= 0 && newIdx < days.length) {
+        setCurrentDayIdx(newIdx);
+      }
     }
   };
 
@@ -3535,36 +3614,27 @@ const parseICal = (icsData: string): AppEvent[] => {
 
 const fetchWithCorsProxy = async (targetUrl: string): Promise<string | null> => {
   const fetchStrategies: (() => Promise<string | null>)[] = [
-    // 1. Direct fetch
+    // 1. Direct fetch (fast timeout)
     async () => {
-      const res = await fetch(targetUrl);
+      const res = await fetch(targetUrl, { signal: AbortSignal.timeout(4000) });
       if (res.ok) {
         const text = await res.text();
         if (text && text.includes("BEGIN:VCALENDAR")) return text;
       }
       return null;
     },
-    // 2. proxy.cors.sh
+    // 2. allorigins raw (fast & reliable)
     async () => {
-      const res = await fetch(`https://proxy.cors.sh/${targetUrl}`);
+      const res = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`, { signal: AbortSignal.timeout(6000) });
       if (res.ok) {
         const text = await res.text();
         if (text && text.includes("BEGIN:VCALENDAR")) return text;
       }
       return null;
     },
-    // 3. codetabs proxy
+    // 3. allorigins get (JSON response wrapper)
     async () => {
-      const res = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`);
-      if (res.ok) {
-        const text = await res.text();
-        if (text && text.includes("BEGIN:VCALENDAR")) return text;
-      }
-      return null;
-    },
-    // 4. allorigins get (JSON response)
-    async () => {
-      const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`);
+      const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`, { signal: AbortSignal.timeout(6000) });
       if (res.ok) {
         const json = await res.json();
         let contents = json?.contents;
@@ -3578,18 +3648,9 @@ const fetchWithCorsProxy = async (targetUrl: string): Promise<string | null> => 
       }
       return null;
     },
-    // 5. corsproxy.io
+    // 4. codetabs proxy
     async () => {
-      const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(targetUrl)}`);
-      if (res.ok) {
-        const text = await res.text();
-        if (text && text.includes("BEGIN:VCALENDAR")) return text;
-      }
-      return null;
-    },
-    // 6. allorigins raw
-    async () => {
-      const res = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`);
+      const res = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(targetUrl)}`, { signal: AbortSignal.timeout(6000) });
       if (res.ok) {
         const text = await res.text();
         if (text && text.includes("BEGIN:VCALENDAR")) return text;
@@ -3621,6 +3682,55 @@ function Events(props: {
 
   const [showSkeleton, setShowSkeleton] = useState(true);
 
+  const processAndSetEvents = useCallback((rawIcalText: string) => {
+    try {
+      const parsed = parseICal(rawIcalText);
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      
+      const upcoming = parsed.filter(e => {
+        const checkDate = e.endDate ? e.endDate : e.date;
+        return checkDate.getTime() >= today.getTime();
+      }).sort((a,b) => a.date.getTime() - b.date.getTime());
+      
+      setAllEvents(upcoming);
+      
+      const monthSet = new Set<string>();
+      for (const evt of upcoming) {
+        const startKey = `${evt.date.getFullYear()}-${String(evt.date.getMonth() + 1).padStart(2, '0')}`;
+        monthSet.add(startKey);
+        
+        if (evt.endDate) {
+          let inclusiveEnd = new Date(evt.endDate.getTime());
+          if (evt.allDay && inclusiveEnd.getTime() > evt.date.getTime()) {
+            inclusiveEnd.setDate(inclusiveEnd.getDate() - 1);
+          }
+          const cursor = new Date(evt.date.getFullYear(), evt.date.getMonth(), 1);
+          const endCursor = new Date(inclusiveEnd.getFullYear(), inclusiveEnd.getMonth(), 1);
+          while (cursor <= endCursor) {
+            const key = `${cursor.getFullYear()}-${String(cursor.getMonth() + 1).padStart(2, '0')}`;
+            monthSet.add(key);
+            cursor.setMonth(cursor.getMonth() + 1);
+          }
+        }
+      }
+      
+      const sortedMonths = Array.from(monthSet).sort();
+      setAvailableMonths(sortedMonths);
+      
+      const now = new Date();
+      const currentKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      if (sortedMonths.includes(currentKey)) {
+        setSelectedMonth(currentKey);
+      } else if (sortedMonths.length > 0) {
+        setSelectedMonth(sortedMonths[0]);
+      }
+      return true;
+    } catch(e) {
+      return false;
+    }
+  }, []);
+
   const fetchAllEvents = useCallback(async (): Promise<boolean> => {
       setLoading(true);
       try {
@@ -3630,6 +3740,9 @@ function Events(props: {
         // Try main feed first (contains events for entire year in 1 fast call)
         const mainFeedText = await fetchWithCorsProxy("https://www.stiftisches.de/termine/?ical=1");
         if (mainFeedText) {
+          try {
+            localStorage.setItem("cached_events_ical", mainFeedText);
+          } catch(e) {}
           const parsed = parseICal(mainFeedText);
           for (const evt of parsed) {
             const evtKey = `${evt.title}_${evt.date.getTime()}_${evt.endDate?.getTime() || ''}`;
@@ -3702,7 +3815,7 @@ function Events(props: {
         const sortedMonths = Array.from(monthSet).sort();
         setAvailableMonths(sortedMonths);
         
-        // Pre-select current month (or first available if current has no events)
+        const now = new Date();
         const currentKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
         if (sortedMonths.includes(currentKey)) {
           setSelectedMonth(currentKey);
@@ -3720,16 +3833,20 @@ function Events(props: {
   }, []);
 
   const refreshEvents = useCallback(async (): Promise<boolean> => {
-    setShowSkeleton(true);
     const status = await fetchAllEvents();
-    await new Promise(r => setTimeout(r, 1000));
     setShowSkeleton(false);
     return status;
   }, [fetchAllEvents]);
 
   useEffect(() => {
+    const cached = typeof window !== "undefined" ? localStorage.getItem("cached_events_ical") : null;
+    if (cached) {
+      processAndSetEvents(cached);
+      setShowSkeleton(false);
+      setLoading(false);
+    }
     refreshEvents();
-  }, [refreshEvents]);
+  }, [refreshEvents, processAndSetEvents]);
 
   if (props.settings.showTermine === false) return null;
 
