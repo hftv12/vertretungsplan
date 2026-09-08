@@ -1604,7 +1604,7 @@ function ExamDayDisplay(props: { // displays a single (sorted) day of exams
   }, [props.courses]);
 
   return (
-    <div class="settings-div" style={{ marginBottom: '12px' }}>
+    <div class="settings-div" style={{ marginBottom: '0px', rowGap: '10px' }}>
       {props.examDays.map((d) => {
         const fullDateStr = `${d.day}, der ${d.date}`;
         const formattedTimeframe = formatTimeframeStr(d.timeframe);
