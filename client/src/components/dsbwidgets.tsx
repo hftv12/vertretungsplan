@@ -7,7 +7,7 @@ import { CheckButton, Select } from "./settingshelper";
 
 //import serializeEvent from "../util/event_helper";
 
-import { EyeIcon, EyeOffIcon, RefreshIcon, ImportantIcon, FilterIcon, PencilIcon, HelpIcon, ExternalLinkIcon } from "./icons";
+import { EyeIcon, EyeOffIcon, RefreshIcon, ImportantIcon, FilterIcon, PencilIcon, HelpIcon, ExternalLinkIcon, CloseIcon } from "./icons";
 // @ts-ignore
 import plink from "../assets/placeholder.gif";
 // import dsbIcon from "/favicons/dsb_simplistic192.png";
@@ -1601,33 +1601,45 @@ function ExamDayDisplay(props: { // displays a single (sorted) day of exams
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
                       <h3>
                         {e.subjectName || prettifyCourse(e.course)[0]} {!isCustom ? prettifyCourse(e.course)[1] : ""}
-                        {isCustom && (
-                          <span style={{
-                            marginLeft: '8px',
-                            fontSize: '0.75rem',
-                            padding: '2px 8px',
-                            borderRadius: '12px',
-                            backgroundColor: 'rgba(59, 130, 246, 0.15)',
-                            color: 'var(--accent-color)',
-                            fontWeight: '600',
-                            display: 'inline-block'
-                          }}>Manuell</span>
-                        )}
                       </h3>
                       {isCustom && props.onDeleteCustomExam && (
                         <button 
-                          class="fakebutton red" 
-                          style={{ padding: '2px 8px', fontSize: '0.8rem', height: 'auto', lineHeight: '1.2' }}
                           onClick={() => props.onDeleteCustomExam!(e.id!)}
                           title="Klausur löschen"
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            padding: '4px',
+                            cursor: 'pointer',
+                            color: 'var(--text-secondary)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            borderRadius: '50%',
+                            transition: 'color 0.15s, background-color 0.15s'
+                          }}
+                          onMouseEnter={(event) => {
+                            (event.currentTarget as HTMLElement).style.color = '#ef4444';
+                            (event.currentTarget as HTMLElement).style.backgroundColor = 'rgba(239, 68, 68, 0.12)';
+                          }}
+                          onMouseLeave={(event) => {
+                            (event.currentTarget as HTMLElement).style.color = 'var(--text-secondary)';
+                            (event.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
+                          }}
                         >
-                          Löschen
+                          <CloseIcon style={{ width: '18px', height: '18px' }} />
                         </button>
                       )}
                     </div>
-                    {e.teacher && <p><i>Lehrer:</i> {e.teacher}</p>}
-                    {!isCustom && <p><i>Es schreiben:</i> {e.people}/{e.max_people}</p>}
-                    {e.length && <p><i>Dauer:</i> {e.length}</p>}
+                    {isCustom ? (
+                      <p><i>Stunden:</i> {d.timeframe}</p>
+                    ) : (
+                      <>
+                        {e.teacher && <p><i>Lehrer:</i> {e.teacher}</p>}
+                        <p><i>Es schreiben:</i> {e.people}/{e.max_people}</p>
+                        {e.length && <p><i>Dauer:</i> {e.length}</p>}
+                      </>
+                    )}
                   </div>
                 </div>);
               })}
@@ -1669,8 +1681,6 @@ function ExamList(props: { // sorted list of all of your exams (probably the mos
   const [formCourse, setFormCourse] = useState("");
   const [formCustomSubject, setFormCustomSubject] = useState("");
   const [formTimeframe, setFormTimeframe] = useState("1.-2. Stunde");
-  const [formTeacher, setFormTeacher] = useState("");
-  const [formLength, setFormLength] = useState("2-stündig");
   const [formError, setFormError] = useState("");
 
   const examListSelectRef = useRef();
@@ -1728,8 +1738,6 @@ function ExamList(props: { // sorted list of all of your exams (probably the mos
       timeframe: formTimeframe || "1.-2. Stunde",
       course: courseVal,
       subjectName: subjName,
-      teacher: formTeacher.trim() || undefined,
-      length: formLength.trim() || "2-stündig",
     };
 
     const updated = [...customExams, newExam];
@@ -1740,8 +1748,6 @@ function ExamList(props: { // sorted list of all of your exams (probably the mos
     setFormCourse("");
     setFormCustomSubject("");
     setFormTimeframe("1.-2. Stunde");
-    setFormTeacher("");
-    setFormLength("2-stündig");
     setFormError("");
     setShowAddForm(false);
   };
@@ -2160,30 +2166,48 @@ function ExamList(props: { // sorted list of all of your exams (probably the mos
                   <div style={{
                     marginTop: '16px',
                     marginBottom: '20px',
-                    padding: '16px',
+                    padding: '18px',
                     backgroundColor: 'var(--input-bg)',
-                    border: '1px solid var(--accent-color)',
+                    border: '1.5px solid var(--accent-color)',
                     borderRadius: 'var(--rounding-md, 12px)',
                     animation: 'tileReveal 0.3s cubic-bezier(0.16, 1, 0.3, 1) both'
                   }}>
-                    <h3 style={{ marginTop: 0, marginBottom: '12px' }}>Manuelle Klausur eintragen</h3>
-                    {formError && <p style={{ color: '#ef4444', fontSize: '0.9rem', margin: '0 0 8px 0' }}>{formError}</p>}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '14px' }}>
+                    <h3 style={{ marginTop: 0, marginBottom: '14px' }}>Manuelle Klausur eintragen</h3>
+                    {formError && <p style={{ color: '#ef4444', fontSize: '0.9rem', margin: '0 0 10px 0' }}>{formError}</p>}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', marginBottom: '16px' }}>
                       <div>
-                        <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Datum*</label>
+                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '500', color: 'var(--text-secondary)', marginBottom: '6px' }}>Datum*</label>
                         <input 
                           type="date" 
                           value={formDate} 
                           onChange={(e) => setFormDate((e.target as HTMLInputElement).value)} 
-                          style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)', color: 'var(--text-color)' }}
+                          style={{
+                            width: '100%',
+                            padding: '9px 12px',
+                            borderRadius: '8px',
+                            border: '1.5px solid var(--brighter-color, rgba(255, 255, 255, 0.2))',
+                            backgroundColor: 'var(--bg-color)',
+                            color: 'var(--text-color)',
+                            fontSize: '0.95rem',
+                            boxSizing: 'border-box'
+                          }}
                         />
                       </div>
                       <div>
-                        <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Fach / Kurs*</label>
+                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '500', color: 'var(--text-secondary)', marginBottom: '6px' }}>Fach / Kurs*</label>
                         <select 
                           value={formCourse} 
                           onChange={(e) => setFormCourse((e.target as HTMLSelectElement).value)}
-                          style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)', color: 'var(--text-color)' }}
+                          style={{
+                            width: '100%',
+                            padding: '9px 12px',
+                            borderRadius: '8px',
+                            border: '1.5px solid var(--brighter-color, rgba(255, 255, 255, 0.2))',
+                            backgroundColor: 'var(--bg-color)',
+                            color: 'var(--text-color)',
+                            fontSize: '0.95rem',
+                            boxSizing: 'border-box'
+                          }}
                         >
                           <option value="">--- Fach auswählen ---</option>
                           {props.courses.map((c) => {
@@ -2195,44 +2219,42 @@ function ExamList(props: { // sorted list of all of your exams (probably the mos
                       </div>
                       {formCourse === "custom" && (
                         <div>
-                          <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Name des Faches*</label>
+                          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '500', color: 'var(--text-secondary)', marginBottom: '6px' }}>Name des Faches*</label>
                           <input 
                             type="text" 
                             placeholder="z. B. Spanisch LK" 
                             value={formCustomSubject} 
                             onChange={(e) => setFormCustomSubject((e.target as HTMLInputElement).value)}
-                            style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)', color: 'var(--text-color)' }}
+                            style={{
+                              width: '100%',
+                              padding: '9px 12px',
+                              borderRadius: '8px',
+                              border: '1.5px solid var(--brighter-color, rgba(255, 255, 255, 0.2))',
+                              backgroundColor: 'var(--bg-color)',
+                              color: 'var(--text-color)',
+                              fontSize: '0.95rem',
+                              boxSizing: 'border-box'
+                            }}
                           />
                         </div>
                       )}
                       <div>
-                        <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Zeitraum</label>
+                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '500', color: 'var(--text-secondary)', marginBottom: '6px' }}>Stunden / Zeitraum*</label>
                         <input 
                           type="text" 
                           placeholder="z. B. 1.-2. Stunde" 
                           value={formTimeframe} 
                           onChange={(e) => setFormTimeframe((e.target as HTMLInputElement).value)}
-                          style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)', color: 'var(--text-color)' }}
-                        />
-                      </div>
-                      <div>
-                        <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Lehrer (optional)</label>
-                        <input 
-                          type="text" 
-                          placeholder="z. B. Fr. Müller" 
-                          value={formTeacher} 
-                          onChange={(e) => setFormTeacher((e.target as HTMLInputElement).value)}
-                          style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)', color: 'var(--text-color)' }}
-                        />
-                      </div>
-                      <div>
-                        <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Dauer (optional)</label>
-                        <input 
-                          type="text" 
-                          placeholder="z. B. 2-stündig" 
-                          value={formLength} 
-                          onChange={(e) => setFormLength((e.target as HTMLInputElement).value)}
-                          style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)', color: 'var(--text-color)' }}
+                          style={{
+                            width: '100%',
+                            padding: '9px 12px',
+                            borderRadius: '8px',
+                            border: '1.5px solid var(--brighter-color, rgba(255, 255, 255, 0.2))',
+                            backgroundColor: 'var(--bg-color)',
+                            color: 'var(--text-color)',
+                            fontSize: '0.95rem',
+                            boxSizing: 'border-box'
+                          }}
                         />
                       </div>
                     </div>
