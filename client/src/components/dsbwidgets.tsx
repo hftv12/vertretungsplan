@@ -3106,10 +3106,11 @@ function PersonalTimetable(props: {
   settings: DSBSettings,
   grade: GradeInfo,
 }) {
-  const isProgrammaticScroll = useRef(false);
+  const isProgrammaticScroll = useRef(true);
   const scrollTimeout = useRef<any>(null);
+  const currentDayIdxRef = useRef<number>(0);
 
-  const getInitialTargetFromStorage = () => {
+  const getInitialTargetFromStorage = (): { dayIdx: number; weekType: "A" | "B" } => {
     let parsedTtData: any = null;
     try {
       const data = typeof window !== "undefined" ? localStorage.getItem("PersonalTimetableData") : null;
@@ -3169,7 +3170,12 @@ function PersonalTimetable(props: {
   const [isEditMode, setIsEditMode] = useState(false);
   const [currentWeek, setCurrentWeek] = useState<"A" | "B">(initialTarget.current.weekType);
   const [timetableData, setTimetableData] = useState<any>({});
-  const [currentDayIdx, setCurrentDayIdx] = useState<number>(initialTarget.current.dayIdx);
+  const [currentDayIdx, _setCurrentDayIdx] = useState<number>(initialTarget.current.dayIdx);
+  const setCurrentDayIdx = (idx: number) => {
+    currentDayIdxRef.current = idx;
+    _setCurrentDayIdx(idx);
+  };
+  currentDayIdxRef.current = currentDayIdx;
   const containerRef = useRef<HTMLDivElement>(null);
   const dayWrapperRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [timetableHeight, setTimetableHeight] = useState<number | null>(null);
@@ -3288,13 +3294,21 @@ function PersonalTimetable(props: {
       const width = containerRef.current.clientWidth;
       containerRef.current.scrollTo({ left: initialTargetVal.dayIdx * width, behavior: "auto" });
     }
+    // Retry scroll after layout settles, then again after a longer delay for slow devices
     const initTimer = setTimeout(() => {
       if (containerRef.current) {
         const width = containerRef.current.clientWidth;
         containerRef.current.scrollTo({ left: initialTargetVal.dayIdx * width, behavior: "auto" });
       }
+    }, 100);
+    const unlockTimer = setTimeout(() => {
+      // One final scroll attempt before unlocking user scroll events
+      if (containerRef.current) {
+        const width = containerRef.current.clientWidth;
+        containerRef.current.scrollTo({ left: initialTargetVal.dayIdx * width, behavior: "auto" });
+      }
       isProgrammaticScroll.current = false;
-    }, 150);
+    }, 350);
 
     const handler = (e: any) => {
       if (e.detail?.week) {
@@ -3318,6 +3332,7 @@ function PersonalTimetable(props: {
     
     return () => {
       clearTimeout(initTimer);
+      clearTimeout(unlockTimer);
       window.removeEventListener("dsb-week-switch", handler);
     };
   }, []);
@@ -3363,7 +3378,7 @@ function PersonalTimetable(props: {
       if (!width) return;
       const scrollLeft = containerRef.current.scrollLeft;
       const newIdx = Math.round(scrollLeft / width);
-      if (newIdx !== currentDayIdx && newIdx >= 0 && newIdx < days.length) {
+      if (newIdx !== currentDayIdxRef.current && newIdx >= 0 && newIdx < days.length) {
         setCurrentDayIdx(newIdx);
       }
     }
@@ -4606,7 +4621,7 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
             
             if (relevantSubstitutions > 0) {
               if (filterStage === FilterStage.COURSES) {
-                 const substSubjects = [...new Set(filtered.map(s => {
+                 const substSubjects = [...new Set(filtered.map((s: any) => {
                     // Try to match usual_subject to our courses for readable name
                     let usual = s.usual_subject;
                     if (usual[1] === " ") usual = usual[0] + usual.substring(2);
@@ -4615,7 +4630,7 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
                        return name === usual;
                     });
                     return courseInfo ? courseInfo.subject_name : s.usual_subject;
-                 }))];
+                 }))] as string[];
                  addPart(<>{timeText} liegen {createClickableHighlight(<>relevante Vertretungen in {formatList(substSubjects)}</>, "vertretungsplan")} für dich vor.</>);
               } else {
                  addPart(<>{timeText} liegen {createClickableHighlight(<>{relevantSubstitutions} relevante Vertretungen</>, "vertretungsplan")} für deine Stufe vor.</>);
