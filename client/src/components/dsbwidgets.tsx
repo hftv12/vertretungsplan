@@ -3822,15 +3822,26 @@ function PersonalTimetable(props: {
   };
 
   const getLastHourForDay = (dayName: string): number => {
-    const dayData = timetableData[currentWeek]?.[dayName];
-    if (!dayData) return 0;
     let lastHour = 0;
-    for (const hourNum in dayData) {
-      if (dayData[hourNum]) {
-        const num = parseInt(hourNum);
-        if (num > lastHour) lastHour = num;
+    const dayData = timetableData[currentWeek]?.[dayName];
+    if (dayData) {
+      for (const hourNum in dayData) {
+        if (dayData[hourNum]) {
+          const num = parseInt(hourNum);
+          if (num > lastHour) lastHour = num;
+        }
       }
     }
+
+    // Check if any exam extends beyond regular class hours
+    if (!isEditMode) {
+      for (let h = 1; h <= 11; h++) {
+        if (getExamForTimetable(dayName, h)) {
+          if (h > lastHour) lastHour = h;
+        }
+      }
+    }
+
     return lastHour;
   };
 
