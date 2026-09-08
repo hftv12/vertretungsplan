@@ -2057,18 +2057,23 @@ function ExamList(props: { // sorted list of all of your exams (probably the mos
         ed.exams.forEach(e => {
           let isRelevant = false;
           let color = 'var(--accent-color)';
+          let split = e.course.split("-");
+          const matches = props.courses.filter(c => {
+            if (c.subject + (c.course ? "-" + c.course : "") === e.course) return true;
+            if (c.subject === split[0] && (c.course === "" || c.course === split[1])) return true;
+            if (e.subjectName && (c.subject_name === e.subjectName || (c.subject_name + " " + c.course).trim() === e.subjectName.trim())) return true;
+            return false;
+          });
+          if (matches.length > 0 && matches[0].color) {
+            color = matches[0].color;
+          }
+
           if (e.isCustom) {
             isRelevant = true;
           } else if (props.settings.exams === ExamVisibility.ALL) {
             isRelevant = true;
-          } else {
-            const matches = props.courses.filter(c => {
-              return !!c.written && (c.course === "" ? c.subject === e.course.split("-")[0] : c.subject === e.course.split("-")[0] && c.course === e.course.split("-")[1]);
-            });
-            if (matches.length > 0) {
-              isRelevant = true;
-              if (matches[0].color) color = matches[0].color;
-            }
+          } else if (matches.length > 0 && matches.some(m => m.written)) {
+            isRelevant = true;
           }
           if (isRelevant) {
             upcoming.push({ name: prettify(e), daysUntil, color });
@@ -3725,6 +3730,56 @@ function PersonalTimetable(props: {
     }
   };
 
+  const getContrastTextColor = (hexColor?: string): string => {
+    if (!hexColor || hexColor.startsWith("var")) return "#ffffff";
+    let hex = hexColor.replace("#", "");
+    if (hex.length === 3) hex = hex.split("").map(c => c + c).join("");
+    const r = parseInt(hex.substring(0, 2), 16) || 0;
+    const g = parseInt(hex.substring(2, 4), 16) || 0;
+    const b = parseInt(hex.substring(4, 6), 16) || 0;
+    const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+    return yiq >= 160 ? "#000000" : "#ffffff";
+  };
+
+  const getExamForTimetable = (dayName: string, hourNum: number) => {
+    const isHourInTimeframe = (hour: number, timeframe: string): boolean => {
+      if (!timeframe) return false;
+      const rangeMatch = timeframe.match(/(\d+)\.?\s*(?:bis|-)\s*(\d+)/i);
+      if (rangeMatch) {
+        const start = parseInt(rangeMatch[1]);
+        const end = parseInt(rangeMatch[2]);
+        return hour >= start && hour <= end;
+      }
+      const singleMatch = timeframe.match(/(\d+)/);
+      if (singleMatch) {
+        return parseInt(singleMatch[1]) === hour;
+      }
+      return false;
+    };
+
+    try {
+      const customData = typeof window !== "undefined" ? localStorage.getItem("customExams") : null;
+      if (customData) {
+        const customs: CustomExam[] = JSON.parse(customData);
+        for (const c of customs) {
+          if (c.day === dayName && isHourInTimeframe(hourNum, c.timeframe)) {
+            const courseInfo = props.courses.find(course => 
+              (course.subject + (course.course ? "-" + course.course : "")) === c.course ||
+              course.subject_name === c.subjectName ||
+              (course.subject_name + " " + course.course).trim() === (c.subjectName || "").trim()
+            );
+            return {
+              subjectName: courseInfo?.subject_name || c.subjectName || c.course,
+              color: courseInfo?.color || "var(--accent-color)"
+            };
+          }
+        }
+      }
+    } catch (e) {}
+
+    return null;
+  };
+
   const getCourseInfo = (courseStr: string) => {
     return props.courses.find(c => (c.subject + (c.course ? "-" + c.course : "")) === courseStr);
   };
@@ -3851,6 +3906,7 @@ function PersonalTimetable(props: {
             <h3 class="timetable-day-header">{day.full}</h3>
             {visibleHours.map((h) => {
               const activeHighlight = isCurrentHour(dayIdx, h.start, h.end) ? "active-hour-highlight" : "";
+              const examForCell = !isEditMode && h.type !== "pause" ? getExamForTimetable(day.full, h.num) : null;
               
               return h.type === "pause" ? (
                 <div key={h.num} class={`timetable-spacer ${activeHighlight}`}></div>
@@ -3865,6 +3921,22 @@ function PersonalTimetable(props: {
                       return <option value={val} key={val}>{c.subject_name} {c.course}</option>;
                     })}
                   </select>
+                ) : examForCell ? (
+                  <div 
+                    class="timetable-course exam-filled" 
+                    style={{ 
+                      backgroundColor: examForCell.color, 
+                      borderColor: examForCell.color,
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)'
+                    }}
+                  >
+                    <span class="timetable-course-name" style={{ color: getContrastTextColor(examForCell.color), fontWeight: 'bold' }}>
+                      {examForCell.subjectName}
+                    </span>
+                    <span class="timetable-course-room" style={{ color: getContrastTextColor(examForCell.color), opacity: 0.9, fontSize: "0.9rem", fontWeight: "600" }}>
+                      Klausur
+                    </span>
+                  </div>
                 ) : (
                   <div class={`timetable-course ${!timetableData[currentWeek]?.[day.full]?.[h.num] ? "empty" : ""}`} style={{ borderColor: getCourseInfo(timetableData[currentWeek]?.[day.full]?.[h.num])?.color || "var(--brighter-color)", ...getSubstitutionStyle(day.full, h.num, timetableData[currentWeek]?.[day.full]?.[h.num]) }}>
                     {timetableData[currentWeek]?.[day.full]?.[h.num] ? (
