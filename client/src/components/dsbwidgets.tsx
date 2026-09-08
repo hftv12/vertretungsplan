@@ -1589,6 +1589,20 @@ function ExamDayDisplay(props: { // displays a single (sorted) day of exams
     return l > 0;
   }, [])
 
+  const getExamColor = useCallback((e: Exam): string => {
+    let split = e.course.split("-");
+    const matches = props.courses.filter(c => {
+      if (c.subject + (c.course ? "-" + c.course : "") === e.course) return true;
+      if (c.subject === split[0] && (c.course === "" || c.course === split[1])) return true;
+      if (e.subjectName && (c.subject_name === e.subjectName || (c.subject_name + " " + c.course).trim() === e.subjectName.trim())) return true;
+      return false;
+    });
+    if (matches.length > 0 && matches[0].color) {
+      return matches[0].color;
+    }
+    return "var(--accent-color)";
+  }, [props.courses]);
+
   return (
     <div class="settings-div" style={{ marginBottom: '12px' }}>
       {props.examDays.map((d) => {
@@ -1603,11 +1617,12 @@ function ExamDayDisplay(props: { // displays a single (sorted) day of exams
               });
               const isCustom = e.isCustom;
               const isRelevant = isCustom || l.length > 0 || props.settings.exams === ExamVisibility.ALL;
+              const examColor = getExamColor(e);
 
-              return isRelevant && (<div class="exam" style={isCustom ? { borderLeft: '3px solid var(--accent-color)', position: 'relative' } : undefined}>
+              return isRelevant && (<div class="exam" style={{ borderLeft: `4px solid ${examColor}`, borderColor: examColor !== "var(--accent-color)" ? `${examColor}50` : undefined, position: 'relative' }}>
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                    <h3 style={{ margin: 0 }}>
+                    <h3 style={{ margin: 0, color: examColor }}>
                       {e.subjectName || prettifyCourse(e.course)[0]} {!isCustom ? prettifyCourse(e.course)[1] : ""}
                     </h3>
                     {isCustom && props.onDeleteCustomExam && (
