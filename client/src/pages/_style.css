@@ -2398,6 +2398,11 @@ a.fakebutton:active {
     opacity: 0.7;
 }
 
+.timetable-course.exam-filled {
+    opacity: 1 !important;
+    border-style: solid !important;
+}
+
 .timetable-pause {
     background: var(--background-color);
     justify-content: center;

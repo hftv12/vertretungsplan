@@ -3757,22 +3757,59 @@ function PersonalTimetable(props: {
       return false;
     };
 
+    const findCourseInfo = (courseStr?: string, subjName?: string) => {
+      const split = courseStr ? courseStr.split("-") : [];
+      return props.courses.find(course => {
+        if (courseStr && (course.subject + (course.course ? "-" + course.course : "")) === courseStr) return true;
+        if (split.length > 0 && course.subject === split[0] && (!split[1] || course.course === "" || course.course === split[1])) return true;
+        if (subjName && (course.subject_name === subjName || (course.subject_name + " " + course.course).trim() === subjName.trim())) return true;
+        return false;
+      });
+    };
+
+    // 1. Check custom exams
     try {
       const customData = typeof window !== "undefined" ? localStorage.getItem("customExams") : null;
       if (customData) {
         const customs: CustomExam[] = JSON.parse(customData);
         for (const c of customs) {
           if (c.day === dayName && isHourInTimeframe(hourNum, c.timeframe)) {
-            const courseInfo = props.courses.find(course => 
-              (course.subject + (course.course ? "-" + course.course : "")) === c.course ||
-              course.subject_name === c.subjectName ||
-              (course.subject_name + " " + course.course).trim() === (c.subjectName || "").trim()
-            );
+            const courseInfo = findCourseInfo(c.course, c.subjectName);
+            const color = courseInfo?.color || "var(--accent-color)";
+            const name = courseInfo?.subject_name || c.subjectName || (c.course ? (getCourseInfo(c.course)?.subject_name || c.course) : "Klausur");
             return {
-              subjectName: courseInfo?.subject_name || c.subjectName || c.course,
-              color: courseInfo?.color || "var(--accent-color)"
+              subjectName: name,
+              color: color
             };
           }
+        }
+      }
+    } catch (e) {}
+
+    // 2. Check DSB substitutions for Klausur (&nbsp;)
+    try {
+      if (dsbDataRaw && props.grade) {
+        let subs: Substitution[] = [];
+        if (dsbDataRaw.day_one?.day?.includes(dayName)) subs = dsbDataRaw.day_one.substitutions || [];
+        else if (dsbDataRaw.day_two?.day?.includes(dayName)) subs = dsbDataRaw.day_two.substitutions || [];
+
+        const s = subs.find((sub: Substitution) => {
+          if (!matchSubstitutionHour(sub.hours, hourNum)) return false;
+          if (sub.usual_subject === "&nbsp;" || (sub as any).type === "Klausur") {
+            return isSubstitutionForCourse(sub, timetableData[currentWeek]?.[dayName]?.[hourNum] || "", props.courses, props.grade);
+          }
+          return false;
+        });
+
+        if (s) {
+          const courseStr = timetableData[currentWeek]?.[dayName]?.[hourNum] || s.subject;
+          const courseInfo = findCourseInfo(courseStr, s.subject);
+          const color = courseInfo?.color || "var(--accent-color)";
+          const name = courseInfo?.subject_name || (courseStr ? (getCourseInfo(courseStr)?.subject_name || courseStr) : "Klausur");
+          return {
+            subjectName: name,
+            color: color
+          };
         }
       }
     } catch (e) {}
