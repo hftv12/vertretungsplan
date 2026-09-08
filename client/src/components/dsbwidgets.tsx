@@ -1,4 +1,4 @@
-import { MutableRef, useCallback, useEffect, useId, useRef, useState } from "preact/hooks";
+import { MutableRef, useCallback, useEffect, useId, useMemo, useRef, useState } from "preact/hooks";
 import { createPortal } from "preact/compat";
 import { useAutoAnimate } from '@formkit/auto-animate/preact';
 
@@ -173,6 +173,17 @@ interface GradeInfo { // maybe this is important too? (I don't rember)
   gradeLetter: string;
 }
 
+interface CustomExam {
+  id: string;
+  date: string;
+  day: string;
+  timeframe: string;
+  course: string;
+  subjectName?: string;
+  teacher?: string;
+  length?: string;
+}
+
 interface ExamDay {
     date: string,
     day: string,
@@ -186,6 +197,9 @@ interface Exam {
     people: number, // 10
     max_people: number, // 18
     length: string, // 2-stündig
+    isCustom?: boolean;
+    id?: string;
+    subjectName?: string;
 }
 
 const week: String[] = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"] // don't question it
@@ -1516,6 +1530,7 @@ function ExamDayDisplay(props: { // displays a single (sorted) day of exams
   settings: DSBSettings,
   courses: Array<CourseInfo>,
   list: string,
+  onDeleteCustomExam?: (id: string) => void,
 }) {
   // const serialize = useCallback((d: ExamDay, e: Exam): string => {
   //   // console.log(JSON.stringify(d));
@@ -1556,6 +1571,7 @@ function ExamDayDisplay(props: { // displays a single (sorted) day of exams
     }
 
     const l = examDay.exams.filter(e => { // yeah this is the funni I think
+      if (e.isCustom) return true;
       return courses.filter(c => {
         return !!c.written && (c.course === "" ? c.subject === e.course.split("-")[0] : c.subject === e.course.split("-")[0] && c.course === e.course.split("-")[1]);
       }).length > 0;
@@ -1577,13 +1593,41 @@ function ExamDayDisplay(props: { // displays a single (sorted) day of exams
                 const l = props.courses.filter(c => {
                   return !!c.written && (c.course === "" ? c.subject === e.course.split("-")[0] : c.subject === e.course.split("-")[0] && c.course === e.course.split("-")[1]);
                 });
+                const isCustom = e.isCustom;
+                const isRelevant = isCustom || l.length > 0 || props.settings.exams === ExamVisibility.ALL;
 
-                return (l.length > 0 || props.settings.exams === ExamVisibility.ALL) && (<div class="exam">
+                return isRelevant && (<div class="exam" style={isCustom ? { borderLeft: '3px solid var(--accent-color)', position: 'relative' } : undefined}>
                   <div>
-                    <h3>{prettifyCourse(e.course)[0]} {prettifyCourse(e.course)[1]}</h3>
-                    <p><i>Lehrer:</i> {e.teacher}</p>
-                    <p><i>Es schreiben:</i> {e.people}/{e.max_people}</p>
-                    <p><i>Dauer:</i> {e.length}</p>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                      <h3>
+                        {e.subjectName || prettifyCourse(e.course)[0]} {!isCustom ? prettifyCourse(e.course)[1] : ""}
+                        {isCustom && (
+                          <span style={{
+                            marginLeft: '8px',
+                            fontSize: '0.75rem',
+                            padding: '2px 8px',
+                            borderRadius: '12px',
+                            backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                            color: 'var(--accent-color)',
+                            fontWeight: '600',
+                            display: 'inline-block'
+                          }}>Manuell</span>
+                        )}
+                      </h3>
+                      {isCustom && props.onDeleteCustomExam && (
+                        <button 
+                          class="fakebutton red" 
+                          style={{ padding: '2px 8px', fontSize: '0.8rem', height: 'auto', lineHeight: '1.2' }}
+                          onClick={() => props.onDeleteCustomExam!(e.id!)}
+                          title="Klausur löschen"
+                        >
+                          Löschen
+                        </button>
+                      )}
+                    </div>
+                    {e.teacher && <p><i>Lehrer:</i> {e.teacher}</p>}
+                    {!isCustom && <p><i>Es schreiben:</i> {e.people}/{e.max_people}</p>}
+                    {e.length && <p><i>Dauer:</i> {e.length}</p>}
                   </div>
                 </div>);
               })}
@@ -1617,6 +1661,18 @@ function ExamList(props: { // sorted list of all of your exams (probably the mos
   const [reloadSuccess, setReloadSuccess] = useState(undefined);
   const [animationKey, setAnimationKey] = useState(0);
 
+  const [customExams, setCustomExams] = useState<CustomExam[]>([]);
+  const [showAddForm, setShowAddForm] = useState(false);
+
+  // Form states for adding custom exam
+  const [formDate, setFormDate] = useState("");
+  const [formCourse, setFormCourse] = useState("");
+  const [formCustomSubject, setFormCustomSubject] = useState("");
+  const [formTimeframe, setFormTimeframe] = useState("1.-2. Stunde");
+  const [formTeacher, setFormTeacher] = useState("");
+  const [formLength, setFormLength] = useState("2-stündig");
+  const [formError, setFormError] = useState("");
+
   const examListSelectRef = useRef();
 
   useEffect(() => {
@@ -1625,7 +1681,76 @@ function ExamList(props: { // sorted list of all of your exams (probably the mos
     return () => window.removeEventListener('dsb-day-switch', handler);
   }, []);
 
-  // fuck you geeksforgeeks
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("customExams");
+      if (saved) {
+        setCustomExams(JSON.parse(saved));
+      }
+    } catch (e) {}
+  }, []);
+
+  const handleAddCustomExam = () => {
+    if (!formDate) {
+      setFormError("Bitte wähle ein Datum aus.");
+      return;
+    }
+    let courseVal = formCourse;
+    let subjName = "";
+    if (formCourse === "custom") {
+      if (!formCustomSubject.trim()) {
+        setFormError("Bitte gib einen Namen für das Fach ein.");
+        return;
+      }
+      courseVal = formCustomSubject.trim();
+      subjName = formCustomSubject.trim();
+    } else if (formCourse) {
+      const c = props.courses.find(course => (course.subject + (course.course ? "-" + course.course : "")) === formCourse);
+      if (c) {
+        subjName = c.subject_name + (c.course ? " " + c.course : "");
+      } else {
+        subjName = formCourse;
+      }
+    } else {
+      setFormError("Bitte wähle ein Fach aus.");
+      return;
+    }
+
+    const [y, m, d] = formDate.split("-");
+    const formattedDate = `${d}.${m}.${y}`;
+    const dateObj = new Date(`${y}-${m}-${d}T12:00:00`);
+    const dayName = (week[dateObj.getDay()] || "Montag") as string;
+
+    const newExam: CustomExam = {
+      id: `custom-${Date.now()}`,
+      date: formattedDate,
+      day: dayName,
+      timeframe: formTimeframe || "1.-2. Stunde",
+      course: courseVal,
+      subjectName: subjName,
+      teacher: formTeacher.trim() || undefined,
+      length: formLength.trim() || "2-stündig",
+    };
+
+    const updated = [...customExams, newExam];
+    setCustomExams(updated);
+    localStorage.setItem("customExams", JSON.stringify(updated));
+
+    setFormDate("");
+    setFormCourse("");
+    setFormCustomSubject("");
+    setFormTimeframe("1.-2. Stunde");
+    setFormTeacher("");
+    setFormLength("2-stündig");
+    setFormError("");
+    setShowAddForm(false);
+  };
+
+  const handleDeleteCustomExam = (id: string) => {
+    const updated = customExams.filter(e => e.id !== id);
+    setCustomExams(updated);
+    localStorage.setItem("customExams", JSON.stringify(updated));
+  };
 
   const stringToDate = useCallback((str: string): Date => { // e.g. "02.10.2025" to something usable (AND NOT THE AMERICAN FU[NN]ING DATE FORMAT)
     const s = str.split(".");
@@ -1650,10 +1775,7 @@ function ExamList(props: { // sorted list of all of your exams (probably the mos
         return false;
       }
 
-      // prettifyExamList(await data.json());
-      // setExamList([]);
       setAvailableLists(await data.json());
-      // ... why is there no return true;? I don't know either actually
     } catch {
         setExamList(null);
         setAvailableLists(null);
@@ -1683,36 +1805,25 @@ function ExamList(props: { // sorted list of all of your exams (probably the mos
         return false;
       }
 
-      // prettifyExamList(await data.json());
       prettifyExamList(await data.json());
       return true;
-      // setAvailableLists(await data.json());
     } catch {
         setExamList(null);
-        // setAvailableLists(null);
         return false;
     }
   }, [setExamList]);
 
   useEffect(() => {
     if ((import.meta as any).env && (import.meta as any).env.DEV) { // this code only runs in the debug env (so if you're reading this), you can override the current date for testing
-      // setDate(stringToDate("13.04.1987"));
       setDate(new Date());
-
-
-      //const test = { summary: "Test Klausur LK1", description: "Es schreiben: 0/0", start: "st1", end: "en2" } as EventData
-      //console.log(serializeEvent(test));
     } else {
       setDate(new Date());
     }
-    // setDate(stringToDate("10.10.2025"));
     getData();
     const l = localStorage.getItem("examList");
     if (!!l) {
       setList(l);
-      // updateExamList();
     }
-    // console.log(l);
     initListData(!!l ? l : "")
   }, []);
 
@@ -1740,29 +1851,98 @@ function ExamList(props: { // sorted list of all of your exams (probably the mos
     }
 
     setExamList(new_list);
-    // console.log(new_list)
   }, []);
+
+  const getCombinedExamList = useMemo(() => {
+    let baseList: Array<ExamDay> = [];
+    if (examList && Array.isArray(examList)) {
+      for (const group of examList) {
+        for (const ed of group) {
+          baseList.push({
+            date: ed.date,
+            day: ed.day,
+            timeframe: ed.timeframe,
+            exams: [...ed.exams]
+          });
+        }
+      }
+    }
+
+    for (const c of customExams) {
+      let found = baseList.find(ed => ed.date === c.date && ed.timeframe === c.timeframe);
+      const customExamObj: Exam = {
+        course: c.course,
+        teacher: c.teacher || "---",
+        people: 1,
+        max_people: 1,
+        length: c.length || "2-stündig",
+        isCustom: true,
+        id: c.id,
+        subjectName: c.subjectName
+      };
+
+      if (found) {
+        found.exams.push(customExamObj);
+      } else {
+        baseList.push({
+          date: c.date,
+          day: c.day,
+          timeframe: c.timeframe,
+          exams: [customExamObj]
+        });
+      }
+    }
+
+    baseList.sort((a, b) => {
+      const parseD = (s: string) => {
+        const parts = s.split(".");
+        return new Date(`${parts[2]}-${parts[1]}-${parts[0]}T00:00:00`).getTime();
+      };
+      return parseD(a.date) - parseD(b.date);
+    });
+
+    let grouped: Array<Array<ExamDay>> = [];
+    let temp: Array<ExamDay> = [];
+    for (const item of baseList) {
+      if (temp.length === 0) {
+        temp.push(item);
+      } else if (item.date === temp[0].date) {
+        temp.push(item);
+      } else {
+        grouped.push(temp);
+        temp = [item];
+      }
+    }
+    if (temp.length > 0) {
+      grouped.push(temp);
+    }
+
+    return grouped;
+  }, [examList, customExams]);
+
   const shouldDisplayDay = useCallback((examDays: Array<ExamDay>, settings: DSBSettings, courses: Array<CourseInfo>, date: Date): boolean => {
     if (settings.exams === ExamVisibility.ALL) {
       return true;
     }
 
-    const l = examDays.filter((ed => { // DO NOT touch the filtering logic, if it works it works (there is a reason it is this complicated I promise)
+    const l = examDays.filter((ed => {
       return ed.exams.filter(e => {
+        if (e.isCustom) return true;
         return courses.filter(c => {
           return !!c.written && (c.course === "" ? c.subject === e.course.split("-")[0] : c.subject === e.course.split("-")[0] && c.course === e.course.split("-")[1]);
         }).length > 0;
       }).length > 0 && (settings.oldExams ? true : date.valueOf() <= stringToDate(ed.date).valueOf());
     })).length;
     return l > 0;
-  }, []);
+  }, [stringToDate]);
+
   const canDisplay = useCallback((): boolean => {
-    return examList.filter((e) => {return shouldDisplayDay(e, props.settings, props.courses, date)}).length > 0;
-  }, [examList, props, date]);
+    return getCombinedExamList.filter((e) => { return shouldDisplayDay(e, props.settings, props.courses, date) }).length > 0;
+  }, [getCombinedExamList, shouldDisplayDay, props.settings, props.courses, date]);
 
   const updateExamList = useCallback(async (): Promise<boolean> => {
     const user = localStorage.getItem("user");
-    const key = localStorage.getItem("key"); // get credentials from localStorage
+    const key = localStorage.getItem("key");
     let nlist = "";
     if (!!examListSelectRef.current) {
       nlist = (examListSelectRef.current as HTMLSelectElement).value;
@@ -1776,19 +1956,18 @@ function ExamList(props: { // sorted list of all of your exams (probably the mos
     localStorage.setItem("examList", nlist);
 
     if (nlist === "") {
-      console.log("skipping...");
       setExamList([]);
       return true;
     }
 
     try {
-      const data = await fetch("https://kirillathome.uucode.com/api/v1/exams/" + nlist, { // request to the real api
+      const data = await fetch("https://kirillathome.uucode.com/api/v1/exams/" + nlist, {
         headers: {
           "user": user,
           "key": key,
         },
       });
-      if (!data.ok) { // not ok
+      if (!data.ok) {
         setExamList(null);
         return false;
       }
@@ -1816,17 +1995,16 @@ function ExamList(props: { // sorted list of all of your exams (probably the mos
     return u;
   }, [getData, updateExamList]);
 
-  // console.log(props.settings)
-
   const getUpcomingExams = useCallback(() => {
-    if (!examList || examList.length === 0) return [];
+    if (!getCombinedExamList || getCombinedExamList.length === 0) return [];
     
-    let upcoming = [];
+    let upcoming: Array<{ name: string; daysUntil: number; color: string }> = [];
     const today = new Date(date);
     today.setHours(0, 0, 0, 0);
 
-    const prettify = (course: string): string => {
-      let split = course.split("-");
+    const prettify = (e: Exam): string => {
+      if (e.subjectName) return e.subjectName;
+      let split = e.course.split("-");
       let n = "";
       for (const c of props.courses) {
         if (c.subject === split[0]) {
@@ -1840,10 +2018,10 @@ function ExamList(props: { // sorted list of all of your exams (probably the mos
           if (o.value === split[0]) return `${o.text} ${split[1]}`;
         }
       }
-      return course;
+      return e.course;
     };
 
-    examList.forEach(dayGroup => {
+    getCombinedExamList.forEach(dayGroup => {
       const examDate = stringToDate(dayGroup[0].date);
       examDate.setHours(0, 0, 0, 0);
       
@@ -1856,7 +2034,9 @@ function ExamList(props: { // sorted list of all of your exams (probably the mos
         ed.exams.forEach(e => {
           let isRelevant = false;
           let color = 'var(--accent-color)';
-          if (props.settings.exams === ExamVisibility.ALL) {
+          if (e.isCustom) {
+            isRelevant = true;
+          } else if (props.settings.exams === ExamVisibility.ALL) {
             isRelevant = true;
           } else {
             const matches = props.courses.filter(c => {
@@ -1868,14 +2048,14 @@ function ExamList(props: { // sorted list of all of your exams (probably the mos
             }
           }
           if (isRelevant) {
-            upcoming.push({ name: prettify(e.course), daysUntil, color });
+            upcoming.push({ name: prettify(e), daysUntil, color });
           }
         });
       });
     });
     
     return upcoming;
-  }, [examList, props.courses, props.settings.exams, props.subjectSelectRef, date, stringToDate]);
+  }, [getCombinedExamList, props.courses, props.settings.exams, props.subjectSelectRef, date, stringToDate]);
 
   return props.settings.exams !== ExamVisibility.NONE && (
     <div class="default-div" id="klausuren">
@@ -1895,20 +2075,18 @@ function ExamList(props: { // sorted list of all of your exams (probably the mos
         <>
           <CornerHelpButton 
             title="Klausuren" 
-            helpText="In diesem Bereich siehst du anstehende Klausuren. Wähle unten deinen Jahrgang aus. Optional kannst du unter 'Einstellungen > Klausurplan' auswählen, dass nur für dich relevante Klausuren (anhand deiner Kurswahl) angezeigt werden." 
+            helpText="In diesem Bereich siehst du anstehende Klausuren. Wähle unten deinen Jahrgang aus oder trage eigene Klausuren manuell über den Button '+ Klausur manuell eintragen' ein." 
           />
           <div key={animationKey} style={{ animation: 'tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both' }}>
             <h2>Klausuren</h2>
             {(availableLists === null || examList === null) && ( 
             <div class="h-div">
-              <DSBRefreshButton success={reloadSuccess} setSuccess={setReloadSuccess} getData={reloadExamList} /> {/* I bet you didn't know I put a refresh button here did you? */}
-              <p><i>aktuell nicht verfügbar.</i></p>
+              <DSBRefreshButton success={reloadSuccess} setSuccess={setReloadSuccess} getData={reloadExamList} />
+              <p><i>Offizieller Plan aktuell nicht verfügbar.</i></p>
             </div>
           )}
-          {!!availableLists && !!examList && (
+          {(!!availableLists && !!examList || customExams.length > 0) && (
             <div>
-              {/* <p>WIP, schaut bitte noch auf den offiziellen Klausurplan, wenn ihr nicht gamblen wollt.</p> */}
-              {/* <p>WIP, schaut bitte noch auf den offiziellen Klausurplan, das Ding funktioniert aktuell nur so halb.</p> */}
               <p>Heute ist <b>{week[date.getDay()]}</b>, der <b>{date.getDate() < 10 ? 0 : null}{date.getDate()}.{date.getMonth() + 1 < 10 ? 0 : null}{date.getMonth() + 1}.{date.getFullYear()}</b>.</p>
               {getUpcomingExams().length > 0 && (
                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '16px', marginBottom: '16px' }}>
@@ -1932,7 +2110,6 @@ function ExamList(props: { // sorted list of all of your exams (probably the mos
                   ))}
                 </div>
               )}
-              {/* {getWeek() & 1 ? (<p><b>Ungerade</b> Woche! <b>({getWeek()})</b></p>) : <p><b>Gerade</b> Woche! <b>({getWeek()})</b></p>} */}
               {props.settings.easterEggs && (date.getFullYear() === 1987 || date.getFullYear() === 1983) && (
                 <div class="center">
                   <video width={!!window ? (window.innerWidth > 500 ? window.innerWidth / 1.8 : window.innerWidth / 1.4) : 400} controls>
@@ -1953,40 +2130,138 @@ function ExamList(props: { // sorted list of all of your exams (probably the mos
                 </div>
               )}
 
-              {props.settings.yellowPaint && list === "" && (<p><b>Notiz</b>: wähle unten einen Klausurplan aus, um dessen Klausuren anzeigen zu lassen.</p>)}
+              {props.settings.yellowPaint && list === "" && customExams.length === 0 && (<p><b>Notiz</b>: wähle unten einen Klausurplan aus oder trage eine Klausur manuell ein.</p>)}
               {props.settings.yellowPaint && list !== "" && props.settings.exams === ExamVisibility.SORTED && props.courses.length === 0 && (<p><b>Notiz</b>: füge (schriftliche) Kurse hinzu, um relevante Klausuren zu sehen.</p>)}
               <Placeholder height="15px" />
-              {/* {examList.map((e) => {
-                return <ExamDayDisplay date={e.date} day={e.day} timeframe={e.timeframe} exams={e.exams} />;
-              })} */}
               <div id="exam-list-wrapper">
-                <div id="exam-selector">
-                  <h3>Klausurplan</h3>
-                  <div id="exam-input">
-                    <select value={list} ref={examListSelectRef} onChange={updateExamList}>
-                      <option value="">---</option>
-                      {availableLists.map((l) => {
-                        if (l.name.includes(props.grade.gradeName)) {
-                          return (<option value={l.name} disabled={!l.available}>{l.name}</option>)
-                        }
-                      })}
-                      {/* <option value="Q1_1">Q1_1</option>
-                      <option value="Q1_2">Q1_2</option>
-                      <option value="Q1_3" disabled>Q1_3</option>
-                      <option value="Q1_4" disabled>Q1_4</option> */}
-                    </select>
+                <div id="exam-selector" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+                  <div>
+                    <h3>Klausurplan</h3>
+                    <div id="exam-input">
+                      <select value={list} ref={examListSelectRef} onChange={updateExamList}>
+                        <option value="">--- Offizieller Plan ---</option>
+                        {availableLists && availableLists.map((l) => {
+                          if (l.name.includes(props.grade.gradeName)) {
+                            return (<option value={l.name} disabled={!l.available}>{l.name}</option>)
+                          }
+                        })}
+                      </select>
+                    </div>
                   </div>
+                  <input 
+                    type="button" 
+                    class="fakebutton" 
+                    value={showAddForm ? "Abbrechen" : "+ Klausur manuell eintragen"} 
+                    onClick={() => setShowAddForm(!showAddForm)} 
+                  />
                 </div>
+
+                {showAddForm && (
+                  <div style={{
+                    marginTop: '16px',
+                    marginBottom: '20px',
+                    padding: '16px',
+                    backgroundColor: 'var(--input-bg)',
+                    border: '1px solid var(--accent-color)',
+                    borderRadius: 'var(--rounding-md, 12px)',
+                    animation: 'tileReveal 0.3s cubic-bezier(0.16, 1, 0.3, 1) both'
+                  }}>
+                    <h3 style={{ marginTop: 0, marginBottom: '12px' }}>Manuelle Klausur eintragen</h3>
+                    {formError && <p style={{ color: '#ef4444', fontSize: '0.9rem', margin: '0 0 8px 0' }}>{formError}</p>}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '14px' }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Datum*</label>
+                        <input 
+                          type="date" 
+                          value={formDate} 
+                          onChange={(e) => setFormDate((e.target as HTMLInputElement).value)} 
+                          style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)', color: 'var(--text-color)' }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Fach / Kurs*</label>
+                        <select 
+                          value={formCourse} 
+                          onChange={(e) => setFormCourse((e.target as HTMLSelectElement).value)}
+                          style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)', color: 'var(--text-color)' }}
+                        >
+                          <option value="">--- Fach auswählen ---</option>
+                          {props.courses.map((c) => {
+                            const val = c.subject + (c.course ? "-" + c.course : "");
+                            return <option value={val} key={val}>{c.subject_name} {c.course}</option>;
+                          })}
+                          <option value="custom">Eigenes Fach / Freitext...</option>
+                        </select>
+                      </div>
+                      {formCourse === "custom" && (
+                        <div>
+                          <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Name des Faches*</label>
+                          <input 
+                            type="text" 
+                            placeholder="z. B. Spanisch LK" 
+                            value={formCustomSubject} 
+                            onChange={(e) => setFormCustomSubject((e.target as HTMLInputElement).value)}
+                            style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)', color: 'var(--text-color)' }}
+                          />
+                        </div>
+                      )}
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Zeitraum</label>
+                        <input 
+                          type="text" 
+                          placeholder="z. B. 1.-2. Stunde" 
+                          value={formTimeframe} 
+                          onChange={(e) => setFormTimeframe((e.target as HTMLInputElement).value)}
+                          style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)', color: 'var(--text-color)' }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Lehrer (optional)</label>
+                        <input 
+                          type="text" 
+                          placeholder="z. B. Fr. Müller" 
+                          value={formTeacher} 
+                          onChange={(e) => setFormTeacher((e.target as HTMLInputElement).value)}
+                          style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)', color: 'var(--text-color)' }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '4px' }}>Dauer (optional)</label>
+                        <input 
+                          type="text" 
+                          placeholder="z. B. 2-stündig" 
+                          value={formLength} 
+                          onChange={(e) => setFormLength((e.target as HTMLInputElement).value)}
+                          style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-color)', color: 'var(--text-color)' }}
+                        />
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                      <input type="button" class="fakebutton" value="Abbrechen" onClick={() => setShowAddForm(false)} />
+                      <input type="button" class="fakebutton" style={{ backgroundColor: 'var(--accent-color)', color: '#ffffff', borderColor: 'var(--accent-color)' }} value="Klausur speichern" onClick={handleAddCustomExam} />
+                    </div>
+                  </div>
+                )}
+
                 <div id="exam-list">
-                  {canDisplay() ? examList.map((e, idx) => {
+                  {canDisplay() ? getCombinedExamList.map((e, idx) => {
                     return shouldDisplayDay(e, props.settings, props.courses, date) && (
-                      <div key={list + "-" + e[0].date} style={{ animation: `tileReveal 0.4s cubic-bezier(0.16, 1, 0.3, 1) ${Math.min(0.2, idx * 0.03)}s both` }}>
-                        <ExamDayDisplay examDays={e} subjectSelectRef={props.subjectSelectRef} settings={props.settings} courses={props.courses} list={list} />
+                      <div key={(list || "custom") + "-" + e[0].date} style={{ animation: `tileReveal 0.4s cubic-bezier(0.16, 1, 0.3, 1) ${Math.min(0.2, idx * 0.03)}s both` }}>
+                        <ExamDayDisplay 
+                          examDays={e} 
+                          subjectSelectRef={props.subjectSelectRef} 
+                          settings={props.settings} 
+                          courses={props.courses} 
+                          list={list} 
+                          onDeleteCustomExam={handleDeleteCustomExam}
+                        />
                       </div>
                     )
-                  }) : (<div style={{ animation: 'tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both' }}>
-                    <span class="blue">Herzlichen Glückwunsch</span><span>. Du hast keine Klausuren!</span>
-                  </div>)}
+                  }) : (!showAddForm && (
+                    <div style={{ animation: 'tileReveal 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both' }}>
+                      <span class="blue">Herzlichen Glückwunsch</span><span>. Du hast keine Klausuren!</span>
+                    </div>
+                  ))}
                 </div>
               </div>
               </div>
@@ -2812,7 +3087,7 @@ export function Settings(props: { // settings block
 
   const exportAllData = useCallback(() => {
     const data: any = {};
-    const keys = ["user", "key", "filterStage", "courses", "grade", "examList", "DSBSettings", "PersonalTimetableData", "DSBHomework", "dismissedWelcome"];
+    const keys = ["user", "key", "filterStage", "courses", "grade", "examList", "customExams", "DSBSettings", "PersonalTimetableData", "DSBHomework", "dismissedWelcome"];
     for (const k of keys) {
       const val = localStorage.getItem(k);
       if (val !== null) data[k] = val;
@@ -4659,48 +4934,85 @@ function OverviewBox(props: { grade: GradeInfo, courses: CourseInfo[], settings:
         // --- 6. Exams ---
         try {
           const listName = localStorage.getItem("examList");
+          const stringToDate = (str: string): Date => { 
+            const s = str.split(".");
+            return new Date(`${s[2]}-${s[1]}-${s[0]}T16:00:00`);
+          };
+
+          let allExamDays: ExamDay[] = [];
           if (listName && user && key) {
-            const stringToDate = (str: string): Date => { 
-              const s = str.split(".");
-              return new Date(`${s[2]}-${s[1]}-${s[0]}T16:00:00`);
-            };
-            const examRes = await fetch("https://kirillathome.uucode.com/api/v1/exams/" + listName, { headers: { user, key } });
-            if (examRes.ok) {
-               const rawExamDays = await examRes.json() as ExamDay[];
-               let examStrings: preact.ComponentChildren[] = [];
+            try {
+              const examRes = await fetch("https://kirillathome.uucode.com/api/v1/exams/" + listName, { headers: { user, key } });
+              if (examRes.ok) {
+                allExamDays = await examRes.json() as ExamDay[];
+              }
+            } catch(e) {}
+          }
+
+          const savedCustom = localStorage.getItem("customExams");
+          if (savedCustom) {
+            try {
+              const customExamsList: CustomExam[] = JSON.parse(savedCustom);
+              for (const c of customExamsList) {
+                let found = allExamDays.find(ed => ed.date === c.date && ed.timeframe === c.timeframe);
+                const customExamObj: Exam = {
+                  course: c.course,
+                  teacher: c.teacher || "---",
+                  people: 1,
+                  max_people: 1,
+                  length: c.length || "2-stündig",
+                  isCustom: true,
+                  id: c.id,
+                  subjectName: c.subjectName
+                };
+                if (found) {
+                  found.exams.push(customExamObj);
+                } else {
+                  allExamDays.push({
+                    date: c.date,
+                    day: c.day,
+                    timeframe: c.timeframe,
+                    exams: [customExamObj]
+                  });
+                }
+              }
+            } catch(e) {}
+          }
+
+          if (allExamDays.length > 0) {
+             let examStrings: preact.ComponentChildren[] = [];
+             
+             for (const ed of allExamDays) {
+               const examDate = stringToDate(ed.date);
+               const diffTime = examDate.getTime() - now.getTime();
+               const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                
-               for (const ed of rawExamDays) {
-                 const examDate = stringToDate(ed.date);
-                 const diffTime = examDate.getTime() - now.getTime();
-                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                 
-                 // Show exams happening today or in the next 14 days
-                 if (diffDays >= -1 && diffDays <= 14) { 
-                   let dayExams: string[] = [];
-                   for (const ex of ed.exams) {
-                     const isRelevant = props.courses.filter(c => !!c.written && (c.course === "" ? c.subject === ex.course.split("-")[0] : c.subject === ex.course.split("-")[0] && c.course === ex.course.split("-")[1])).length > 0;
-                     if (isRelevant) {
-                       dayExams.push(getSubjectName(ex.course));
-                     }
-                   }
-                   dayExams = [...new Set(dayExams)];
-                   if (dayExams.length > 0) {
-                     const isToday = examDate.getDate() === now.getDate() && examDate.getMonth() === now.getMonth();
-                     const isTomorrowExam = examDate.getDate() === new Date(now.getTime() + 86400000).getDate() && examDate.getMonth() === new Date(now.getTime() + 86400000).getMonth();
-                     
-                     let dateText = `Am ${formatDateToDayMonth(examDate)}`;
-                     if (isToday) dateText = "Heute";
-                     else if (isTomorrowExam) dateText = "Morgen";
-                     
-                     examStrings.push(<>{dateText} schreibst du eine Klausur in {createClickableHighlight(formatList(dayExams), "klausuren")}.</>);
+               // Show exams happening today or in the next 14 days
+               if (diffDays >= -1 && diffDays <= 14) { 
+                 let dayExams: string[] = [];
+                 for (const ex of ed.exams) {
+                   const isRelevant = ex.isCustom || props.courses.filter(c => !!c.written && (c.course === "" ? c.subject === ex.course.split("-")[0] : c.subject === ex.course.split("-")[0] && c.course === ex.course.split("-")[1])).length > 0;
+                   if (isRelevant) {
+                     dayExams.push(ex.subjectName || getSubjectName(ex.course));
                    }
                  }
+                 dayExams = [...new Set(dayExams)];
+                 if (dayExams.length > 0) {
+                   const isToday = examDate.getDate() === now.getDate() && examDate.getMonth() === now.getMonth();
+                   const isTomorrowExam = examDate.getDate() === new Date(now.getTime() + 86400000).getDate() && examDate.getMonth() === new Date(now.getTime() + 86400000).getMonth();
+                   
+                   let dateText = `Am ${formatDateToDayMonth(examDate)}`;
+                   if (isToday) dateText = "Heute";
+                   else if (isTomorrowExam) dateText = "Morgen";
+                   
+                   examStrings.push(<>{dateText} schreibst du eine Klausur in {createClickableHighlight(formatList(dayExams), "klausuren")}.</>);
+                 }
                }
-               
-               if (examStrings.length > 0) {
-                 examStrings.forEach(s => addPart(s));
-               }
-            }
+             }
+             
+             if (examStrings.length > 0) {
+               examStrings.forEach(s => addPart(s));
+             }
           }
         } catch(e) {}
 
