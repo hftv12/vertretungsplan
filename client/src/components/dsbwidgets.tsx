@@ -1514,7 +1514,7 @@ function CourseList(props: { // thing for displaying your courses & the course a
         <div id='course-list'>
           {loadedData && props.courses.map((c, i) => {
             return ( // style guidelines hate this one simple trick: (hope you know how to scroll horizontally)
-              <Course subject={c.subject} subject_name={c.subject_name} course={c.course} room={c.room} courses={props.courses} setCourses={props.setCourses} index={i} written={c.written} color={c.color} advanced={props.settings.advancedCourses} />
+          <Course subject={c.subject} subject_name={c.subject_name} course={c.course} room={c.room} courses={props.courses} setCourses={props.setCourses} index={i} written={c.written} color={c.color} advanced={props.settings.advancedCourses} />
             );
           })}
           <CourseAdder courses={props.courses} setCourses={props.setCourses} subjectSelectRef={props.subjectSelectRef} />
@@ -1524,6 +1524,20 @@ function CourseList(props: { // thing for displaying your courses & the course a
   );
 }
 
+const formatTimeframeStr = (tf: string): string => {
+  if (!tf) return "";
+  if (tf.includes("bis")) return tf;
+  const match = tf.match(/(\d+)\.?\s*-\s*(\d+)/);
+  if (match) {
+    return `${match[1]}. bis ${match[2]}.`;
+  }
+  const singleMatch = tf.match(/(\d+)/);
+  if (singleMatch) {
+    return `${singleMatch[1]}.`;
+  }
+  return tf;
+};
+
 function ExamDayDisplay(props: { // displays a single (sorted) day of exams
   examDays: Array<ExamDay>, // array because fuck you
   subjectSelectRef: MutableRef<HTMLSelectElement>,
@@ -1532,11 +1546,6 @@ function ExamDayDisplay(props: { // displays a single (sorted) day of exams
   list: string,
   onDeleteCustomExam?: (id: string) => void,
 }) {
-  // const serialize = useCallback((d: ExamDay, e: Exam): string => {
-  //   // console.log(JSON.stringify(d));
-  //   // console.log(JSON.stringify(d))
-  //   return ;
-  // }, []);
 
   const prettifyCourse = useCallback((course: string): [string, string] => {
     let split = course.split("-");
@@ -1581,80 +1590,70 @@ function ExamDayDisplay(props: { // displays a single (sorted) day of exams
   }, [])
 
   return (
-    <div>
-      <h2>{props.examDays[0].day}, der {props.examDays[0].date}</h2>
-
+    <div class="settings-div" style={{ marginBottom: '12px' }}>
       {props.examDays.map((d) => {
-        return shouldDisplay(d, props.settings, props.courses) && (
-          <div>
-            <h3>{d.timeframe}</h3>
-            <div class="settings-div">
-              {d.exams.map((e) => {
-                const l = props.courses.filter(c => {
-                  return !!c.written && (c.course === "" ? c.subject === e.course.split("-")[0] : c.subject === e.course.split("-")[0] && c.course === e.course.split("-")[1]);
-                });
-                const isCustom = e.isCustom;
-                const isRelevant = isCustom || l.length > 0 || props.settings.exams === ExamVisibility.ALL;
+        const fullDateStr = `${d.day}, der ${d.date}`;
+        const formattedTimeframe = formatTimeframeStr(d.timeframe);
 
-                return isRelevant && (<div class="exam" style={isCustom ? { borderLeft: '3px solid var(--accent-color)', position: 'relative' } : undefined}>
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
-                      <h3>
-                        {e.subjectName || prettifyCourse(e.course)[0]} {!isCustom ? prettifyCourse(e.course)[1] : ""}
-                      </h3>
-                      {isCustom && props.onDeleteCustomExam && (
-                        <button 
-                          onClick={() => props.onDeleteCustomExam!(e.id!)}
-                          title="Klausur löschen"
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            padding: '4px',
-                            cursor: 'pointer',
-                            color: 'var(--text-secondary)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            borderRadius: '50%',
-                            transition: 'color 0.15s, background-color 0.15s'
-                          }}
-                          onMouseEnter={(event) => {
-                            (event.currentTarget as HTMLElement).style.color = '#ef4444';
-                            (event.currentTarget as HTMLElement).style.backgroundColor = 'rgba(239, 68, 68, 0.12)';
-                          }}
-                          onMouseLeave={(event) => {
-                            (event.currentTarget as HTMLElement).style.color = 'var(--text-secondary)';
-                            (event.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
-                          }}
-                        >
-                          <CloseIcon style={{ width: '18px', height: '18px' }} />
-                        </button>
-                      )}
-                    </div>
-                    {isCustom ? (
-                      <p><i>Stunden:</i> {d.timeframe}</p>
-                    ) : (
-                      <>
-                        {e.teacher && <p><i>Lehrer:</i> {e.teacher}</p>}
-                        <p><i>Es schreiben:</i> {e.people}/{e.max_people}</p>
-                        {e.length && <p><i>Dauer:</i> {e.length}</p>}
-                      </>
+        return shouldDisplay(d, props.settings, props.courses) && (
+          <>
+            {d.exams.map((e) => {
+              const l = props.courses.filter(c => {
+                return !!c.written && (c.course === "" ? c.subject === e.course.split("-")[0] : c.subject === e.course.split("-")[0] && c.course === e.course.split("-")[1]);
+              });
+              const isCustom = e.isCustom;
+              const isRelevant = isCustom || l.length > 0 || props.settings.exams === ExamVisibility.ALL;
+
+              return isRelevant && (<div class="exam" style={isCustom ? { borderLeft: '3px solid var(--accent-color)', position: 'relative' } : undefined}>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                    <h3 style={{ margin: 0 }}>
+                      {e.subjectName || prettifyCourse(e.course)[0]} {!isCustom ? prettifyCourse(e.course)[1] : ""}
+                    </h3>
+                    {isCustom && props.onDeleteCustomExam && (
+                      <button 
+                        onClick={() => props.onDeleteCustomExam!(e.id!)}
+                        title="Klausur löschen"
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          padding: '4px',
+                          cursor: 'pointer',
+                          color: 'var(--text-secondary)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderRadius: '50%',
+                          transition: 'color 0.15s, background-color 0.15s'
+                        }}
+                        onMouseEnter={(event) => {
+                          (event.currentTarget as HTMLElement).style.color = '#ef4444';
+                          (event.currentTarget as HTMLElement).style.backgroundColor = 'rgba(239, 68, 68, 0.12)';
+                        }}
+                        onMouseLeave={(event) => {
+                          (event.currentTarget as HTMLElement).style.color = 'var(--text-secondary)';
+                          (event.currentTarget as HTMLElement).style.backgroundColor = 'transparent';
+                        }}
+                      >
+                        <CloseIcon style={{ width: '18px', height: '18px' }} />
+                      </button>
                     )}
                   </div>
-                </div>);
-              })}
-            </div>
-          </div>
+                  <p style={{ margin: '3px 0' }}><i>Datum:</i> {fullDateStr}</p>
+                  <p style={{ margin: '3px 0' }}><i>Stunden:</i> {formattedTimeframe}</p>
+                  {!isCustom && (
+                    <>
+                      {e.teacher && <p style={{ margin: '3px 0' }}><i>Lehrer:</i> {e.teacher}</p>}
+                      <p style={{ margin: '3px 0' }}><i>Es schreiben:</i> {e.people}/{e.max_people}</p>
+                      {e.length && <p style={{ margin: '3px 0' }}><i>Dauer:</i> {e.length}</p>}
+                    </>
+                  )}
+                </div>
+              </div>);
+            })}
+          </>
         )
       })}
-      {/* <h3>{props.examDays[0].timeframe}</h3>
-      <ul>  
-        {props.exams.map((e) => {
-          return (<li>
-            <p>{e.course}, {e.length}, {e.max_people}/{e.people}, {e.teacher}</p>
-          </li>);
-        })}
-      </ul> */}
     </div>
   );
 }
@@ -1680,7 +1679,8 @@ function ExamList(props: { // sorted list of all of your exams (probably the mos
   const [formDate, setFormDate] = useState("");
   const [formCourse, setFormCourse] = useState("");
   const [formCustomSubject, setFormCustomSubject] = useState("");
-  const [formTimeframe, setFormTimeframe] = useState("1.-2. Stunde");
+  const [formStartHour, setFormStartHour] = useState(1);
+  const [formEndHour, setFormEndHour] = useState(2);
   const [formError, setFormError] = useState("");
 
   const examListSelectRef = useRef();
@@ -1730,12 +1730,13 @@ function ExamList(props: { // sorted list of all of your exams (probably the mos
     const formattedDate = `${d}.${m}.${y}`;
     const dateObj = new Date(`${y}-${m}-${d}T12:00:00`);
     const dayName = (week[dateObj.getDay()] || "Montag") as string;
+    const timeframeStr = formStartHour === formEndHour ? `${formStartHour}.` : `${formStartHour}. bis ${formEndHour}.`;
 
     const newExam: CustomExam = {
       id: `custom-${Date.now()}`,
       date: formattedDate,
       day: dayName,
-      timeframe: formTimeframe || "1.-2. Stunde",
+      timeframe: timeframeStr,
       course: courseVal,
       subjectName: subjName,
     };
@@ -1747,7 +1748,8 @@ function ExamList(props: { // sorted list of all of your exams (probably the mos
     setFormDate("");
     setFormCourse("");
     setFormCustomSubject("");
-    setFormTimeframe("1.-2. Stunde");
+    setFormStartHour(1);
+    setFormEndHour(2);
     setFormError("");
     setShowAddForm(false);
   };
@@ -2239,23 +2241,50 @@ function ExamList(props: { // sorted list of all of your exams (probably the mos
                         </div>
                       )}
                       <div>
-                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '500', color: 'var(--text-secondary)', marginBottom: '6px' }}>Stunden / Zeitraum*</label>
-                        <input 
-                          type="text" 
-                          placeholder="z. B. 1.-2. Stunde" 
-                          value={formTimeframe} 
-                          onChange={(e) => setFormTimeframe((e.target as HTMLInputElement).value)}
-                          style={{
-                            width: '100%',
-                            padding: '9px 12px',
-                            borderRadius: '8px',
-                            border: '1.5px solid var(--brighter-color, rgba(255, 255, 255, 0.2))',
-                            backgroundColor: 'var(--bg-color)',
-                            color: 'var(--text-color)',
-                            fontSize: '0.95rem',
-                            boxSizing: 'border-box'
-                          }}
-                        />
+                        <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '500', color: 'var(--text-secondary)', marginBottom: '6px' }}>Stunden*</label>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <select 
+                            value={formStartHour} 
+                            onChange={(e) => {
+                              const val = parseInt((e.target as HTMLSelectElement).value);
+                              setFormStartHour(val);
+                              if (formEndHour < val) setFormEndHour(val);
+                            }}
+                            style={{
+                              flex: 1,
+                              padding: '9px 12px',
+                              borderRadius: '8px',
+                              border: '1.5px solid var(--brighter-color, rgba(255, 255, 255, 0.2))',
+                              backgroundColor: 'var(--bg-color)',
+                              color: 'var(--text-color)',
+                              fontSize: '0.95rem',
+                              boxSizing: 'border-box'
+                            }}
+                          >
+                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(h => (
+                              <option key={h} value={h}>{h}. Stunde</option>
+                            ))}
+                          </select>
+                          <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: '500' }}>bis</span>
+                          <select 
+                            value={formEndHour} 
+                            onChange={(e) => setFormEndHour(parseInt((e.target as HTMLSelectElement).value))}
+                            style={{
+                              flex: 1,
+                              padding: '9px 12px',
+                              borderRadius: '8px',
+                              border: '1.5px solid var(--brighter-color, rgba(255, 255, 255, 0.2))',
+                              backgroundColor: 'var(--bg-color)',
+                              color: 'var(--text-color)',
+                              fontSize: '0.95rem',
+                              boxSizing: 'border-box'
+                            }}
+                          >
+                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].filter(h => h >= formStartHour).map(h => (
+                              <option key={h} value={h}>{h}. Stunde</option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
