@@ -3526,6 +3526,7 @@ function PersonalTimetable(props: {
   const dayWrapperRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [timetableHeight, setTimetableHeight] = useState<number | null>(null);
   const [dsbDataRaw, setDsbDataRaw] = useState<any>(null);
+  const [officialExams, setOfficialExams] = useState<ExamDay[]>([]);
 
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -3675,6 +3676,19 @@ function PersonalTimetable(props: {
       }
     };
     fetchDSB();
+
+    const fetchOfficialExams = async () => {
+      const listName = localStorage.getItem("examList");
+      const user = localStorage.getItem("user");
+      const key = localStorage.getItem("key");
+      if (listName && user && key) {
+        try {
+          const res = await fetch("https://kirillathome.uucode.com/api/v1/exams/" + listName, { headers: { user, key } });
+          if (res.ok) setOfficialExams(await res.json());
+        } catch(e) {}
+      }
+    };
+    fetchOfficialExams();
     
     return () => {
       clearTimeout(initTimer);
@@ -3741,7 +3755,51 @@ function PersonalTimetable(props: {
     return yiq >= 160 ? "#000000" : "#ffffff";
   };
 
+  const parseGermanDate = (str: string): Date | null => {
+    if (!str) return null;
+    if (str.includes("-")) {
+      const parts = str.split("-");
+      if (parts.length >= 3) {
+        return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+      }
+    }
+    const parts = str.split(".");
+    if (parts.length < 3) return null;
+    const day = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    let year = parseInt(parts[2], 10);
+    if (year < 100) year += 2000;
+    return new Date(year, month, day);
+  };
+
+  const isSameCalendarDay = (d1: Date, d2: Date): boolean => {
+    return d1.getFullYear() === d2.getFullYear() &&
+           d1.getMonth() === d2.getMonth() &&
+           d1.getDate() === d2.getDate();
+  };
+
+  const getTargetDateForDay = (dayName: string): Date => {
+    const dayIdx = days.findIndex(d => d.full === dayName);
+    const now = currentTime;
+    const realMonday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const dayOfWeek = realMonday.getDay();
+    const diffToMonday = realMonday.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+    realMonday.setDate(diffToMonday);
+    realMonday.setHours(0, 0, 0, 0);
+
+    const realWeekType = getCalendarWeekType(now);
+
+    const targetMonday = new Date(realMonday.getTime());
+    if (currentWeek !== realWeekType) {
+      targetMonday.setDate(targetMonday.getDate() + 7);
+    }
+    targetMonday.setDate(targetMonday.getDate() + (dayIdx >= 0 ? dayIdx : 0));
+    return targetMonday;
+  };
+
   const getExamForTimetable = (dayName: string, hourNum: number) => {
+    const targetDate = getTargetDateForDay(dayName);
+
     const isHourInTimeframe = (hour: number, timeframe: string): boolean => {
       if (!timeframe) return false;
       const rangeMatch = timeframe.match(/(\d+)\.?\s*(?:bis|-)\s*(\d+)/i);
@@ -3773,7 +3831,16 @@ function PersonalTimetable(props: {
       if (customData) {
         const customs: CustomExam[] = JSON.parse(customData);
         for (const c of customs) {
-          if (c.day === dayName && isHourInTimeframe(hourNum, c.timeframe)) {
+          if (c.date) {
+            const eDate = parseGermanDate(c.date);
+            if (eDate && (!isSameCalendarDay(eDate, targetDate) || getCalendarWeekType(eDate) !== currentWeek)) {
+              continue;
+            }
+          } else if (c.day !== dayName) {
+            continue;
+          }
+
+          if (isHourInTimeframe(hourNum, c.timeframe)) {
             const courseInfo = findCourseInfo(c.course, c.subjectName);
             const color = courseInfo?.color || "var(--accent-color)";
             const name = courseInfo?.subject_name || c.subjectName || (c.course ? (getCourseInfo(c.course)?.subject_name || c.course) : "Klausur");
@@ -3786,12 +3853,56 @@ function PersonalTimetable(props: {
       }
     } catch (e) {}
 
-    // 2. Check DSB substitutions for Klausur (&nbsp;)
+    // 2. Check official school exams
+    try {
+      if (officialExams && officialExams.length > 0) {
+        for (const ed of officialExams) {
+          if (ed.date) {
+            const eDate = parseGermanDate(ed.date);
+            if (eDate && (!isSameCalendarDay(eDate, targetDate) || getCalendarWeekType(eDate) !== currentWeek)) {
+              continue;
+            }
+          } else if (ed.day !== dayName) {
+            continue;
+          }
+
+          if (isHourInTimeframe(hourNum, ed.timeframe)) {
+            for (const ex of ed.exams) {
+              const isRelevant = ex.isCustom || props.courses.some(c => !!c.written && (c.course === "" ? c.subject === ex.course.split("-")[0] : c.subject === ex.course.split("-")[0] && c.course === ex.course.split("-")[1]));
+              if (isRelevant) {
+                const courseInfo = findCourseInfo(ex.course, ex.subjectName);
+                const color = courseInfo?.color || "var(--accent-color)";
+                const name = ex.subjectName || courseInfo?.subject_name || (getCourseInfo(ex.course)?.subject_name || ex.course);
+                return {
+                  subjectName: name,
+                  color: color
+                };
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {}
+
+    // 3. Check DSB substitutions for Klausur (&nbsp;)
     try {
       if (dsbDataRaw && props.grade) {
         let subs: Substitution[] = [];
-        if (dsbDataRaw.day_one?.day?.includes(dayName)) subs = dsbDataRaw.day_one.substitutions || [];
-        else if (dsbDataRaw.day_two?.day?.includes(dayName)) subs = dsbDataRaw.day_two.substitutions || [];
+        let subDateStr: string | null = null;
+        if (dsbDataRaw.day_one?.day?.includes(dayName)) {
+          subs = dsbDataRaw.day_one.substitutions || [];
+          subDateStr = dsbDataRaw.day_one.date;
+        } else if (dsbDataRaw.day_two?.day?.includes(dayName)) {
+          subs = dsbDataRaw.day_two.substitutions || [];
+          subDateStr = dsbDataRaw.day_two.date;
+        }
+
+        if (subDateStr) {
+          const sDate = parseGermanDate(subDateStr);
+          if (sDate && (!isSameCalendarDay(sDate, targetDate) || getCalendarWeekType(sDate) !== currentWeek)) {
+            subs = [];
+          }
+        }
 
         const s = subs.find((sub: Substitution) => {
           if (!matchSubstitutionHour(sub.hours, hourNum)) return false;
@@ -3877,9 +3988,24 @@ function PersonalTimetable(props: {
 
   const getSubstitutionStyle = (dayName: string, hourNum: number, courseStr: string) => {
     if (!dsbDataRaw || !courseStr || !props.grade) return {};
+    const targetDate = getTargetDateForDay(dayName);
+
     let subs: Substitution[] = [];
-    if (dsbDataRaw.day_one?.day?.includes(dayName)) subs = dsbDataRaw.day_one.substitutions || [];
-    else if (dsbDataRaw.day_two?.day?.includes(dayName)) subs = dsbDataRaw.day_two.substitutions || [];
+    let subDateStr: string | null = null;
+    if (dsbDataRaw.day_one?.day?.includes(dayName)) {
+      subs = dsbDataRaw.day_one.substitutions || [];
+      subDateStr = dsbDataRaw.day_one.date;
+    } else if (dsbDataRaw.day_two?.day?.includes(dayName)) {
+      subs = dsbDataRaw.day_two.substitutions || [];
+      subDateStr = dsbDataRaw.day_two.date;
+    }
+
+    if (subDateStr) {
+      const sDate = parseGermanDate(subDateStr);
+      if (sDate && (!isSameCalendarDay(sDate, targetDate) || getCalendarWeekType(sDate) !== currentWeek)) {
+        return {};
+      }
+    }
     
     if (subs.length === 0) return {};
     
